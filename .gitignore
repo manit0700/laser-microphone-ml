@@ -1,0 +1,27 @@
+# Data and model artifacts (do not commit large/binary files)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+models/*.pt
+results/plots/*.png
+results/reports/*
+results/*.json
+!**/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+.DS_Store
+
+# Prediction logs and captured clips
+results/captures/
+results/predictions_log.csv
+results/*.txt
+
+# Tooling / generated artifacts
+.claude-flow/
+models/test_indices.json

@@ -1,0 +1,25 @@
+# Laser Microphone ML pipeline - Python dependencies
+# Install with:  pip install -r requirements.txt
+#
+# Tested with Python 3.9-3.11. A normal laptop CPU is enough.
+
+torch>=2.0           # neural network framework (LSTM, training)
+torchaudio>=2.0      # audio loading, resampling, MFCC / mel spectrogram
+numpy>=1.23          # numerical arrays
+scipy>=1.10          # signal processing helpers (future filtering)
+scikit-learn>=1.2    # metrics, confusion matrix, classification report
+matplotlib>=3.6      # plots (confusion matrix, waveforms, spectrograms)
+pandas>=1.5          # CSV handling (metadata, future laser CSV data)
+soundfile>=0.12      # WAV backend used by torchaudio on some platforms
+
+# Optional, only if you prefer librosa-based loading/feature extraction:
+# librosa>=0.10
+
+# Optional, ONLY needed to record from a microphone (scripts/record_wav.py):
+# sounddevice>=0.4
+
+# Optional, ONLY needed for the browser test UI (src/app.py):
+# gradio>=4.0
+
+# Optional, for running notebooks/exploration.ipynb:
+# jupyter>=1.0
