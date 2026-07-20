@@ -15,8 +15,13 @@ soundfile>=0.12      # WAV backend used by torchaudio on some platforms
 # Optional, only if you prefer librosa-based loading/feature extraction:
 # librosa>=0.10
 
-# Optional, ONLY needed to record from a microphone (scripts/record_wav.py):
+# Optional, ONLY needed to record from a microphone (scripts/record_wav.py)
+# and for live mic capture in the desktop dashboard (signal_dashboard.py):
 # sounddevice>=0.4
+
+# Optional, ONLY needed for the desktop signal dashboard (signal_dashboard.py):
+# PyQt5>=5.15
+# pyqtgraph>=0.13
 
 # Optional, ONLY needed for the browser test UI (src/app.py):
 # gradio>=4.0

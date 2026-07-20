@@ -57,6 +57,26 @@ _high = min(BANDPASS_HIGH_HZ, _nyquist - 1)
 _BANDPASS_SOS = butter(BANDPASS_ORDER, [BANDPASS_LOW_HZ / _nyquist, _high / _nyquist],
                        btype="band", output="sos")
 
+# Runtime override for the filter (used by the live UI's Band-Pass toggle).
+# None -> follow the ENABLE_FILTER default from config; True/False -> force it on/off
+# for this session without editing config or retraining. See set_filter().
+_FILTER_OVERRIDE: bool | None = None
+
+
+def set_filter(enabled: bool | None) -> None:
+    """Turn the band-pass + pre-emphasis filter on/off at runtime.
+
+    The dashboard's Band-Pass switch calls this so the toggle actually changes the
+    signal the model sees. Pass None to fall back to the ENABLE_FILTER config value.
+    """
+    global _FILTER_OVERRIDE
+    _FILTER_OVERRIDE = enabled
+
+
+def filter_enabled() -> bool:
+    """Whether the filter is currently active (runtime override, else config)."""
+    return ENABLE_FILTER if _FILTER_OVERRIDE is None else _FILTER_OVERRIDE
+
 
 # ---------------------------------------------------------------------------
 # Step 1-3: load, mono, resample
@@ -245,7 +265,7 @@ def reduce_noise(waveform: torch.Tensor) -> torch.Tensor:
     Controlled by ENABLE_FILTER in config. Also cleans future laser/DAQ signals.
     Short/near-silent clips are returned unchanged to avoid filter edge artifacts.
     """
-    if not ENABLE_FILTER or waveform.numel() < 32:
+    if not filter_enabled() or waveform.numel() < 32:
         return waveform
 
     x = waveform.detach().cpu().numpy().astype(np.float64)

@@ -87,12 +87,17 @@ class SpokenDigitDataset(Dataset):
         include_unknown: bool = False,
         cache_in_memory: bool = True,
         feature: str = "mfcc",
+        augment: bool = False,
     ) -> None:
         self.data_dir = Path(data_dir)
         self.include_unknown = include_unknown
-        self.cache_in_memory = cache_in_memory
         # Which feature to compute per sample: "mfcc" (LSTM) or "mel" (CNN).
         self.feature = feature
+        # Data augmentation (training only). When on, each sample is randomized
+        # every epoch, so we must NOT cache -- a cached feature would freeze the
+        # randomness and defeat the purpose.
+        self.augment = augment
+        self.cache_in_memory = cache_in_memory and not augment
         self.label_to_index = _build_label_index(include_unknown)
 
         # Each entry is (file_path, label_index).
@@ -167,6 +172,10 @@ class SpokenDigitDataset(Dataset):
 
         path, label_index = self.samples[idx]
         waveform = self._load_one_waveform(path)
+        if self.augment:
+            # Randomized, realistic distortion (noise/gain/shift) for robustness.
+            from augment import augment_waveform
+            waveform = augment_waveform(waveform)
         feat = extract_features(waveform, self.feature)  # mfcc -> (time,n_mfcc); mel -> (n_mels,time)
         item = (feat.float(), label_index)
 

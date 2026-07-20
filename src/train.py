@@ -110,18 +110,28 @@ def run_epoch(model, loader, criterion, optimizer=None):
     return total_loss / total, correct / total
 
 
-def main(model_type: str = MODEL_TYPE):
+def main(model_type: str = MODEL_TYPE, augment: bool = False):
     set_seed(SEED)
     ensure_dirs()
 
     feature = FEATURE_FOR_MODEL[model_type]
     checkpoint_path = model_checkpoint(model_type)
-    print(f"Model: {model_type}  |  feature: {feature}  |  device: {DEVICE}")
+    print(f"Model: {model_type}  |  feature: {feature}  |  device: {DEVICE}"
+          f"  |  augment: {augment}")
     print("Loading dataset...")
+    # Clean dataset supplies val/test. When augmenting, a second (augmented)
+    # instance supplies train. Both are split with the SAME seed, so the index
+    # partition is identical -> train stays disjoint from val/test, and only the
+    # training clips get randomized. Without --augment, both point to one dataset.
     dataset = SpokenDigitDataset(feature=feature)
     print(f"Total samples: {len(dataset)} | class counts: {dataset.class_counts()}")
 
-    train_ds, val_ds, test_ds = split_dataset(dataset)
+    _, val_ds, test_ds = split_dataset(dataset)
+    if augment:
+        train_source = SpokenDigitDataset(feature=feature, augment=True)
+        train_ds, _, _ = split_dataset(train_source)
+    else:
+        train_ds, _, _ = split_dataset(dataset)
     print(f"Split -> train: {len(train_ds)}, val: {len(val_ds)}, test: {len(test_ds)}")
 
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
@@ -194,5 +204,10 @@ if __name__ == "__main__":
         "--model", choices=["lstm", "cnn"], default=MODEL_TYPE,
         help="which network to train: 'lstm' (MFCC) or 'cnn' (mel spectrogram)",
     )
+    parser.add_argument(
+        "--augment", action="store_true",
+        help="apply training-time data augmentation (noise/gain/time-shift) for "
+             "robustness to real mic/laser noise",
+    )
     args = parser.parse_args()
-    main(model_type=args.model)
+    main(model_type=args.model, augment=args.augment)
