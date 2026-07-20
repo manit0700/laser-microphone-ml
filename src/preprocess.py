@@ -35,14 +35,27 @@ import numpy as np
 import soundfile as sf
 import torch
 import torchaudio.functional as AF
+from scipy.signal import butter, sosfiltfilt
 
 from config import (
+    BANDPASS_HIGH_HZ,
+    BANDPASS_LOW_HZ,
+    BANDPASS_ORDER,
+    ENABLE_FILTER,
     ENERGY_THRESHOLD_RATIO,
     FRAME_HOP,
     FRAME_LENGTH,
     MAX_AUDIO_SAMPLES,
+    PREEMPHASIS_COEF,
     SAMPLE_RATE,
 )
+
+# Build the band-pass filter once (reused for every clip). Second-order sections
+# (SOS) form is numerically stable for higher-order filters.
+_nyquist = SAMPLE_RATE / 2.0
+_high = min(BANDPASS_HIGH_HZ, _nyquist - 1)
+_BANDPASS_SOS = butter(BANDPASS_ORDER, [BANDPASS_LOW_HZ / _nyquist, _high / _nyquist],
+                       btype="band", output="sos")
 
 
 # ---------------------------------------------------------------------------
@@ -221,14 +234,26 @@ def pad_or_truncate(waveform: torch.Tensor, length: int = MAX_AUDIO_SAMPLES) -> 
 # Optional: noise filtering placeholder
 # ---------------------------------------------------------------------------
 def reduce_noise(waveform: torch.Tensor) -> torch.Tensor:
-    """Placeholder for future noise reduction / filtering.
+    """Voice enhancement: band-pass filter + pre-emphasis (see config knobs).
 
-    For now this is a pass-through. Laser-vibrometry signals may need band-pass
-    filtering or spectral noise gating here. Implement it later (e.g. with
-    scipy.signal) without changing the rest of the pipeline.
+    1. Band-pass (200-3800 Hz, 6-pole Butterworth): keeps the speech band and
+       removes low-frequency rumble/DC offset and high-frequency hiss. Zero-phase
+       (sosfiltfilt) so it does not shift the signal in time.
+    2. Pre-emphasis (y[n] = x[n] - a*x[n-1]): boosts high frequencies to sharpen
+       consonants, which helps the MFCCs separate similar-sounding digits.
+
+    Controlled by ENABLE_FILTER in config. Also cleans future laser/DAQ signals.
+    Short/near-silent clips are returned unchanged to avoid filter edge artifacts.
     """
-    # TODO (laser team): add band-pass / denoising tuned to the laser signal.
-    return waveform
+    if not ENABLE_FILTER or waveform.numel() < 32:
+        return waveform
+
+    x = waveform.detach().cpu().numpy().astype(np.float64)
+    # Zero-phase band-pass. padlen guards against very short inputs.
+    x = sosfiltfilt(_BANDPASS_SOS, x, padlen=min(3 * BANDPASS_ORDER, x.size - 1))
+    # Pre-emphasis high-pass.
+    x = np.append(x[0], x[1:] - PREEMPHASIS_COEF * x[:-1])
+    return torch.from_numpy(np.ascontiguousarray(x, dtype=np.float32))
 
 
 # ---------------------------------------------------------------------------
