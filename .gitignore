@@ -25,3 +25,6 @@ results/*.txt
 # Tooling / generated artifacts
 .claude-flow/
 models/test_indices.json
+
+# Generated calibration/plot artifacts at results/ root (regenerable)
+results/threshold_sweep_*.png

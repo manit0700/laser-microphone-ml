@@ -133,22 +133,116 @@ class _MicSource:
         return buf[-n:] if len(buf) > n else buf
 
 
+def _read_signal_file(path: str):
+    """Read a WAV or CSV capture into (samples_1d, sample_rate).
+
+    - .wav            : standard audio, any rate (resampled downstream).
+    - .csv            : laser/DAQ style. Uses a 'voltage' column if present,
+                        else the last numeric column, as the signal. Sample rate
+                        comes from a 'time' column (1/dt) if present, else falls
+                        back to the project SAMPLE_RATE.
+
+    This is the format the hardware team's laser captures are expected to land
+    in (see docs/laser_daq_interface.md). Keeping the reader here means the
+    dashboard can replay a real capture file the moment one exists.
+    """
+    import numpy as np
+    p = str(path).lower()
+    if p.endswith(".wav"):
+        import soundfile as sf
+        data, sr = sf.read(str(path), dtype="float32", always_2d=True)
+        return np.asarray(data, dtype=np.float32).mean(axis=1), int(sr)
+
+    # CSV: read the header, pick signal + optional time column.
+    import csv as _csv
+    with open(path, newline="") as f:
+        rows = list(_csv.reader(f))
+    header = [h.strip().lower() for h in rows[0]]
+    body = np.array([[float(v) for v in r] for r in rows[1:] if r], dtype=np.float64)
+    sig_col = header.index("voltage") if "voltage" in header else body.shape[1] - 1
+    samples = body[:, sig_col].astype(np.float32)
+    if "time" in header and body.shape[0] > 1:
+        t = body[:, header.index("time")]
+        dt = float(np.median(np.diff(t)))
+        sr = int(round(1.0 / dt)) if dt > 0 else SAMPLE_RATE
+    else:
+        sr = SAMPLE_RATE
+    return samples, sr
+
+
+class _FileReplaySource:
+    """Streams a WAV/CSV capture as if it were arriving live from a device.
+
+    Same interface as _MicSource (available/start/stop/latest), so the dashboard
+    and SignalBackend treat a replayed laser file exactly like a live mic. Loops
+    the file so the scope keeps moving. This is how you demo/test the full
+    pipeline BEFORE the laser hardware is connected (Sprint 4).
+    """
+
+    def __init__(self, path: str, sample_rate: int, buffer_seconds: float):
+        import numpy as np
+        self.sample_rate = sample_rate
+        self.max_len = int(buffer_seconds * sample_rate)
+        self.available = False
+        self.error = None
+        self._pos = 0
+        self._data = np.zeros(0, dtype=np.float32)
+        self._playing = False
+        try:
+            samples, sr = _read_signal_file(path)
+            wave = load_waveform_from_array(samples, sr)   # resample to SAMPLE_RATE
+            self._data = wave.cpu().numpy().astype(np.float32)
+            self.available = self._data.size > 0
+            if not self.available:
+                self.error = "Capture file is empty."
+        except Exception as e:  # noqa: BLE001
+            self.error = f"{type(e).__name__}: {e}"
+
+    def start(self):
+        self._playing = True
+
+    def stop(self):
+        self._playing = False
+
+    def latest(self, seconds=None):
+        import numpy as np
+        if not self.available:
+            return np.zeros(0, dtype=np.float32)
+        # Advance the playback head a little each call so the view scrolls.
+        if self._playing:
+            self._pos = (self._pos + int(0.05 * self.sample_rate)) % self._data.size
+        n = self.max_len if seconds is None else int(seconds * self.sample_rate)
+        # Take a window ending at the current head, wrapping around the file.
+        idx = (np.arange(self._pos - n, self._pos)) % self._data.size
+        return self._data[idx]
+
+
 class SignalBackend:
     """Everything the dashboard needs, behind one small, safe interface.
 
     The dashboard checks `.audio_available` and `.model_available`; when either
     is False it keeps using its own dummy data for that part. All methods are
     safe to call every GUI frame -- they're cheap and never raise.
+
+    `source` selects where the signal comes from:
+        "mic"          -> live microphone (default, for the current demo)
+        path to a file -> replay a WAV/CSV capture as if live (test without
+                          hardware, or play back a real laser capture in Sprint 4)
     """
 
-    def __init__(self, threshold: float = CONFIDENCE_THRESHOLD, model: str = "lstm"):
+    def __init__(self, threshold: float = CONFIDENCE_THRESHOLD, model: str = "lstm",
+                 source: str = "mic"):
         self.sample_rate = SAMPLE_RATE
         self.threshold = threshold
         self.model = model                # "lstm", "cnn", or "ensemble"
+        self.source_kind = source
         self._running = False
 
-        # --- audio source ---
-        self._mic = _MicSource(SAMPLE_RATE, BUFFER_SECONDS)
+        # --- signal source: live mic, or replay a capture file ---
+        if source == "mic":
+            self._mic = _MicSource(SAMPLE_RATE, BUFFER_SECONDS)
+        else:
+            self._mic = _FileReplaySource(source, SAMPLE_RATE, BUFFER_SECONDS)
         self.audio_available = self._mic.available
         self.audio_error = self._mic.error
 
@@ -258,7 +352,8 @@ class SignalBackend:
     def status_text(self) -> str:
         """One-line summary for logging/console when the dashboard starts."""
         parts = []
-        parts.append(f"mic={'ok' if self.audio_available else 'OFF'}"
+        src = "mic" if self.source_kind == "mic" else f"file:{self.source_kind}"
+        parts.append(f"source={src} {'ok' if self.audio_available else 'OFF'}"
                      + ("" if self.audio_available else f" ({self.audio_error})"))
         parts.append(f"model={'ok' if self.model_available else 'OFF'}"
                      + ("" if self.model_available else f" ({self.model_error})"))
