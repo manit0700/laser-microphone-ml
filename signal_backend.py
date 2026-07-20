@@ -1,0 +1,266 @@
+"""
+signal_backend.py
+=================
+The bridge between the UI dashboard (signal_dashboard.py) and the real ML
+pipeline in src/. The dashboard draws the oscilloscope, spectrogram, and the
+prediction panel; THIS file gives it real numbers instead of the fake ones.
+
+It fills the four "ML TEAM:" hooks the dashboard left open:
+    1. waveform acquisition   -> live microphone samples (or laser/DAQ later)
+    2. spectrogram generation -> real STFT of the captured signal
+    3. classifier prediction  -> the trained LSTM/CNN/ensemble result
+    4. band-pass filter switch -> our real reduce_noise() filter, toggled live
+
+DESIGN GOALS
+------------
+- Keep the dashboard file almost untouched: it just asks this backend for data
+  and falls back to its own dummy generators if the backend isn't ready.
+- Degrade gracefully. If the mic library (sounddevice) isn't installed, or no
+  trained model exists, the relevant `*_available` flag is False and the
+  dashboard keeps showing its demo animation instead of crashing.
+- Reuse the EXACT same inference path as predict.py / app.py, so what you see on
+  the dashboard is what the rest of the system produces.
+
+LASER NOTE
+----------
+Right now the audio source is the microphone (sounddevice). When the laser/DAQ
+arrives, swap `_MicSource` for a DAQ source that fills the same rolling buffer
+(a 1-D float array at some sample rate) and nothing else here changes: the
+resampling, filtering, and model are all downstream of the buffer.
+"""
+
+import sys
+import threading
+from pathlib import Path
+
+import numpy as np
+
+# Make the src/ modules importable whether this file is run from the repo root
+# or elsewhere.
+_SRC = Path(__file__).resolve().parent / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+# These imports are the real pipeline. They only need numpy/torch/torchaudio,
+# which the ML environment already has -- NOT the GUI or mic libraries.
+from config import CONFIDENCE_THRESHOLD, SAMPLE_RATE          # noqa: E402
+from preprocess import load_waveform_from_array, preprocess_waveform, set_filter  # noqa: E402
+from features import extract_spectrogram                       # noqa: E402
+import predict as predict_mod                                  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# Tuning knobs (mirror the values used in app.py's live mode so behavior matches)
+# ---------------------------------------------------------------------------
+# How much recent audio we keep. Long enough to hold one spoken digit (~1.3 s)
+# plus a little slack for the scope/spectrogram views.
+BUFFER_SECONDS = 1.5
+# The window (seconds) actually fed to the model for each prediction.
+PREDICT_WINDOW_SEC = 1.3
+# Below this RMS loudness the window is treated as silence and NOT classified,
+# so background quiet doesn't produce a confident random digit.
+SILENCE_RMS = 0.015
+# Don't re-run the model on every GUI frame (that's ~20x/sec). Re-classify at
+# most this often; between runs the dashboard shows the last result.
+PREDICT_EVERY_SEC = 0.35
+# How many samples the oscilloscope trace shows (a short, recent slice).
+SCOPE_SECONDS = 0.4
+
+
+class _MicSource:
+    """Microphone capture using sounddevice, kept in a rolling buffer.
+
+    sounddevice is imported lazily inside here so that simply importing this
+    module (e.g. on a headless ML box, or during tests) never fails just because
+    the mic library isn't installed. `available` tells the caller whether real
+    capture is possible.
+    """
+
+    def __init__(self, sample_rate: int, buffer_seconds: float):
+        self.sample_rate = sample_rate
+        self.max_len = int(buffer_seconds * sample_rate)
+        self._buf = np.zeros(0, dtype=np.float32)
+        self._lock = threading.Lock()
+        self._stream = None
+        self._sd = None
+        self.available = False
+        self.error = None
+
+        try:
+            import sounddevice as sd  # lazy: only needed for live mic capture
+            self._sd = sd
+            # Confirm at least one input device actually exists before claiming
+            # capture is available (importing succeeds even with no mic).
+            if any(d["max_input_channels"] > 0 for d in sd.query_devices()):
+                self.available = True
+            else:
+                self.error = "No microphone input device found."
+        except Exception as e:  # noqa: BLE001 - any import/query issue -> unavailable
+            self.error = f"{type(e).__name__}: {e}"
+
+    def _callback(self, indata, frames, time_info, status):
+        """sounddevice calls this from an audio thread with each new mic chunk."""
+        chunk = indata[:, 0].astype(np.float32)  # first channel -> mono
+        with self._lock:
+            self._buf = np.concatenate([self._buf, chunk])[-self.max_len:]
+
+    def start(self):
+        if not self.available or self._stream is not None:
+            return
+        with self._lock:
+            self._buf = np.zeros(0, dtype=np.float32)
+        self._stream = self._sd.InputStream(
+            samplerate=self.sample_rate,
+            channels=1,
+            dtype="float32",
+            callback=self._callback,
+        )
+        self._stream.start()
+
+    def stop(self):
+        if self._stream is not None:
+            self._stream.stop()
+            self._stream.close()
+            self._stream = None
+
+    def latest(self, seconds: float | None = None) -> np.ndarray:
+        """Return the most recent `seconds` of audio (all of it if None)."""
+        with self._lock:
+            buf = self._buf.copy()
+        if seconds is None:
+            return buf
+        n = int(seconds * self.sample_rate)
+        return buf[-n:] if len(buf) > n else buf
+
+
+class SignalBackend:
+    """Everything the dashboard needs, behind one small, safe interface.
+
+    The dashboard checks `.audio_available` and `.model_available`; when either
+    is False it keeps using its own dummy data for that part. All methods are
+    safe to call every GUI frame -- they're cheap and never raise.
+    """
+
+    def __init__(self, threshold: float = CONFIDENCE_THRESHOLD, model: str = "lstm"):
+        self.sample_rate = SAMPLE_RATE
+        self.threshold = threshold
+        self.model = model                # "lstm", "cnn", or "ensemble"
+        self._running = False
+
+        # --- audio source ---
+        self._mic = _MicSource(SAMPLE_RATE, BUFFER_SECONDS)
+        self.audio_available = self._mic.available
+        self.audio_error = self._mic.error
+
+        # --- model availability (don't crash if weights aren't trained yet) ---
+        self.model_available = True
+        self.model_error = None
+        try:
+            predict_mod._load("lstm" if model == "ensemble" else model)
+        except Exception as e:  # noqa: BLE001
+            self.model_available = False
+            self.model_error = f"{type(e).__name__}: {e}"
+
+        # Prediction throttle + last result cache.
+        self._last_predict_t = 0.0
+        self._last_result = None
+
+    # -- lifecycle ---------------------------------------------------------
+    def start(self):
+        """Begin live capture (called when the user hits Record)."""
+        self._mic.start()
+        self._running = True
+
+    def stop(self):
+        """Stop live capture (called on Stop)."""
+        self._mic.stop()
+        self._running = False
+        self._last_result = None
+
+    @property
+    def running(self) -> bool:
+        return self._running
+
+    # -- hook 4: band-pass filter -----------------------------------------
+    def set_bandpass(self, enabled: bool):
+        """Wire the dashboard's Band-Pass switch to the real filter."""
+        set_filter(bool(enabled))
+
+    # -- hook 1: waveform for the oscilloscope ----------------------------
+    def scope_samples(self):
+        """Recent mic samples for the scope trace, or None if nothing captured yet.
+
+        Applies the SAME preprocessing filter as the model path when the band-pass
+        switch is on, so the scope shows what the model actually sees.
+        """
+        if not self.audio_available:
+            return None
+        raw = self._mic.latest(SCOPE_SECONDS)
+        if raw.size < 2:
+            return None
+        wave = load_waveform_from_array(raw, self.sample_rate)
+        from preprocess import reduce_noise  # honors the runtime filter toggle
+        return reduce_noise(wave).cpu().numpy()
+
+    # -- hook 2: spectrogram ----------------------------------------------
+    def spectrogram(self):
+        """Real (freq_bins, time_bins) magnitude spectrogram in dB, or None."""
+        if not self.audio_available:
+            return None
+        raw = self._mic.latest(SCOPE_SECONDS)
+        if raw.size < 64:
+            return None
+        wave = load_waveform_from_array(raw, self.sample_rate)
+        spec = extract_spectrogram(wave).cpu().numpy()
+        # ImageView expects (x=time, y=freq); our spec is (freq, time) -> transpose.
+        return spec.T
+
+    # -- hook 3: prediction -----------------------------------------------
+    def predict(self):
+        """Classify the current audio window.
+
+        Returns (label, confidence_percent) or None when there's nothing
+        confident to show (silence, too little audio, or no model). Throttled so
+        the model runs a few times per second, not on every GUI frame.
+        """
+        if not (self.audio_available and self.model_available and self._running):
+            return None
+
+        import time
+        now = time.monotonic()
+        if now - self._last_predict_t < PREDICT_EVERY_SEC:
+            return self._last_result           # reuse recent result between runs
+        self._last_predict_t = now
+
+        buf = self._mic.latest(PREDICT_WINDOW_SEC)
+        if buf.size < int(0.2 * self.sample_rate):   # need a bit of audio first
+            return None
+
+        # Silence gate: quiet window -> don't classify (avoids random confident digit).
+        rms = float(np.sqrt(np.mean(buf ** 2))) if buf.size else 0.0
+        if rms < SILENCE_RMS:
+            self._last_result = None
+            return None
+
+        waveform = load_waveform_from_array(buf, self.sample_rate)
+        if self.model == "ensemble":
+            result, _ = predict_mod.infer_ensemble(waveform, threshold=self.threshold)
+        else:
+            result, _ = predict_mod.infer(waveform, threshold=self.threshold,
+                                          model_type=self.model)
+
+        label = result["prediction"]                # digit string or "unknown"
+        confidence = result["confidence"] * 100.0    # 0..1 -> percent
+        self._last_result = (label, confidence)
+        return self._last_result
+
+    # -- diagnostics -------------------------------------------------------
+    def status_text(self) -> str:
+        """One-line summary for logging/console when the dashboard starts."""
+        parts = []
+        parts.append(f"mic={'ok' if self.audio_available else 'OFF'}"
+                     + ("" if self.audio_available else f" ({self.audio_error})"))
+        parts.append(f"model={'ok' if self.model_available else 'OFF'}"
+                     + ("" if self.model_available else f" ({self.model_error})"))
+        parts.append(f"rate={self.sample_rate}Hz")
+        return "SignalBackend: " + ", ".join(parts)

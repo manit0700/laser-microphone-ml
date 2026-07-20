@@ -28,6 +28,14 @@ import numpy as np
 from PyQt5 import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
 
+# Real ML backend (mic capture + trained model). Optional: if it can't be
+# imported (missing deps, etc.) the dashboard still runs on its demo data.
+try:
+    from signal_backend import SignalBackend
+except Exception as _e:  # noqa: BLE001
+    SignalBackend = None
+    print(f"[dashboard] ML backend unavailable, using demo data ({_e})")
+
 
 # Colors and fonts live here so the whole theme can be tweaked in one place
 # instead of hunting through every widget.
@@ -242,6 +250,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.time_axis = np.linspace(0, self.chunk_len / self.sample_rate, self.chunk_len)
         self.t_offset = 0.0
 
+        # Try to bring up the real ML backend (mic + trained model). If anything
+        # is missing it stays None and every hook below falls back to demo data,
+        # so the UI always runs.
+        self.backend = None
+        if SignalBackend is not None:
+            try:
+                self.backend = SignalBackend()
+                print(self.backend.status_text())
+            except Exception as e:  # noqa: BLE001
+                print(f"[dashboard] backend init failed, using demo data: {e}")
+                self.backend = None
+
         self.build_ui()
 
         # this timer is what makes the dummy data feel "live" - swap the
@@ -377,33 +397,66 @@ class MainWindow(QtWidgets.QMainWindow):
         # (freq_bins x time_bins) array and setImage() below will handle it.
         return np.random.rand(40, 60)
 
-    def update_frame(self):
-        """Runs on every timer tick - pushes fresh dummy data into all three
-        panels (scope, spectrogram, and prediction/confidence)."""
-        wave = self.make_fake_waveform()
-        self.scope_curve.setData(self.time_axis, wave)
+    def _backend_audio_live(self):
+        """True when the real backend is present and actually capturing mic audio."""
+        return self.backend is not None and self.backend.audio_available and self.backend.running
 
-        spec_data = self.make_fake_spectrogram()
+    def get_scope_data(self):
+        """(samples, time_axis) for the oscilloscope - real mic if available, else demo."""
+        if self._backend_audio_live():
+            samples = self.backend.scope_samples()
+            if samples is not None and len(samples) > 1:
+                t = np.linspace(0, len(samples) / self.backend.sample_rate, len(samples))
+                return samples, t
+        return self.make_fake_waveform(), self.time_axis
+
+    def get_spectrogram_data(self):
+        """(freq x time) image for the spectrogram - real STFT if available, else demo."""
+        if self._backend_audio_live():
+            spec = self.backend.spectrogram()
+            if spec is not None:
+                return spec
+        return self.make_fake_spectrogram()
+
+    def update_prediction(self):
+        """Update the Prediction + Confidence boxes from the model (or demo)."""
+        if self.backend is not None:
+            result = self.backend.predict()      # (label, confidence%) or None
+            if result is not None:
+                label, confidence = result
+                self.prediction_box.set_value(label)
+                self.confidence_box.set_value(f"{confidence:.1f}")
+            # None = silence / not enough audio yet: leave the last reading as-is.
+            return
+
+        # Demo fallback: roll a random label + confidence so the panel has
+        # something to display when no trained backend is connected.
+        label = np.random.choice(PREDICTION_LABELS)
+        confidence = np.random.uniform(72, 99.5)
+        self.prediction_box.set_value(label)
+        self.confidence_box.set_value(f"{confidence:.1f}")
+
+    def update_frame(self):
+        """Runs on every timer tick - pushes fresh data into all three panels
+        (scope, spectrogram, and prediction/confidence). Uses the real ML
+        backend when connected, otherwise the built-in demo generators."""
+        wave, t = self.get_scope_data()
+        self.scope_curve.setData(t, wave)
+
+        spec_data = self.get_spectrogram_data()
         self.spectrogram.setImage(spec_data, autoLevels=True, autoRange=True)
 
         if self.is_recording:
-            # ML TEAM: insert classifier prediction here
-            #
-            # This just rolls a random label + confidence so the panel has
-            # something to display. Replace with your model's actual
-            # output - call prediction_box.set_value(...) and
-            # confidence_box.set_value(...) with whatever it returns.
-            label = np.random.choice(PREDICTION_LABELS)
-            confidence = np.random.uniform(72, 99.5)
-            self.prediction_box.set_value(label)
-            self.confidence_box.set_value(f"{confidence:.1f}")
+            self.update_prediction()
 
     def on_record(self):
         self.is_recording = True
         self.record_btn.set_recording(True)
         self.stop_btn.setEnabled(True)
         print("Recording started")
-        # ML TEAM: kick off real acquisition / streaming inference here too, if needed
+        # Start real mic capture + streaming inference when the backend is present.
+        if self.backend is not None:
+            self.backend.start()
 
     def on_stop(self):
         self.is_recording = False
@@ -412,12 +465,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.prediction_box.set_value("--")
         self.confidence_box.set_value("--")
         print("Recording stopped")
+        if self.backend is not None:
+            self.backend.stop()
 
     def on_bandpass_toggled(self, checked):
         state = "ON" if checked else "OFF"
         print(f"Band-pass filter: {state}")
-        # ML TEAM: apply your real band-pass filter here based on `checked` -
-        # this switch is UI-only right now and doesn't touch the signal at all
+        # Apply the real band-pass + pre-emphasis filter (preprocess.reduce_noise)
+        # so the toggle actually changes the signal the scope and model see.
+        if self.backend is not None:
+            self.backend.set_bandpass(checked)
 
     def keyPressEvent(self, event):
         # F11 for a true borderless fullscreen, Esc to leave it. Not required
