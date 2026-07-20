@@ -80,7 +80,7 @@ MAX_AUDIO_SAMPLES = int(SAMPLE_RATE * MAX_AUDIO_SECONDS)
 # ---------------------------------------------------------------------------
 # Applied in preprocess.reduce_noise() before feature extraction. Cleans the
 # signal so the model sees speech, not hum/hiss. Also helps future laser data.
-ENABLE_FILTER = True
+ENABLE_FILTER = False
 
 # Band-pass keeps only the speech band and removes low-frequency rumble/DC and
 # high-frequency hiss. Butterworth = flat in-band. High cutoff must stay below
