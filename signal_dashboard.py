@@ -264,6 +264,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.build_ui()
 
+        # Make the real filter match the Band-Pass switch's initial state so the
+        # UI and the signal agree from the start (the switch defaults to OFF).
+        if self.backend is not None:
+            self.backend.set_bandpass(self.bandpass_switch.isChecked())
+
         # this timer is what makes the dummy data feel "live" - swap the
         # dummy generators for real data and everything downstream of them
         # (the graphs, the timer, all of it) keeps working the same way
@@ -296,6 +301,10 @@ class MainWindow(QtWidgets.QMainWindow):
         filter_label = QtWidgets.QLabel("Band-Pass Filter")
         filter_label.setStyleSheet(f"color: {DIM_TEXT_COLOR}; font-family: {UI_FONT}; font-size: 13px;")
         self.bandpass_switch = ToggleSwitch()
+        # Default ON: the trained model was fit on band-pass-filtered audio, so it
+        # expects filtered input. Turning this off mismatches training and hurts
+        # accuracy. Leave it on unless you retrain without the filter.
+        self.bandpass_switch.setChecked(True)
         self.bandpass_switch.toggled.connect(self.on_bandpass_toggled)
         filter_row.addWidget(filter_label)
         filter_row.addSpacing(10)

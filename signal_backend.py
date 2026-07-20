@@ -77,8 +77,14 @@ class _MicSource:
     """
 
     def __init__(self, sample_rate: int, buffer_seconds: float):
-        self.sample_rate = sample_rate
-        self.max_len = int(buffer_seconds * sample_rate)
+        # IMPORTANT: we capture at the microphone's OWN native rate and let the
+        # pipeline resample to the project rate downstream. Forcing the mic to
+        # the project's 8 kHz produces distorted audio on Macs (native 44.1/48
+        # kHz), which wrecks the MFCCs and the prediction. `self.rate` is the
+        # rate the samples in the buffer are at (what latest() returns).
+        self.rate = int(sample_rate)          # updated to the device rate below
+        self._buffer_seconds = buffer_seconds
+        self.max_len = int(buffer_seconds * self.rate)
         self._buf = np.zeros(0, dtype=np.float32)
         self._lock = threading.Lock()
         self._stream = None
@@ -93,6 +99,13 @@ class _MicSource:
             # capture is available (importing succeeds even with no mic).
             if any(d["max_input_channels"] > 0 for d in sd.query_devices()):
                 self.available = True
+                # Use the default input device's native sample rate for capture.
+                try:
+                    default_in = sd.query_devices(kind="input")
+                    self.rate = int(round(default_in["default_samplerate"]))
+                except Exception:  # noqa: BLE001 - fall back to project rate
+                    pass
+                self.max_len = int(self._buffer_seconds * self.rate)
             else:
                 self.error = "No microphone input device found."
         except Exception as e:  # noqa: BLE001 - any import/query issue -> unavailable
@@ -109,8 +122,9 @@ class _MicSource:
             return
         with self._lock:
             self._buf = np.zeros(0, dtype=np.float32)
+        # samplerate=None lets PortAudio open the device at its native rate.
         self._stream = self._sd.InputStream(
-            samplerate=self.sample_rate,
+            samplerate=self.rate,
             channels=1,
             dtype="float32",
             callback=self._callback,
@@ -129,7 +143,7 @@ class _MicSource:
             buf = self._buf.copy()
         if seconds is None:
             return buf
-        n = int(seconds * self.sample_rate)
+        n = int(seconds * self.rate)
         return buf[-n:] if len(buf) > n else buf
 
 
@@ -181,7 +195,10 @@ class _FileReplaySource:
 
     def __init__(self, path: str, sample_rate: int, buffer_seconds: float):
         import numpy as np
+        # File data is resampled to the project rate on load, so that's the rate
+        # the samples we hand out are at (mirrors _MicSource.rate).
         self.sample_rate = sample_rate
+        self.rate = sample_rate
         self.max_len = int(buffer_seconds * sample_rate)
         self.available = False
         self.error = None
@@ -292,7 +309,7 @@ class SignalBackend:
         raw = self._mic.latest(SCOPE_SECONDS)
         if raw.size < 2:
             return None
-        wave = load_waveform_from_array(raw, self.sample_rate)
+        wave = load_waveform_from_array(raw, self._mic.rate)
         from preprocess import reduce_noise  # honors the runtime filter toggle
         return reduce_noise(wave).cpu().numpy()
 
@@ -304,7 +321,7 @@ class SignalBackend:
         raw = self._mic.latest(SCOPE_SECONDS)
         if raw.size < 64:
             return None
-        wave = load_waveform_from_array(raw, self.sample_rate)
+        wave = load_waveform_from_array(raw, self._mic.rate)
         spec = extract_spectrogram(wave).cpu().numpy()
         # ImageView expects (x=time, y=freq); our spec is (freq, time) -> transpose.
         return spec.T
@@ -327,7 +344,7 @@ class SignalBackend:
         self._last_predict_t = now
 
         buf = self._mic.latest(PREDICT_WINDOW_SEC)
-        if buf.size < int(0.2 * self.sample_rate):   # need a bit of audio first
+        if buf.size < int(0.2 * self._mic.rate):   # need a bit of audio first
             return None
 
         # Silence gate: quiet window -> don't classify (avoids random confident digit).
@@ -336,7 +353,7 @@ class SignalBackend:
             self._last_result = None
             return None
 
-        waveform = load_waveform_from_array(buf, self.sample_rate)
+        waveform = load_waveform_from_array(buf, self._mic.rate)
         if self.model == "ensemble":
             result, _ = predict_mod.infer_ensemble(waveform, threshold=self.threshold)
         else:
