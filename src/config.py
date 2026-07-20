@@ -76,6 +76,23 @@ MAX_AUDIO_SECONDS = 1.0
 MAX_AUDIO_SAMPLES = int(SAMPLE_RATE * MAX_AUDIO_SECONDS)
 
 # ---------------------------------------------------------------------------
+# 2b. VOICE ENHANCEMENT (band-pass filter + pre-emphasis)
+# ---------------------------------------------------------------------------
+# Applied in preprocess.reduce_noise() before feature extraction. Cleans the
+# signal so the model sees speech, not hum/hiss. Also helps future laser data.
+ENABLE_FILTER = True
+
+# Band-pass keeps only the speech band and removes low-frequency rumble/DC and
+# high-frequency hiss. Butterworth = flat in-band. High cutoff must stay below
+# the Nyquist frequency (SAMPLE_RATE / 2 = 4000 Hz at 8 kHz).
+BANDPASS_LOW_HZ = 200
+BANDPASS_HIGH_HZ = 3800          # < 4000 Hz Nyquist at 8 kHz
+BANDPASS_ORDER = 6               # 6-pole, matches the team's DSP filter plan
+
+# Pre-emphasis boosts high frequencies to sharpen consonants (y[n] = x[n] - a*x[n-1]).
+PREEMPHASIS_COEF = 0.97
+
+# ---------------------------------------------------------------------------
 # 3. ENDPOINT DETECTION / SILENCE TRIMMING
 # ---------------------------------------------------------------------------
 # Energy-based endpoint detection keeps only the part of the clip that is
