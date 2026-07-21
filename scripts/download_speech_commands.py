@@ -66,43 +66,62 @@ def main():
                         help="max clips for the unknown class (with --unknown)")
     args = parser.parse_args()
 
-    try:
-        import torchaudio
-    except ImportError:
-        print("Needs torchaudio (already in requirements). pip install torchaudio")
-        return
+    import soundfile as sf  # read WAVs directly (avoids torchaudio.load/torchcodec dep)
 
-    print("Downloading / loading Google Speech Commands (cached; ~2.3 GB first time)...")
+    # Ensure the dataset is downloaded + extracted. torchaudio handles the
+    # download/extract; we then read the extracted WAV files ourselves.
     root = Path(RAW_DATA_DIR).parent / "speech_commands_cache"
-    root.mkdir(parents=True, exist_ok=True)
-    ds = torchaudio.datasets.SPEECHCOMMANDS(root=str(root), download=True)
+    base = root / "SpeechCommands" / "speech_commands_v0.02"
+    if not base.exists():
+        print("Downloading / extracting Google Speech Commands (~2.3 GB first time)...")
+        try:
+            import torchaudio
+            torchaudio.datasets.SPEECHCOMMANDS(root=str(root), download=True)
+        except Exception as e:  # noqa: BLE001 - download OK even if later load would fail
+            if not base.exists():
+                print(f"Download failed: {e}")
+                return
+    print(f"Reading extracted clips from {base}")
 
     out = Path(RAW_DATA_DIR)
     out.mkdir(parents=True, exist_ok=True)
 
-    kept = {d: 0 for d in WORD_TO_DIGIT.values()}
+    def _copy_word(word, cap, save_fn):
+        """Read up to `cap` WAVs for one word and save them via save_fn(samples, sr, speaker, n)."""
+        wavs = sorted((base / word).glob("*.wav"))[:cap]
+        n = 0
+        for wp in wavs:
+            data, sr = sf.read(str(wp), dtype="float32")
+            # filename is <speakerhash>_nohash_<k>.wav -> use the speaker hash
+            speaker = wp.stem.split("_")[0]
+            save_fn(data, sr, speaker, n)
+            n += 1
+        return n
+
+    kept = {}
+    for word, digit in WORD_TO_DIGIT.items():
+        cnt = _copy_word(
+            word, args.per_class,
+            lambda data, sr, spk, n, d=digit: save_wav(data, out / f"{d}_sc{spk}_{n}.wav", sr),
+        )
+        kept[digit] = cnt
+        print(f"  digit {digit} ({word}): {cnt} clips")
+
     unk = 0
-    caps = {d: args.per_class for d in WORD_TO_DIGIT.values()}
-
-    for i in range(len(ds)):
-        waveform, sr, label, speaker_id, _ = ds[i]
-        if label in WORD_TO_DIGIT:
-            digit = WORD_TO_DIGIT[label]
-            if kept[digit] >= caps[digit]:
+    if args.unknown:
+        udir = out / UNKNOWN_LABEL
+        udir.mkdir(exist_ok=True)
+        remaining = args.per_unknown
+        for word in UNKNOWN_WORDS:
+            if remaining <= 0 or not (base / word).exists():
                 continue
-            name = f"{digit}_sc{speaker_id}_{kept[digit]}.wav"
-            save_wav(waveform.squeeze(0).numpy(), out / name, sr)
-            kept[digit] += 1
-        elif args.unknown and label in UNKNOWN_WORDS and unk < args.per_unknown:
-            # 'unknown' clips go in a subfolder dataset.py reads as the unknown class.
-            udir = out / UNKNOWN_LABEL
-            udir.mkdir(exist_ok=True)
-            save_wav(waveform.squeeze(0).numpy(), udir / f"unk_{unk}.wav", sr)
-            unk += 1
-
-        if i % 2000 == 0:
-            done = sum(kept.values())
-            print(f"  scanned {i}/{len(ds)} | digits kept {done} | unknown {unk}")
+            per = max(1, args.per_unknown // len(UNKNOWN_WORDS))
+            c = _copy_word(
+                word, min(per, remaining),
+                lambda data, sr, spk, n, w=word: save_wav(data, udir / f"{w}_{spk}_{n}.wav", sr),
+            )
+            unk += c
+            remaining -= c
 
     print("\nAdded per digit:")
     for d in sorted(kept):
