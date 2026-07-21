@@ -110,25 +110,30 @@ def run_epoch(model, loader, criterion, optimizer=None):
     return total_loss / total, correct / total
 
 
-def main(model_type: str = MODEL_TYPE, augment: bool = False):
+def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = False):
     set_seed(SEED)
     ensure_dirs()
 
     feature = FEATURE_FOR_MODEL[model_type]
     checkpoint_path = model_checkpoint(model_type)
     print(f"Model: {model_type}  |  feature: {feature}  |  device: {DEVICE}"
-          f"  |  augment: {augment}")
+          f"  |  augment: {augment}  |  unknown-class: {unknown}")
     print("Loading dataset...")
     # Clean dataset supplies val/test. When augmenting, a second (augmented)
     # instance supplies train. Both are split with the SAME seed, so the index
     # partition is identical -> train stays disjoint from val/test, and only the
     # training clips get randomized. Without --augment, both point to one dataset.
-    dataset = SpokenDigitDataset(feature=feature)
+    dataset = SpokenDigitDataset(feature=feature, include_unknown=unknown)
     print(f"Total samples: {len(dataset)} | class counts: {dataset.class_counts()}")
+
+    # Ordered label list (0..9, plus 'unknown' when enabled) -> class count.
+    labels = [lbl for lbl, _ in sorted(dataset.label_to_index.items(), key=lambda kv: kv[1])]
+    num_classes = len(labels)
 
     _, val_ds, test_ds = split_dataset(dataset)
     if augment:
-        train_source = SpokenDigitDataset(feature=feature, augment=True)
+        train_source = SpokenDigitDataset(feature=feature, augment=True,
+                                          include_unknown=unknown)
         train_ds, _, _ = split_dataset(train_source)
     else:
         train_ds, _, _ = split_dataset(dataset)
@@ -139,7 +144,7 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False):
     val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False,
                             num_workers=NUM_WORKERS)
 
-    model = build_model(model_type).to(DEVICE)
+    model = build_model(model_type, num_classes=num_classes).to(DEVICE)
 
     # Use BOTH GPUs when available ("2x GPU"). DataParallel splits each batch
     # across cards. For this small LSTM the win is modest, but it honors the
@@ -181,7 +186,7 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False):
                     "model_state": state,
                     "model_type": model_type,   # so evaluate/predict rebuild the right net
                     "feature": feature,         # and extract the matching feature
-                    "labels": DIGIT_LABELS,
+                    "labels": labels,           # 0..9 (+ 'unknown' if trained with it)
                     "val_acc": best_val_acc,
                     "epoch": epoch,
                 },
@@ -209,5 +214,10 @@ if __name__ == "__main__":
         help="apply training-time data augmentation (noise/gain/time-shift) for "
              "robustness to real mic/laser noise",
     )
+    parser.add_argument(
+        "--unknown-class", action="store_true", dest="unknown",
+        help="train a dedicated 'unknown' class from non-digit clips in "
+             "data/raw/unknown/ (11 classes) so non-digits are actively rejected",
+    )
     args = parser.parse_args()
-    main(model_type=args.model, augment=args.augment)
+    main(model_type=args.model, augment=args.augment, unknown=args.unknown)

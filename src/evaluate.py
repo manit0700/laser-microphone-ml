@@ -101,7 +101,8 @@ def _predictions_single(model_type):
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False,
                              num_workers=NUM_WORKERS)
 
-    model = build_model(loaded_type).to(DEVICE)
+    n_classes = len(checkpoint.get("labels", DIGIT_LABELS))
+    model = build_model(loaded_type, num_classes=n_classes).to(DEVICE)
     model.load_state_dict(checkpoint["model_state"])
     model.eval()
 

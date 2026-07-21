@@ -70,12 +70,15 @@ def _load(model_type: str = MODEL_TYPE) -> dict:
             )
         checkpoint = torch.load(ckpt_path, map_location=DEVICE)
         loaded_type = checkpoint.get("model_type", model_type)
-        model = build_model(loaded_type).to(DEVICE)
+        labels = checkpoint.get("labels", DIGIT_LABELS)
+        # Build with the checkpoint's class count so an 'unknown'-class model
+        # (11 outputs) loads correctly alongside plain 10-class models.
+        model = build_model(loaded_type, num_classes=len(labels)).to(DEVICE)
         model.load_state_dict(checkpoint["model_state"])
         model.eval()
         _cache[model_type] = {
             "model": model,
-            "labels": checkpoint.get("labels", DIGIT_LABELS),
+            "labels": labels,
             "feature": checkpoint.get("feature", FEATURE_FOR_MODEL[loaded_type]),
         }
     return _cache[model_type]

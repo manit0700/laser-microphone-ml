@@ -125,15 +125,17 @@ class DigitCNN(nn.Module):
         return self.classifier(x)
 
 
-def build_model(model_type: str = "lstm") -> nn.Module:
+def build_model(model_type: str = "lstm", num_classes: int = NUM_CLASSES) -> nn.Module:
     """Factory used by train/evaluate/predict so they all build the same model.
 
     model_type="lstm" -> DigitLSTM (MFCC)   |   "cnn" -> DigitCNN (mel spectrogram)
+    num_classes lets the model add an extra "unknown" output when trained with a
+    dedicated reject class (11 instead of 10).
     """
     if model_type == "lstm":
-        return DigitLSTM()
+        return DigitLSTM(num_classes=num_classes)
     if model_type == "cnn":
-        return DigitCNN()
+        return DigitCNN(num_classes=num_classes)
     raise ValueError(f"Unknown model_type: {model_type!r} (expected 'lstm' or 'cnn')")
 
 
