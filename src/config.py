@@ -82,6 +82,13 @@ MAX_AUDIO_SAMPLES = int(SAMPLE_RATE * MAX_AUDIO_SECONDS)
 # signal so the model sees speech, not hum/hiss. Also helps future laser data.
 ENABLE_FILTER = False
 
+# Live audio enhancement (DC removal + spectral denoise + auto-gain), applied to
+# microphone/laser captures before feature extraction (see enhance.py). Unlike
+# the band-pass filter, this makes noisy/quiet live audio look MORE like the
+# clean training clips, so it helps live recognition without a train/inference
+# mismatch. On already-clean clips it is near a no-op. Default on for live use.
+ENABLE_ENHANCE = True
+
 # Band-pass keeps only the speech band and removes low-frequency rumble/DC and
 # high-frequency hiss. Butterworth = flat in-band. High cutoff must stay below
 # the Nyquist frequency (SAMPLE_RATE / 2 = 4000 Hz at 8 kHz).

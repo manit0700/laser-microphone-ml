@@ -43,9 +43,10 @@ if str(_SRC) not in sys.path:
 
 # These imports are the real pipeline. They only need numpy/torch/torchaudio,
 # which the ML environment already has -- NOT the GUI or mic libraries.
-from config import CONFIDENCE_THRESHOLD, SAMPLE_RATE          # noqa: E402
+from config import CONFIDENCE_THRESHOLD, SAMPLE_RATE, ENABLE_ENHANCE  # noqa: E402
 from preprocess import load_waveform_from_array, preprocess_waveform, set_filter  # noqa: E402
 from features import extract_spectrogram                       # noqa: E402
+from enhance import enhance_waveform                           # noqa: E402
 import predict as predict_mod                                  # noqa: E402
 
 
@@ -58,8 +59,10 @@ BUFFER_SECONDS = 1.5
 # The window (seconds) actually fed to the model for each prediction.
 PREDICT_WINDOW_SEC = 1.3
 # Below this RMS loudness the window is treated as silence and NOT classified,
-# so background quiet doesn't produce a confident random digit.
-SILENCE_RMS = 0.015
+# so background quiet doesn't produce a confident random digit. Kept low because
+# quiet speakers can sit around 0.008 RMS; the confidence threshold + enhancement
+# handle the rest. (Auto-gain in enhance.py then brings the level up.)
+SILENCE_RMS = 0.006
 # Don't re-run the model on every GUI frame (that's ~20x/sec). Re-classify at
 # most this often; between runs the dashboard shows the last result.
 PREDICT_EVERY_SEC = 0.35
@@ -256,6 +259,8 @@ class SignalBackend:
         # Save each recognized capture (clip + CSV) to grow a real dataset.
         self.autosave = autosave
         self._last_logged = None
+        # Live audio enhancement (denoise + auto-gain) before prediction.
+        self.enhance = ENABLE_ENHANCE
         self._running = False
 
         # --- signal source: live mic, or replay a capture file ---
@@ -313,7 +318,9 @@ class SignalBackend:
         if raw.size < 2:
             return None
         wave = load_waveform_from_array(raw, self._mic.rate)
-        from preprocess import reduce_noise  # honors the runtime filter toggle
+        if self.enhance:
+            wave = enhance_waveform(wave)      # show the cleaned signal on the scope
+        from preprocess import reduce_noise    # honors the runtime filter toggle
         return reduce_noise(wave).cpu().numpy()
 
     # -- hook 2: spectrogram ----------------------------------------------
@@ -357,6 +364,8 @@ class SignalBackend:
             return None
 
         waveform = load_waveform_from_array(buf, self._mic.rate)
+        if self.enhance:
+            waveform = enhance_waveform(waveform)     # denoise + auto-gain for live audio
         if self.model == "ensemble":
             result, _ = predict_mod.infer_ensemble(waveform, threshold=self.threshold)
         else:
