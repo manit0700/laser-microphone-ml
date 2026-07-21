@@ -28,3 +28,6 @@ models/test_indices.json
 
 # Generated calibration/plot artifacts at results/ root (regenerable)
 results/threshold_sweep_*.png
+
+# Large downloaded dataset cache (do not push - 2.3GB)
+data/speech_commands_cache/

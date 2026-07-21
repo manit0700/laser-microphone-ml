@@ -264,10 +264,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.build_ui()
 
-        # Make the real filter match the Band-Pass switch's initial state so the
-        # UI and the signal agree from the start (the switch defaults to OFF).
+        # Make enhancement match the switch's initial state (defaults ON).
         if self.backend is not None:
-            self.backend.set_bandpass(self.bandpass_switch.isChecked())
+            self.backend.enhance = self.bandpass_switch.isChecked()
 
         # this timer is what makes the dummy data feel "live" - swap the
         # dummy generators for real data and everything downstream of them
@@ -295,15 +294,16 @@ class MainWindow(QtWidgets.QMainWindow):
         col = QtWidgets.QVBoxLayout()
         col.setSpacing(10)
 
-        # Band-pass filter toggle lives here since it acts on the incoming
-        # signal that's about to get plotted below, not on the ML result.
+        # Audio-enhancement toggle. Cleans the incoming signal (denoise +
+        # auto-gain) before it is plotted and classified. This replaces the old
+        # band-pass filter, which hurt the current (unfiltered) model.
         filter_row = QtWidgets.QHBoxLayout()
-        filter_label = QtWidgets.QLabel("Band-Pass Filter")
+        filter_label = QtWidgets.QLabel("Enhance Audio")
         filter_label.setStyleSheet(f"color: {DIM_TEXT_COLOR}; font-family: {UI_FONT}; font-size: 13px;")
         self.bandpass_switch = ToggleSwitch()
-        # Default OFF: the current model is trained WITHOUT the band-pass filter
-        # (ENABLE_FILTER=False), so inference should be unfiltered to match. If a
-        # future model is trained with the filter, default this ON instead.
+        # Default ON: enhancement (denoise + auto-gain) helps live mic/laser audio
+        # and is a near no-op on clean clips, so it is safe to leave on.
+        self.bandpass_switch.setChecked(True)
         self.bandpass_switch.toggled.connect(self.on_bandpass_toggled)
         filter_row.addWidget(filter_label)
         filter_row.addSpacing(10)
@@ -478,11 +478,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def on_bandpass_toggled(self, checked):
         state = "ON" if checked else "OFF"
-        print(f"Band-pass filter: {state}")
-        # Apply the real band-pass + pre-emphasis filter (preprocess.reduce_noise)
-        # so the toggle actually changes the signal the scope and model see.
+        print(f"Audio enhancement: {state}")
+        # Toggle the live audio enhancement (denoise + auto-gain) applied before
+        # the scope and the classifier.
         if self.backend is not None:
-            self.backend.set_bandpass(checked)
+            self.backend.enhance = checked
 
     def keyPressEvent(self, event):
         # F11 for a true borderless fullscreen, Esc to leave it. Not required
