@@ -256,7 +256,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.backend = None
         if SignalBackend is not None:
             try:
-                self.backend = SignalBackend()
+                # Ensemble (LSTM + CNN) is the most accurate, so the dashboard
+                # uses it by default. Both are fast, so live latency is fine.
+                self.backend = SignalBackend(model="ensemble")
                 print(self.backend.status_text())
             except Exception as e:  # noqa: BLE001
                 print(f"[dashboard] backend init failed, using demo data: {e}")
