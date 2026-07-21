@@ -248,11 +248,14 @@ class SignalBackend:
     """
 
     def __init__(self, threshold: float = CONFIDENCE_THRESHOLD, model: str = "lstm",
-                 source: str = "mic"):
+                 source: str = "mic", autosave: bool = True):
         self.sample_rate = SAMPLE_RATE
         self.threshold = threshold
         self.model = model                # "lstm", "cnn", or "ensemble"
         self.source_kind = source
+        # Save each recognized capture (clip + CSV) to grow a real dataset.
+        self.autosave = autosave
+        self._last_logged = None
         self._running = False
 
         # --- signal source: live mic, or replay a capture file ---
@@ -362,6 +365,21 @@ class SignalBackend:
 
         label = result["prediction"]                # digit string or "unknown"
         confidence = result["confidence"] * 100.0    # 0..1 -> percent
+
+        # Auto-save each NEW recognized digit (clip + CSV row) so real captures
+        # accumulate for later auto-tuning. Deduped: log once per detection, not
+        # on every 0.35s window, and only for confident digits (not "unknown").
+        if self.autosave and result["status"] == "recognized" and label != self._last_logged:
+            try:
+                from utils import log_prediction
+                log_prediction(result, samples=buf, sample_rate=self._mic.rate,
+                               source="dashboard")
+                self._last_logged = label
+            except Exception:  # noqa: BLE001 - never let logging break the UI
+                pass
+        elif result["status"] != "recognized":
+            self._last_logged = None   # reset so a repeat later logs again
+
         self._last_result = (label, confidence)
         return self._last_result
 
