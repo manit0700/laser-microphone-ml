@@ -9,6 +9,46 @@ a digit.
 
 ---
 
+## Quick Start — Run the Live Demo
+
+Recognizes spoken digits **0–9** live from the microphone in a desktop dashboard.
+Works on **Windows** and **macOS**. The trained model is included in the repo, so
+there is nothing to train first.
+
+**1. Get the code and install dependencies**
+```bash
+git clone https://github.com/manit0700/laser-microphone-ml.git
+cd laser-microphone-ml
+pip install -r requirements.txt
+pip install PyQt5 pyqtgraph sounddevice
+```
+
+**2. Run the dashboard**
+```bash
+python signal_dashboard.py
+```
+
+**3. Allow microphone access** (do this once, or the app hears only silence and
+guesses wrong):
+- **Windows:** Settings → Privacy & security → Microphone → turn ON
+  “Microphone access” and “Let desktop apps access your microphone.”
+- **macOS:** System Settings → Privacy & Security → Microphone → enable your
+  terminal (Terminal / iTerm / VS Code).
+
+**4. Demo it**
+- Click the red **Record** button, allow the mic prompt.
+- Say a digit clearly, ~15 cm from the mic (moderate volume — not a whisper, not
+  a shout). The **Prediction** + **Confidence** boxes update and hold steady.
+- The **Enhance Audio** toggle (denoise + auto-gain) should stay ON.
+- **Stop** ends capture. **F11** = fullscreen.
+
+The dashboard uses the **ensemble** (LSTM + CNN) model by default and works for
+any speaker. If recognition seems off, it is almost always the mic: check step 3
+and the input volume (watch the oscilloscope — you want a clear burst when you
+speak, not a flat line or a clipped/squared-off wave).
+
+---
+
 ## 1. What is the Laser Microphone project?
 
 Instead of a normal microphone, the final hardware uses a **laser / laser

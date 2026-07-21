@@ -384,14 +384,19 @@ class SignalBackend:
             self._last_logged = None      # allow a repeat of the same digit later
             return self._committed
 
-        waveform = load_waveform_from_array(buf, self._mic.rate)
-        if self.enhance:
-            waveform = enhance_waveform(waveform)     # denoise + auto-gain for live audio
-        if self.model == "ensemble":
-            result, _ = predict_mod.infer_ensemble(waveform, threshold=self.threshold)
-        else:
-            result, _ = predict_mod.infer(waveform, threshold=self.threshold,
-                                          model_type=self.model)
+        # Never let an inference hiccup crash the live loop / the demo: on any
+        # error, hold the last committed result instead of raising.
+        try:
+            waveform = load_waveform_from_array(buf, self._mic.rate)
+            if self.enhance:
+                waveform = enhance_waveform(waveform)     # denoise + auto-gain for live audio
+            if self.model == "ensemble":
+                result, _ = predict_mod.infer_ensemble(waveform, threshold=self.threshold)
+            else:
+                result, _ = predict_mod.infer(waveform, threshold=self.threshold,
+                                              model_type=self.model)
+        except Exception:  # noqa: BLE001 - keep the UI alive no matter what
+            return self._committed
 
         label = result["prediction"]                # digit string or "unknown"
         confident = result["status"] == "recognized" and result["confidence"] >= STABLE_CONF
