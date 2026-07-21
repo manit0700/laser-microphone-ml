@@ -1,4 +1,4 @@
-model,feature,params,accuracy_no_filter,accuracy_with_filter
-LSTM,MFCC,544266,0.943,0.900
-CNN,mel spectrogram,33770,0.957,0.957
-Ensemble,LSTM+CNN,-,0.970,0.960
+model,feature,params,dataset,test_accuracy,val_accuracy
+LSTM,MFCC,544266,FSDD+SpeechCommands+voice,0.912,0.904
+CNN,mel spectrogram,33770,FSDD+SpeechCommands+voice,0.949,0.943
+Ensemble,LSTM+CNN,-,FSDD+SpeechCommands+voice,0.951,-
