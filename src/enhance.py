@@ -37,8 +37,10 @@ _WINDOW = torch.hann_window(_N_FFT)
 
 # Denoise strength: how much of the estimated noise floor to subtract, and the
 # floor below which we never push a bin (prevents "musical noise" artifacts).
-_NOISE_OVERSUB = 1.5     # subtract 1.5x the estimated noise magnitude
-_SPECTRAL_FLOOR = 0.10   # keep at least 10% of the original magnitude
+# Kept GENTLE so speech isn't distorted -- the trained 'unknown' class handles
+# noise rejection, so denoise only needs a light touch here.
+_NOISE_OVERSUB = 0.8     # subtract <1x the estimated noise magnitude (light)
+_SPECTRAL_FLOOR = 0.30   # keep at least 30% of the original magnitude (less artifacts)
 
 # Auto-gain target RMS (in [-1,1]). Speech around this level is comfortably above
 # the noise floor without clipping.
