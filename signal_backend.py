@@ -79,6 +79,48 @@ STABLE_HITS = 2             # this many agreeing windows in a row -> commit
 SCOPE_SECONDS = 0.4
 
 
+# Bluetooth earbuds/headsets frequently expose a mic that returns pure silence
+# (they only enable it in call/HFP mode). If one is the system default we skip it
+# in favor of a real built-in mic, which is what wrecked live capture once when
+# AirPods became the default input device.
+_BLUETOOTH_HINTS = ("airpods", "buds", "bluetooth", "headphone", "headset", "beats")
+_BUILTIN_HINTS = ("macbook", "built-in", "internal", "microphone array")
+
+
+def _pick_input_device(sd):
+    """Choose a good input device index, or None to let PortAudio decide.
+
+    Order: LMML_MIC_DEVICE env override -> the system default (unless it looks
+    like Bluetooth earbuds, in which case prefer a built-in mic) -> first input.
+    """
+    import os
+    override = os.environ.get("LMML_MIC_DEVICE")
+    if override is not None:
+        try:
+            return int(override)
+        except ValueError:
+            pass
+
+    devices = sd.query_devices()
+    inputs = [i for i, d in enumerate(devices) if d["max_input_channels"] > 0]
+    if not inputs:
+        return None
+
+    try:
+        default_idx = sd.default.device[0]
+    except Exception:  # noqa: BLE001
+        default_idx = None
+
+    if default_idx in inputs:
+        name = devices[default_idx]["name"].lower()
+        if any(b in name for b in _BLUETOOTH_HINTS):
+            for i in inputs:                       # prefer a built-in mic instead
+                if any(k in devices[i]["name"].lower() for k in _BUILTIN_HINTS):
+                    return i
+        return default_idx
+    return inputs[0]
+
+
 class _MicSource:
     """Microphone capture using sounddevice, kept in a rolling buffer.
 
@@ -101,6 +143,8 @@ class _MicSource:
         self._lock = threading.Lock()
         self._stream = None
         self._sd = None
+        self.device = None            # chosen input-device index (None = default)
+        self.device_name = None
         self.available = False
         self.error = None
 
@@ -111,10 +155,12 @@ class _MicSource:
             # capture is available (importing succeeds even with no mic).
             if any(d["max_input_channels"] > 0 for d in sd.query_devices()):
                 self.available = True
-                # Use the default input device's native sample rate for capture.
+                self.device = _pick_input_device(sd)   # avoid dead Bluetooth mics
                 try:
-                    default_in = sd.query_devices(kind="input")
-                    self.rate = int(round(default_in["default_samplerate"]))
+                    info = sd.query_devices(self.device if self.device is not None
+                                            else None, kind="input")
+                    self.rate = int(round(info["default_samplerate"]))
+                    self.device_name = info["name"]
                 except Exception:  # noqa: BLE001 - fall back to project rate
                     pass
                 self.max_len = int(self._buffer_seconds * self.rate)
@@ -134,11 +180,11 @@ class _MicSource:
             return
         with self._lock:
             self._buf = np.zeros(0, dtype=np.float32)
-        # samplerate=None lets PortAudio open the device at its native rate.
         self._stream = self._sd.InputStream(
             samplerate=self.rate,
             channels=1,
             dtype="float32",
+            device=self.device,          # chosen built-in mic (skips Bluetooth)
             callback=self._callback,
         )
         self._stream.start()
@@ -435,5 +481,7 @@ class SignalBackend:
                      + ("" if self.audio_available else f" ({self.audio_error})"))
         parts.append(f"model={'ok' if self.model_available else 'OFF'}"
                      + ("" if self.model_available else f" ({self.model_error})"))
+        if self.source_kind == "mic" and getattr(self._mic, "device_name", None):
+            parts.append(f"mic='{self._mic.device_name}'")
         parts.append(f"rate={self.sample_rate}Hz")
         return "SignalBackend: " + ", ".join(parts)
