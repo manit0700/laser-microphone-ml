@@ -65,7 +65,16 @@ PREDICT_WINDOW_SEC = 1.3
 SILENCE_RMS = 0.006
 # Don't re-run the model on every GUI frame (that's ~20x/sec). Re-classify at
 # most this often; between runs the dashboard shows the last result.
-PREDICT_EVERY_SEC = 0.35
+PREDICT_EVERY_SEC = 0.30
+
+# --- Prediction stability (stops the readout flickering between digits) ---
+# The sliding window classifies continuously, so one spoken digit passes through
+# several windows (onset/middle/tail) that can disagree. To keep the displayed
+# number STABLE we only "commit" a digit once the SAME label repeats on
+# STABLE_HITS consecutive windows at >= STABLE_CONF confidence, and then hold it
+# until a different digit is confirmed the same way.
+STABLE_CONF = 0.75          # a window must be at least this confident to count
+STABLE_HITS = 2             # this many agreeing windows in a row -> commit
 # How many samples the oscilloscope trace shows (a short, recent slice).
 SCOPE_SECONDS = 0.4
 
@@ -261,6 +270,11 @@ class SignalBackend:
         self._last_logged = None
         # Live audio enhancement (denoise + auto-gain) before prediction.
         self.enhance = ENABLE_ENHANCE
+        # Prediction-stability state (debounce): the committed/held result plus
+        # the current agreement streak.
+        self._committed = None       # (label, confidence_percent) shown on screen
+        self._streak_label = None
+        self._streak_count = 0
         self._running = False
 
         # --- signal source: live mic, or replay a capture file ---
@@ -294,7 +308,10 @@ class SignalBackend:
         """Stop live capture (called on Stop)."""
         self._mic.stop()
         self._running = False
-        self._last_result = None
+        # Clear the held result + streak so the next session starts clean.
+        self._committed = None
+        self._streak_label = None
+        self._streak_count = 0
 
     @property
     def running(self) -> bool:
@@ -350,18 +367,22 @@ class SignalBackend:
         import time
         now = time.monotonic()
         if now - self._last_predict_t < PREDICT_EVERY_SEC:
-            return self._last_result           # reuse recent result between runs
+            return self._committed             # hold the committed result between runs
         self._last_predict_t = now
 
         buf = self._mic.latest(PREDICT_WINDOW_SEC)
         if buf.size < int(0.2 * self._mic.rate):   # need a bit of audio first
             return None
 
-        # Silence gate: quiet window -> don't classify (avoids random confident digit).
+        # Silence gate: quiet window -> not speech. Reset the agreement streak so
+        # the next spoken digit is judged fresh, but HOLD the committed result on
+        # screen (don't blank it between words).
         rms = float(np.sqrt(np.mean(buf ** 2))) if buf.size else 0.0
         if rms < SILENCE_RMS:
-            self._last_result = None
-            return None
+            self._streak_label = None
+            self._streak_count = 0
+            self._last_logged = None      # allow a repeat of the same digit later
+            return self._committed
 
         waveform = load_waveform_from_array(buf, self._mic.rate)
         if self.enhance:
@@ -373,24 +394,32 @@ class SignalBackend:
                                           model_type=self.model)
 
         label = result["prediction"]                # digit string or "unknown"
-        confidence = result["confidence"] * 100.0    # 0..1 -> percent
+        confident = result["status"] == "recognized" and result["confidence"] >= STABLE_CONF
 
-        # Auto-save each NEW recognized digit (clip + CSV row) so real captures
-        # accumulate for later auto-tuning. Deduped: log once per detection, not
-        # on every 0.35s window, and only for confident digits (not "unknown").
-        if self.autosave and result["status"] == "recognized" and label != self._last_logged:
-            try:
-                from utils import log_prediction
-                log_prediction(result, samples=buf, sample_rate=self._mic.rate,
-                               source="dashboard")
-                self._last_logged = label
-            except Exception:  # noqa: BLE001 - never let logging break the UI
-                pass
-        elif result["status"] != "recognized":
-            self._last_logged = None   # reset so a repeat later logs again
+        # Debounce: require the SAME confident label on several windows in a row
+        # before changing the displayed number. This is what stops the readout
+        # flickering as one spoken digit passes through the sliding window.
+        if confident:
+            if label == self._streak_label:
+                self._streak_count += 1
+            else:
+                self._streak_label = label
+                self._streak_count = 1
 
-        self._last_result = (label, confidence)
-        return self._last_result
+            committed_label = self._committed[0] if self._committed else None
+            if self._streak_count >= STABLE_HITS and label != committed_label:
+                # New digit confirmed -> commit it, and save it once.
+                self._committed = (label, result["confidence"] * 100.0)
+                if self.autosave:
+                    try:
+                        from utils import log_prediction
+                        log_prediction(result, samples=buf,
+                                       sample_rate=self._mic.rate, source="dashboard")
+                    except Exception:  # noqa: BLE001 - never break the UI
+                        pass
+        # If not confident, leave the streak as-is and keep showing the committed
+        # value (a brief mid-word dip shouldn't wipe the number).
+        return self._committed
 
     # -- diagnostics -------------------------------------------------------
     def status_text(self) -> str:
