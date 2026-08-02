@@ -28,6 +28,99 @@ pip install PyQt5 pyqtgraph sounddevice
 python signal_dashboard.py
 ```
 
+If the microphone is unreliable during a presentation, run the same dashboard
+with a saved audio or DAQ file instead:
+```bash
+LMML_SIGNAL_SOURCE="data/raw/5_nicolas_9.wav" python signal_dashboard.py
+```
+
+You can also click **Open Audio** inside the dashboard and select a WAV, FLAC,
+OGG, AIFF, MP3, or CSV capture. CSV files should contain a `voltage` column, or
+the last numeric column will be used as the signal.
+
+**Hardware / PCM1808 Sprint 4 test**
+Put real captures from the hardware/software connection into:
+```bash
+data/hardware_test/
+```
+
+Use filenames that start with the expected digit, for example:
+```text
+0_test1.wav
+1_pcm1808_01.wav
+2_laser_capture.wav
+```
+
+Then run:
+```bash
+python scripts/test_hardware_captures.py
+```
+
+This prints expected digit, predicted digit, confidence, peak/RMS signal level,
+and writes:
+```text
+results/hardware_test_report.csv
+```
+
+For the exact hardware-to-ML format, see:
+```text
+docs/hardware_ml_input_contract.md
+```
+
+### Manual Running Process
+
+Use this when a teammate wants to run the ML side manually.
+
+**A. Install and check the project**
+```bash
+cd laser_microphone_ml
+pip install -r requirements.txt
+pip install PyQt5 pyqtgraph sounddevice
+```
+
+**B. Run the dashboard with the laptop microphone**
+```bash
+python signal_dashboard.py
+```
+
+If the dashboard opens but predictions are bad, check microphone permission and
+make sure the waveform moves when you speak.
+
+**C. Run the dashboard with a saved audio file**
+```bash
+LMML_SIGNAL_SOURCE="data/hardware_test/0_simulated_01.wav" python signal_dashboard.py
+```
+
+This is the best option for demos if the live microphone or hardware input is
+not stable.
+
+**D. Test simulated hardware captures**
+```bash
+python scripts/test_hardware_captures.py
+```
+
+This reads files from `data/hardware_test/` and writes:
+```text
+results/hardware_test_report.csv
+```
+
+**E. Test real PCM1808 / DAQ captures later**
+Copy real captures into `data/hardware_test/` using names like:
+```text
+5_pcm1808_01.wav
+5_laser_01.csv
+```
+
+Then run:
+```bash
+python scripts/test_hardware_captures.py
+```
+
+For CSV captures without a usable `time` column, force the sample rate:
+```bash
+python scripts/test_hardware_captures.py --sample-rate 16000
+```
+
 **3. Allow microphone access** (do this once, or the app hears only silence and
 guesses wrong):
 - **Windows:** Settings → Privacy & security → Microphone → turn ON

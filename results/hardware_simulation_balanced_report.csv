@@ -1,0 +1,11 @@
+file,expected,predicted,confidence,status,correct,sample_rate,duration_sec,peak,rms,issue,error
+data/hardware_test/0_simulated_01.wav,0,0,0.9605,recognized,True,16000,1.000,1.0000,0.1661,possible clipping,
+data/hardware_test/1_simulated_01.wav,1,1,0.8865,recognized,True,16000,1.000,1.0000,0.1663,possible clipping,
+data/hardware_test/2_simulated_01.wav,2,2,0.9016,recognized,True,8000,0.320,0.2697,0.0634,ok,
+data/hardware_test/3_simulated_01.wav,3,3,0.6103,recognized,True,16000,1.000,1.0000,0.1852,possible clipping,
+data/hardware_test/4_simulated_01.wav,4,4,0.9997,recognized,True,16000,1.000,1.0000,0.1745,possible clipping,
+data/hardware_test/5_simulated_01.wav,5,5,0.9815,recognized,True,8000,0.337,0.3516,0.0639,ok,
+data/hardware_test/6_simulated_01.wav,6,6,0.9891,recognized,True,16000,1.000,1.0000,0.1487,possible clipping,
+data/hardware_test/7_simulated_01.wav,7,7,0.9992,recognized,True,16000,1.000,1.0000,0.0820,possible clipping,
+data/hardware_test/8_simulated_01.wav,8,unknown,0.5627,low_confidence,False,16000,1.000,1.0000,0.3595,possible clipping,
+data/hardware_test/9_simulated_01.wav,9,9,0.9992,recognized,True,16000,1.000,1.0000,0.0941,possible clipping,

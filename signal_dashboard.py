@@ -24,6 +24,7 @@ for QtCore.Property in the ToggleSwitch class. Everything else is the same.
 """
 
 import sys
+import os
 import numpy as np
 from PyQt5 import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
@@ -258,7 +259,8 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 # Ensemble (LSTM + CNN) is the most accurate, so the dashboard
                 # uses it by default. Both are fast, so live latency is fine.
-                self.backend = SignalBackend(model="ensemble")
+                source = os.environ.get("LMML_SIGNAL_SOURCE", "mic")
+                self.backend = SignalBackend(model="ensemble", source=source)
                 print(self.backend.status_text())
             except Exception as e:  # noqa: BLE001
                 print(f"[dashboard] backend init failed, using demo data: {e}")
@@ -378,6 +380,27 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stop_btn.setEnabled(False)  # nothing to stop until we've started recording
         row.addWidget(self.stop_btn)
 
+        row.addSpacing(30)
+
+        self.open_audio_btn = QtWidgets.QPushButton("Open Audio")
+        self.open_audio_btn.setCursor(QtCore.Qt.PointingHandCursor)
+        self.open_audio_btn.clicked.connect(self.open_audio_file)
+        self.open_audio_btn.setFixedSize(140, 54)
+        self.open_audio_btn.setStyleSheet(f"""
+            QPushButton {{
+                color: {TEXT_COLOR};
+                background-color: {STOP_COLOR};
+                border: 2px solid {BORDER_COLOR};
+                border-radius: 8px;
+                font-family: {UI_FONT};
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{ background-color: #3a4453; }}
+            QPushButton:pressed {{ background-color: #21262d; }}
+        """)
+        row.addWidget(self.open_audio_btn)
+
         row.addStretch()
         return row
 
@@ -477,6 +500,32 @@ class MainWindow(QtWidgets.QMainWindow):
         print("Recording stopped")
         if self.backend is not None:
             self.backend.stop()
+
+    def open_audio_file(self):
+        """Switch the dashboard from live mic to a replayed audio/DAQ file."""
+        if SignalBackend is None:
+            return
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Open audio or DAQ capture",
+            "",
+            "Audio/DAQ files (*.wav *.flac *.ogg *.aiff *.aif *.mp3 *.m4a *.csv);;All files (*)",
+        )
+        if not path:
+            return
+        was_recording = self.is_recording
+        if self.backend is not None:
+            self.backend.stop()
+        try:
+            self.backend = SignalBackend(model="ensemble", source=path, autosave=False)
+            self.backend.enhance = self.bandpass_switch.isChecked()
+            print(self.backend.status_text())
+            if not self.backend.audio_available:
+                print(f"[dashboard] audio source unavailable: {self.backend.audio_error}")
+            if was_recording:
+                self.backend.start()
+        except Exception as e:  # noqa: BLE001
+            print(f"[dashboard] failed to open audio file: {type(e).__name__}: {e}")
 
     def on_bandpass_toggled(self, checked):
         state = "ON" if checked else "OFF"

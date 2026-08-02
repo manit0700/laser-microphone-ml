@@ -60,9 +60,9 @@ BUFFER_SECONDS = 1.5
 PREDICT_WINDOW_SEC = 1.3
 # Below this RMS loudness the window is treated as silence and NOT classified,
 # so background quiet doesn't produce a confident random digit. Kept low because
-# quiet speakers can sit around 0.008 RMS; the confidence threshold + enhancement
+# laptop/demo microphones can be quiet; the confidence threshold + enhancement
 # handle the rest. (Auto-gain in enhance.py then brings the level up.)
-SILENCE_RMS = 0.006
+SILENCE_RMS = 0.003
 # Don't re-run the model on every GUI frame (that's ~20x/sec). Re-classify at
 # most this often; between runs the dashboard shows the last result.
 PREDICT_EVERY_SEC = 0.30
@@ -73,8 +73,8 @@ PREDICT_EVERY_SEC = 0.30
 # number STABLE we only "commit" a digit once the SAME label repeats on
 # STABLE_HITS consecutive windows at >= STABLE_CONF confidence, and then hold it
 # until a different digit is confirmed the same way.
-STABLE_CONF = 0.75          # a window must be at least this confident to count
-STABLE_HITS = 2             # this many agreeing windows in a row -> commit
+STABLE_CONF = 0.60          # a window must be at least this confident to count
+STABLE_HITS = 1             # demo mode: show a recognized digit immediately
 # How many samples the oscilloscope trace shows (a short, recent slice).
 SCOPE_SECONDS = 0.4
 
@@ -206,9 +206,11 @@ class _MicSource:
 
 
 def _read_signal_file(path: str):
-    """Read a WAV or CSV capture into (samples_1d, sample_rate).
+    """Read an audio or CSV capture into (samples_1d, sample_rate).
 
-    - .wav            : standard audio, any rate (resampled downstream).
+    - audio           : WAV/FLAC/OGG/AIFF and any other format supported by
+                        soundfile/libsndfile on this machine. MP3/M4A are
+                        best-effort and may require ffmpeg or OS codec support.
     - .csv            : laser/DAQ style. Uses a 'voltage' column if present,
                         else the last numeric column, as the signal. Sample rate
                         comes from a 'time' column (1/dt) if present, else falls
@@ -219,10 +221,11 @@ def _read_signal_file(path: str):
     dashboard can replay a real capture file the moment one exists.
     """
     import numpy as np
-    p = str(path).lower()
-    if p.endswith(".wav"):
+    path = str(path)
+    p = path.lower()
+    if not p.endswith(".csv"):
         import soundfile as sf
-        data, sr = sf.read(str(path), dtype="float32", always_2d=True)
+        data, sr = sf.read(path, dtype="float32", always_2d=True)
         return np.asarray(data, dtype=np.float32).mean(axis=1), int(sr)
 
     # CSV: read the header, pick signal + optional time column.
@@ -287,6 +290,8 @@ class _FileReplaySource:
         if self._playing:
             self._pos = (self._pos + int(0.05 * self.sample_rate)) % self._data.size
         n = self.max_len if seconds is None else int(seconds * self.sample_rate)
+        if n >= self._data.size:
+            return self._data.copy()
         # Take a window ending at the current head, wrapping around the file.
         idx = (np.arange(self._pos - n, self._pos)) % self._data.size
         return self._data[idx]
@@ -335,7 +340,11 @@ class SignalBackend:
         self.model_available = True
         self.model_error = None
         try:
-            predict_mod._load("lstm" if model == "ensemble" else model)
+            if model == "ensemble":
+                predict_mod._load("lstm")
+                predict_mod._load("cnn")
+            else:
+                predict_mod._load(model)
         except Exception as e:  # noqa: BLE001
             self.model_available = False
             self.model_error = f"{type(e).__name__}: {e}"
@@ -392,10 +401,17 @@ class SignalBackend:
         if not self.audio_available:
             return None
         raw = self._mic.latest(SCOPE_SECONDS)
-        if raw.size < 64:
+        # torchaudio's STFT reflect-padding needs the signal to be longer than
+        # its padding. Right after Record is clicked the live buffer can contain
+        # only a few samples, so wait until the buffer is safely long enough.
+        if raw.size < 512:
             return None
-        wave = load_waveform_from_array(raw, self._mic.rate)
-        spec = extract_spectrogram(wave).cpu().numpy()
+        try:
+            wave = load_waveform_from_array(raw, self._mic.rate)
+            spec = extract_spectrogram(wave).cpu().numpy()
+        except Exception as e:  # noqa: BLE001 - never let the plot crash the demo
+            print(f"[dashboard] spectrogram error: {type(e).__name__}: {e}")
+            return None
         # ImageView expects (x=time, y=freq); our spec is (freq, time) -> transpose.
         return spec.T
 
@@ -441,7 +457,8 @@ class SignalBackend:
             else:
                 result, _ = predict_mod.infer(waveform, threshold=self.threshold,
                                               model_type=self.model)
-        except Exception:  # noqa: BLE001 - keep the UI alive no matter what
+        except Exception as e:  # noqa: BLE001 - keep the UI alive no matter what
+            print(f"[dashboard] prediction error: {type(e).__name__}: {e}")
             return self._committed
 
         label = result["prediction"]                # digit string or "unknown"
@@ -468,8 +485,12 @@ class SignalBackend:
                                        sample_rate=self._mic.rate, source="dashboard")
                     except Exception:  # noqa: BLE001 - never break the UI
                         pass
-        # If not confident, leave the streak as-is and keep showing the committed
-        # value (a brief mid-word dip shouldn't wipe the number).
+        elif self._committed is None:
+            # During a demo, avoid a blank result panel. If the model heard
+            # something but rejected it, show Unknown with the observed confidence.
+            self._committed = ("Unknown", result["confidence"] * 100.0)
+        # If not confident after a committed value exists, keep showing the
+        # committed value (a brief mid-word dip shouldn't wipe the number).
         return self._committed
 
     # -- diagnostics -------------------------------------------------------

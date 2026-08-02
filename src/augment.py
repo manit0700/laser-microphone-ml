@@ -35,6 +35,7 @@ import torch
 _P_GAIN = 0.8
 _P_NOISE = 0.7
 _P_SHIFT = 0.7
+_P_SPEED = 0.6
 
 # Random gain range (multiply amplitude): models speaker distance / mic volume.
 _GAIN_MIN, _GAIN_MAX = 0.6, 1.4
@@ -42,6 +43,10 @@ _GAIN_MIN, _GAIN_MAX = 0.6, 1.4
 _SNR_MIN_DB, _SNR_MAX_DB = 8.0, 30.0
 # Max time shift as a fraction of the clip length (rolls the digit left/right).
 _SHIFT_FRAC = 0.15
+# Speed/tempo perturbation: models different accents, speaking speeds, and vowel
+# lengths. We stretch/compress the waveform, then pad/truncate back to the same
+# length so the model input shape stays unchanged.
+_SPEED_MIN, _SPEED_MAX = 0.85, 1.15
 
 
 def _rand(lo: float, hi: float) -> float:
@@ -87,6 +92,32 @@ def time_shift(wave: torch.Tensor) -> torch.Tensor:
     return out
 
 
+def speed_perturb(wave: torch.Tensor) -> torch.Tensor:
+    """Slightly stretch/compress the clip to mimic different speaking styles."""
+    import torch.nn.functional as F
+
+    n = wave.numel()
+    if n < 8:
+        return wave
+    factor = _rand(_SPEED_MIN, _SPEED_MAX)
+    new_len = max(8, int(round(n / factor)))
+    stretched = F.interpolate(
+        wave.view(1, 1, -1),
+        size=new_len,
+        mode="linear",
+        align_corners=False,
+    ).view(-1)
+
+    if new_len < n:
+        pad_left = (n - new_len) // 2
+        pad_right = n - new_len - pad_left
+        return F.pad(stretched, (pad_left, pad_right))
+    if new_len > n:
+        start = (new_len - n) // 2
+        return stretched[start:start + n]
+    return stretched
+
+
 def augment_waveform(wave: torch.Tensor) -> torch.Tensor:
     """Apply a random subset of augmentations to one fixed-length waveform.
 
@@ -99,6 +130,8 @@ def augment_waveform(wave: torch.Tensor) -> torch.Tensor:
         wave = add_noise(wave)
     if torch.rand(1).item() < _P_SHIFT:
         wave = time_shift(wave)
+    if torch.rand(1).item() < _P_SPEED:
+        wave = speed_perturb(wave)
     # Keep amplitude in a sane range so downstream normalization behaves.
     peak = wave.abs().max()
     if peak > 1.0:

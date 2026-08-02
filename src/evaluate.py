@@ -57,7 +57,9 @@ def load_test_subset(dataset):
     """Recreate the test split: prefer saved indices, else re-split with the seed."""
     if Path(TEST_INDICES_PATH).exists():
         indices = load_json(TEST_INDICES_PATH)["test_indices"]
-        return Subset(dataset, indices)
+        if indices and max(indices) < len(dataset):
+            return Subset(dataset, indices)
+        print("[evaluate] saved test indices do not match this dataset; using a fresh split")
     # Fallback (e.g. indices file missing): reproduce the split deterministically.
     _, _, test_ds = split_dataset(dataset)
     return test_ds
@@ -122,14 +124,23 @@ def _predictions_ensemble():
 
     # We need the raw files for the test split, so we can feed both models.
     dataset = SpokenDigitDataset(cache_in_memory=False)
-    indices = load_json(TEST_INDICES_PATH)["test_indices"]
+    if Path(TEST_INDICES_PATH).exists():
+        indices = load_json(TEST_INDICES_PATH)["test_indices"]
+        if not indices or max(indices) >= len(dataset):
+            print("[evaluate] saved test indices do not match this dataset; using a fresh split")
+            _, _, test_ds = split_dataset(dataset)
+            indices = list(test_ds.indices)
+    else:
+        _, _, test_ds = split_dataset(dataset)
+        indices = list(test_ds.indices)
     label_index = {label: i for i, label in enumerate(DIGIT_LABELS)}
 
     all_preds, all_true = [], []
     for i in indices:
         path, true_idx = dataset.samples[i]
         _, probs = predict_mod.infer_ensemble(load_audio(path))
-        pred_label = max(probs, key=probs.get)       # argmax (ignore threshold here)
+        digit_probs = {label: probs[label] for label in DIGIT_LABELS if label in probs}
+        pred_label = max(digit_probs, key=digit_probs.get)  # argmax over digit labels
         all_preds.append(label_index[pred_label])
         all_true.append(true_idx)
     print(f"Evaluating ENSEMBLE (lstm + cnn) on {len(all_true)} test samples")

@@ -4,6 +4,7 @@ data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 models/*.pt
+models/backups/
 results/plots/*.png
 results/reports/*
 results/*.json

@@ -128,9 +128,16 @@ def infer_ensemble(waveform: torch.Tensor, threshold: float = CONFIDENCE_THRESHO
     probs_sum = None
     for entry in entries:
         p = _probs(clean, entry)
-        probs_sum = p if probs_sum is None else probs_sum + p
+        # Older checkpoints may include an extra "unknown" output while newer
+        # digit-only checkpoints have 10 outputs. Average by label name so mixed
+        # checkpoints still ensemble safely.
+        aligned = torch.zeros((1, len(DIGIT_LABELS)), dtype=p.dtype, device=p.device)
+        for src_idx, label in enumerate(entry["labels"]):
+            if label in DIGIT_LABELS:
+                aligned[0, DIGIT_LABELS.index(label)] = p[0, src_idx]
+        probs_sum = aligned if probs_sum is None else probs_sum + aligned
     probs = probs_sum / len(entries)                    # simple average
-    return _result_from_probs(probs, entries[0]["labels"], threshold)
+    return _result_from_probs(probs, DIGIT_LABELS, threshold)
 
 
 def predict_waveform(waveform: torch.Tensor, threshold: float = CONFIDENCE_THRESHOLD) -> dict:
