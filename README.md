@@ -67,6 +67,11 @@ For the exact hardware-to-ML format, see:
 docs/hardware_ml_input_contract.md
 ```
 
+For Linux/Jetson setup, see:
+```text
+docs/linux_jetson_setup.md
+```
+
 ### Manual Running Process
 
 Use this when a teammate wants to run the ML side manually.
