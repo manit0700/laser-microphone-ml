@@ -1,8 +1,13 @@
 # Linux / Jetson Manual Setup
 
-This project is written in Python and should run on Linux. The safest first test
-is the command-line ML capture test, because it does not need a GUI display or a
-live microphone.
+This project is written in Python and should run on Linux, including Jetson Orin
+Nano Super. The safest first test is the command-line ML capture test, because
+it does not need a GUI display or a live microphone.
+
+Jetson note: the code is portable, but PyTorch installation depends on the
+installed JetPack version. NVIDIA's Jetson PyTorch documentation says to install
+JetPack first, then install Jetson-compatible PyTorch packages/wheels for that
+JetPack version.
 
 ## 1. Clone And Enter Project
 
@@ -24,6 +29,20 @@ git pull origin main
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
+```
+
+Check JetPack and system version:
+
+```bash
+cat /etc/nv_tegra_release
+python3 --version
+uname -m
+```
+
+Expected architecture is usually:
+
+```text
+aarch64
 ```
 
 ## 3. Install System Packages
@@ -58,6 +77,38 @@ install the rest:
 ```bash
 pip install numpy scipy scikit-learn matplotlib pandas soundfile pyqtgraph sounddevice
 ```
+
+After installing PyTorch, verify it:
+
+```bash
+python - <<'PY'
+import torch
+print("torch:", torch.__version__)
+print("cuda available:", torch.cuda.is_available())
+if torch.cuda.is_available():
+    print("gpu:", torch.cuda.get_device_name(0))
+PY
+```
+
+If `cuda available` is `False`, the project can still run on CPU for small demo
+inference. For faster Jetson inference, install the NVIDIA PyTorch build that
+matches your JetPack version.
+
+## 4b. One-Command Runtime Check
+
+Run this after installing packages:
+
+```bash
+python scripts/check_jetson_runtime.py
+```
+
+This checks:
+
+- required Python packages
+- optional dashboard/microphone packages
+- PyTorch CUDA status
+- model files
+- one simulated prediction
 
 ## 5. Verify ML Without GUI
 
@@ -129,4 +180,3 @@ Then run:
 ```bash
 python scripts/test_hardware_captures.py
 ```
-
