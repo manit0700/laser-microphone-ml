@@ -205,6 +205,163 @@ class _MicSource:
         return buf[-n:] if len(buf) > n else buf
 
 
+# PCM1808 ADC boards typically show up under ALSA as a card whose name
+# contains "APE" (the breakout board's label) or as hw:1,0. If neither is
+# found we fall back to device index 1 (the known-working slot on the Jetson
+# bring-up rig), then to the first stereo-capable input -- same order the
+# hardware team's bring-up script uses.
+_DAQ_NAME_HINTS = ("ape", "hw:1,0")
+_DAQ_CHUNK = 4096 * 3  # frames per read; matches the value validated on hardware
+
+
+def _pick_daq_device(pa, channels: int):
+    """Find the PCM1808 input device index, or None if nothing suitable exists."""
+    import os
+    override = os.environ.get("LMML_DAQ_DEVICE")
+    if override is not None:
+        try:
+            return int(override)
+        except ValueError:
+            pass
+
+    count = pa.get_device_count()
+    for i in range(count):
+        try:
+            info = pa.get_device_info_by_index(i)
+        except Exception:  # noqa: BLE001
+            continue
+        name = str(info.get("name", "")).lower()
+        if info.get("maxInputChannels", 0) >= channels and any(h in name for h in _DAQ_NAME_HINTS):
+            return i
+
+    if count > 1:
+        try:
+            info = pa.get_device_info_by_index(1)
+            if info.get("maxInputChannels", 0) >= channels:
+                return 1
+        except Exception:  # noqa: BLE001
+            pass
+
+    for i in range(count):
+        try:
+            info = pa.get_device_info_by_index(i)
+        except Exception:  # noqa: BLE001
+            continue
+        if info.get("maxInputChannels", 0) >= channels:
+            return i
+    return None
+
+
+class _DAQSource:
+    """Live capture from the PCM1808 ADC (laser DAQ) via PyAudio.
+
+    Same available/start/stop/latest interface as `_MicSource`, so the rest of
+    SignalBackend (resampling, filtering, prediction) doesn't change at all --
+    this is the DAQ source promised in the LASER NOTE at the top of this file.
+
+    Captured at the ADC's own native rate (2-channel, 32-bit int), then
+    averaged to mono float32 into the same rolling buffer `_MicSource` uses.
+    No band-pass filtering happens here -- that stays downstream in
+    `preprocess.reduce_noise()` so the DAQ and mic paths share one filter.
+    """
+
+    CHANNELS = 2
+
+    def __init__(self, buffer_seconds: float, rate: int = 48000, chunk: int = _DAQ_CHUNK):
+        self.rate = int(rate)
+        self._buffer_seconds = buffer_seconds
+        self._chunk = chunk
+        self.max_len = int(buffer_seconds * self.rate)
+        self._buf = np.zeros(0, dtype=np.float32)
+        self._lock = threading.Lock()
+        self._pa = None
+        self._stream = None
+        self._thread = None
+        self._stop_flag = threading.Event()
+        self.device = None
+        self.device_name = None
+        self.available = False
+        self.error = None
+
+        try:
+            import pyaudio
+            self._pyaudio = pyaudio
+            self._pa = pyaudio.PyAudio()
+            self.device = _pick_daq_device(self._pa, self.CHANNELS)
+            if self.device is None:
+                self.error = "No PCM1808/DAQ input device found."
+                self._pa.terminate()
+                self._pa = None
+                return
+            info = self._pa.get_device_info_by_index(self.device)
+            self.device_name = info.get("name")
+            # Use the device's own default rate if it reports one; otherwise
+            # keep the caller's rate (matches the hardware team's validated 48 kHz).
+            device_rate = info.get("defaultSampleRate") or 0
+            if device_rate:
+                self.rate = int(round(device_rate))
+            self.max_len = int(self._buffer_seconds * self.rate)
+            self.available = True
+        except Exception as e:  # noqa: BLE001 - pyaudio missing, no device, etc.
+            self.error = f"{type(e).__name__}: {e}"
+            self._pa = None
+
+    def _run(self):
+        while not self._stop_flag.is_set():
+            try:
+                raw = self._stream.read(self._chunk, exception_on_overflow=False)
+            except Exception:  # noqa: BLE001 - device hiccup, keep the loop alive
+                continue
+            ints = np.frombuffer(raw, dtype=np.int32)
+            if ints.size != self._chunk * self.CHANNELS:
+                continue
+            # Stereo -> mono (average channels), matching the WAV path's
+            # convention (docs/laser_daq_interface.md).
+            stereo = ints.reshape(-1, self.CHANNELS).astype(np.float32)
+            mono = stereo.mean(axis=1) / 2147483648.0  # int32 full-scale
+            with self._lock:
+                self._buf = np.concatenate([self._buf, mono])[-self.max_len:]
+
+    def start(self):
+        if not self.available or self._stream is not None:
+            return
+        with self._lock:
+            self._buf = np.zeros(0, dtype=np.float32)
+        self._stream = self._pa.open(
+            format=self._pyaudio.paInt32,
+            channels=self.CHANNELS,
+            rate=self.rate,
+            input=True,
+            input_device_index=self.device,
+            frames_per_buffer=self._chunk,
+        )
+        self._stop_flag.clear()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def stop(self):
+        self._stop_flag.set()
+        if self._thread is not None:
+            self._thread.join(timeout=1.0)
+            self._thread = None
+        if self._stream is not None:
+            try:
+                if self._stream.is_active():
+                    self._stream.stop_stream()
+                self._stream.close()
+            except Exception:  # noqa: BLE001
+                pass
+            self._stream = None
+
+    def latest(self, seconds: float | None = None) -> np.ndarray:
+        with self._lock:
+            buf = self._buf.copy()
+        if seconds is None:
+            return buf
+        n = int(seconds * self.rate)
+        return buf[-n:] if len(buf) > n else buf
+
+
 def _read_signal_file(path: str):
     """Read an audio or CSV capture into (samples_1d, sample_rate).
 
@@ -306,6 +463,7 @@ class SignalBackend:
 
     `source` selects where the signal comes from:
         "mic"          -> live microphone (default, for the current demo)
+        "daq"          -> live PCM1808/laser ADC capture via PyAudio (Sprint 4 hardware)
         path to a file -> replay a WAV/CSV capture as if live (test without
                           hardware, or play back a real laser capture in Sprint 4)
     """
@@ -328,9 +486,11 @@ class SignalBackend:
         self._streak_count = 0
         self._running = False
 
-        # --- signal source: live mic, or replay a capture file ---
+        # --- signal source: live mic, live DAQ, or replay a capture file ---
         if source == "mic":
             self._mic = _MicSource(SAMPLE_RATE, BUFFER_SECONDS)
+        elif source == "daq":
+            self._mic = _DAQSource(BUFFER_SECONDS)
         else:
             self._mic = _FileReplaySource(source, SAMPLE_RATE, BUFFER_SECONDS)
         self.audio_available = self._mic.available
@@ -497,12 +657,15 @@ class SignalBackend:
     def status_text(self) -> str:
         """One-line summary for logging/console when the dashboard starts."""
         parts = []
-        src = "mic" if self.source_kind == "mic" else f"file:{self.source_kind}"
+        if self.source_kind in ("mic", "daq"):
+            src = self.source_kind
+        else:
+            src = f"file:{self.source_kind}"
         parts.append(f"source={src} {'ok' if self.audio_available else 'OFF'}"
                      + ("" if self.audio_available else f" ({self.audio_error})"))
         parts.append(f"model={'ok' if self.model_available else 'OFF'}"
                      + ("" if self.model_available else f" ({self.model_error})"))
-        if self.source_kind == "mic" and getattr(self._mic, "device_name", None):
-            parts.append(f"mic='{self._mic.device_name}'")
+        if self.source_kind in ("mic", "daq") and getattr(self._mic, "device_name", None):
+            parts.append(f"device='{self._mic.device_name}'")
         parts.append(f"rate={self.sample_rate}Hz")
         return "SignalBackend: " + ", ".join(parts)

@@ -39,7 +39,7 @@ def main() -> int:
     print()
 
     required = ["numpy", "scipy", "pandas", "soundfile", "torch", "torchaudio"]
-    optional = ["PyQt5", "pyqtgraph", "sounddevice"]
+    optional = ["PyQt5", "pyqtgraph", "sounddevice", "pyaudio"]
 
     ok = True
     print("Required packages:")
