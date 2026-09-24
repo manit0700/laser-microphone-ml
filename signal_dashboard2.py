@@ -20,9 +20,15 @@ input (see STANDARD_MIC_CHANNEL / LASER_MIC_CHANNEL below). There is no
 longer a UI switch for the bandpass filter - both the raw and the filtered
 signal are always shown, for both microphones, continuously.
 
-The Spectrogram and Prediction/Confidence panels are unchanged in spirit:
-the spectrogram is computed from the laser mic's filtered signal, and the
-Prediction/Confidence panel still uses the optional ML backend
+Spectrograms:
+    - Standard Mic - Bandpass
+    - Laser Mic    - Bandpass
+Both are computed from the filtered signal of their own microphone and sit
+side by side in a row that is the same size as each oscilloscope row, so all
+panes in the graph area share the same proportions.
+
+The Prediction/Confidence panel is unchanged in spirit: it
+still uses the optional ML backend
 (signal_backend.SignalBackend) when available, or demo values otherwise.
 Everywhere the real classifier still needs to be plugged in is marked with
 a comment starting with "ML TEAM:".
@@ -53,7 +59,7 @@ from scipy import ndimage
 
 # Real ML backend (trained classifier). Optional: if it can't be imported
 # (missing deps, etc.) the Prediction/Confidence panel falls back to demo
-# values, but the oscilloscopes/spectrogram below always use live hardware.
+# values, but the oscilloscopes/spectrograms below always use live hardware.
 try:
     from signal_backend import SignalBackend
 except Exception as _e:  # noqa: BLE001
@@ -84,9 +90,19 @@ MONO_FONT = "Consolas, JetBrains Mono, monospace"  # used for the numeric readou
 
 SPECTROGRAM_CMAP = "inferno"
 
+# Result panel readout sizes (pixels). The predicted digit and the confidence
+# number are shown big; the "Unknown" prediction keeps the original, smaller
+# size so the word still fits inside the box.
+RESULT_PANEL_WIDTH = 480
+PREDICTION_VALUE_PX = 200      # predicted digit (0-9)
+CONFIDENCE_VALUE_PX = 110      # confidence number
+CONFIDENCE_UNIT_PX = 56        # the "%" next to the confidence number
+UNKNOWN_VALUE_PX = 56          # "Unknown" prediction (unchanged from before)
+UNKNOWN_LABEL = "Unknown"
+
 # Placeholder prediction classes - swap this list for whatever your actual
 # classifier outputs.
-PREDICTION_LABELS = [str(d) for d in range(10)] + ["Unknown"]
+PREDICTION_LABELS = [str(d) for d in range(10)] + [UNKNOWN_LABEL]
 
 
 # ============================================================================
@@ -286,7 +302,7 @@ class HardwareAudioSource:
     def read(self):
         """Returns a dict with std_raw/std_bp/laser_raw/laser_bp arrays
         (length PLOT_POINTS, clipped to [-1, 1]) plus the unclipped filtered
-        laser-mic signal for the spectrogram, or None if a chunk couldn't be
+        std/laser signals for the spectrograms, or None if a chunk couldn't be
         captured this tick (buffer underrun / no trigger yet)."""
         if not self.available:
             return None
@@ -320,7 +336,9 @@ class HardwareAudioSource:
                 "std_bp": np.clip(std_bp * VISUAL_GAIN, -1.0, 1.0),
                 "laser_raw": np.clip(laser_raw * VISUAL_GAIN, -1.0, 1.0),
                 "laser_bp": np.clip(laser_bp * VISUAL_GAIN, -1.0, 1.0),
-                "laser_bp_full": laser_bp_full,  # unclipped, full chunk - for the spectrogram
+                # Unclipped, full-chunk filtered signals - for the spectrograms.
+                "std_bp_full": std_bp_full,
+                "laser_bp_full": laser_bp_full,
             }
         except Exception as exc:
             print("[hardware] read error:", repr(exc))
@@ -429,9 +447,14 @@ class ResultBox(QtWidgets.QGroupBox):
     """A titled box with one big value in the middle - used for both the
     Prediction box and the Confidence Percentage box."""
 
-    def __init__(self, title, initial_value="--", unit="", parent=None):
+    def __init__(self, title, initial_value="--", unit="", value_px=56,
+                 unit_px=None, unknown_px=UNKNOWN_VALUE_PX, parent=None):
         super().__init__(title, parent)
         self.unit = unit
+        self.value_px = value_px                      # size for normal values
+        self.unit_px = unit_px or value_px            # size for the unit (e.g. "%")
+        self.unknown_px = unknown_px                  # size for the "Unknown" case
+        self._current_px = None
         self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
         self.setStyleSheet(f"""
             QGroupBox {{
@@ -452,28 +475,50 @@ class ResultBox(QtWidgets.QGroupBox):
         """)
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(16, 22, 16, 18)
-        self.value_label = QtWidgets.QLabel(str(initial_value))
+        self.value_label = QtWidgets.QLabel()
         self.value_label.setAlignment(QtCore.Qt.AlignCenter)
         self.value_label.setWordWrap(True)
+        self.value_label.setTextFormat(QtCore.Qt.RichText)  # lets the unit be smaller than the number
+        layout.addWidget(self.value_label)
+        self.set_value(initial_value)
+
+    def _apply_font_size(self, px):
+        if px == self._current_px:
+            return
+        self._current_px = px
         self.value_label.setStyleSheet(f"""
             color: {ACCENT_COLOR};
             font-family: {MONO_FONT};
-            font-size: 56px;
+            font-size: {px}px;
             font-weight: 700;
             border: none;
             background: transparent;
         """)
-        layout.addWidget(self.value_label)
 
     def set_value(self, value):
-        self.value_label.setText(f"{value}{self.unit}")
+        text = str(value)
+        # "Unknown" is a word rather than a digit/number, so it keeps the
+        # original (smaller) size instead of the big readout size.
+        if text.strip().lower() == UNKNOWN_LABEL.lower():
+            self._apply_font_size(self.unknown_px)
+            self.value_label.setText(text)
+            return
+
+        self._apply_font_size(self.value_px)
+        if self.unit and text != "--":
+            unit = self.unit.replace(" ", "&nbsp;")
+            self.value_label.setText(
+                f'{text}<span style="font-size:{self.unit_px}px;">{unit}</span>'
+            )
+        else:
+            self.value_label.setText(text)
 
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Signal Dashboard - PCM1808 Standard Mic + Laser Mic")
-        self.resize(1500, 940)
+        self.resize(1800, 1000)
         self.setStyleSheet(f"QMainWindow {{ background-color: {BG_COLOR}; }}")
 
         self.is_recording = False
@@ -482,7 +527,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # ---------------------------------------------------------------
         # Live hardware acquisition (dsp4ch.py pipeline). This is the
-        # primary data source for all four oscilloscopes + spectrogram.
+        # primary data source for all four oscilloscopes + both spectrograms.
         # ---------------------------------------------------------------
         self.hardware = HardwareAudioSource()
 
@@ -498,7 +543,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #
         # ML TEAM: when live hardware is active, self.last_chunk (set every
         # tick in update_frame) holds the most recent std_raw/std_bp/
-        # laser_raw/laser_bp/laser_bp_full arrays straight from the PCM1808.
+        # laser_raw/laser_bp/std_bp_full/laser_bp_full arrays straight from the PCM1808.
         # Feed the classifier from that buffer instead of having
         # SignalBackend open its own microphone stream - otherwise you'll
         # have two processes fighting over the same audio device.
@@ -535,13 +580,9 @@ class MainWindow(QtWidgets.QMainWindow):
         root.setContentsMargins(16, 16, 16, 16)
         root.setSpacing(14)
 
-        body = QtWidgets.QHBoxLayout()
-        body.setSpacing(16)
-        root.addLayout(body, stretch=1)
-        body.addLayout(self.build_graphs_column(), stretch=4)
-        body.addWidget(self.build_result_panel(), stretch=0)
-
-        root.addLayout(self.build_button_row(), stretch=0)
+        # Each microphone now owns its graphs, spectrogram, controls,
+        # prediction, and confidence display.
+        root.addLayout(self.build_graphs_column(), stretch=1)
 
     def _make_scope(self, title, color):
         """Build one themed oscilloscope pane + its curve."""
@@ -560,61 +601,191 @@ class MainWindow(QtWidgets.QMainWindow):
         return plot, curve
 
     def build_graphs_column(self):
-        col = QtWidgets.QVBoxLayout()
-        col.setSpacing(10)
+        """
+        Build one row for each microphone.
 
-        # ---- Four oscilloscopes: raw + bandpass for each microphone ----
-        # No more bandpass on/off switch - raw and filtered are both
-        # always shown, for both mics, continuously.
+        Layout:
+            [Raw + Bandpass scopes] | [Spectrogram] | [Controls + Results]
+
+        This keeps each microphone's spectrogram and controls beside that
+        microphone instead of placing the spectrograms underneath the graphs.
+        """
+        col = QtWidgets.QVBoxLayout()
+        col.setSpacing(12)
+
         self.scope_std_raw, self.curve_std_raw = self._make_scope(
             "Standard Mic - Raw", STD_RAW_COLOR
         )
         self.scope_std_bp, self.curve_std_bp = self._make_scope(
-            f"Standard Mic - Bandpass ({LOWCUT_HZ:.0f}-{HIGHCUT_HZ:.0f} Hz)", STD_BP_COLOR
+            f"Standard Mic - Bandpass ({LOWCUT_HZ:.0f}-{HIGHCUT_HZ:.0f} Hz)",
+            STD_BP_COLOR
         )
         self.scope_laser_raw, self.curve_laser_raw = self._make_scope(
             "Laser Mic - Raw", LASER_RAW_COLOR
         )
         self.scope_laser_bp, self.curve_laser_bp = self._make_scope(
-            f"Laser Mic - Bandpass ({LOWCUT_HZ:.0f}-{HIGHCUT_HZ:.0f} Hz)", LASER_BP_COLOR
+            f"Laser Mic - Bandpass ({LOWCUT_HZ:.0f}-{HIGHCUT_HZ:.0f} Hz)",
+            LASER_BP_COLOR
         )
 
-        scope_grid = QtWidgets.QGridLayout()
-        scope_grid.setSpacing(10)
-        scope_grid.addWidget(self.scope_std_raw, 0, 0)
-        scope_grid.addWidget(self.scope_std_bp, 0, 1)
-        scope_grid.addWidget(self.scope_laser_raw, 1, 0)
-        scope_grid.addWidget(self.scope_laser_bp, 1, 1)
-        scope_grid.setColumnStretch(0, 1)
-        scope_grid.setColumnStretch(1, 1)
-        scope_grid.setRowStretch(0, 1)
-        scope_grid.setRowStretch(1, 1)
+        self.spectrogram_std = self._make_spectrogram(
+            "Spectrogram - Standard Mic (Bandpass)"
+        )
+        self.spectrogram_laser = self._make_spectrogram(
+            "Spectrogram - Laser Mic (Bandpass)"
+        )
 
-        scope_container = QtWidgets.QWidget()
-        scope_container.setLayout(scope_grid)
-        col.addWidget(scope_container, stretch=2)
+        # One prediction/confidence pair for each microphone.
+        self.prediction_box_std = ResultBox(
+            "PREDICTION", "--", value_px=92, unknown_px=42
+        )
+        self.confidence_box_std = ResultBox(
+            "CONFIDENCE PERCENTAGE", "--", unit=" %",
+            value_px=58, unit_px=30
+        )
+        self.prediction_box_laser = ResultBox(
+            "PREDICTION", "--", value_px=92, unknown_px=42
+        )
+        self.confidence_box_laser = ResultBox(
+            "CONFIDENCE PERCENTAGE", "--", unit=" %",
+            value_px=58, unit_px=30
+        )
 
-        # ---- Spectrogram (laser mic, bandpass-filtered signal) ----
-        self.spectrogram = pg.ImageView(view=pg.PlotItem())
-        self.spectrogram.ui.histogram.hide()
-        self.spectrogram.ui.roiBtn.hide()
-        self.spectrogram.ui.menuBtn.hide()
-        self.spectrogram.view.setTitle("Spectrogram - Laser Mic (Bandpass)", color=TEXT_COLOR, size="13pt")
-        self.spectrogram.view.setLabel("bottom", "Time", color=DIM_TEXT_COLOR)
-        self.spectrogram.view.setLabel("left", "Frequency", color=DIM_TEXT_COLOR)
-        # ImageView locks the aspect ratio by default since it's meant for
-        # viewing photos - without turning that off, the image gets
-        # squeezed into a thin strip instead of filling the panel.
-        self.spectrogram.view.setAspectLocked(False)
-        self.spectrogram.setColorMap(pg.colormap.get(SPECTROGRAM_CMAP))
-        self.spectrogram.setStyleSheet(f"background-color:{PANEL_COLOR}; border:none;")
-        col.addWidget(self.spectrogram, stretch=1)
+        self.std_recording = False
+        self.laser_recording = False
+
+        self.std_controls = self._make_mic_controls(
+            "Standard Mic",
+            self.on_standard_record,
+            self.on_standard_pause,
+            self.open_audio_file,
+        )
+        self.std_record_btn = self.std_controls.findChild(CircleButton)
+        self.std_pause_btn = self.std_controls.findChild(StopButton)
+        self.std_enhance_btn = self.std_controls.findChild(QtWidgets.QPushButton)
+
+        self.laser_controls = self._make_mic_controls(
+            "Laser Mic",
+            self.on_laser_record,
+            self.on_laser_pause,
+            self.open_audio_file,
+        )
+        self.laser_record_btn = self.laser_controls.findChild(CircleButton)
+        self.laser_pause_btn = self.laser_controls.findChild(StopButton)
+        self.laser_enhance_btn = self.laser_controls.findChild(QtWidgets.QPushButton)
+
+        def add_mic_row(raw_scope, bp_scope, spectrogram,
+                        prediction_box, confidence_box, controls):
+            graph_box = QtWidgets.QWidget()
+            graph_layout = QtWidgets.QVBoxLayout(graph_box)
+            graph_layout.setContentsMargins(0, 0, 0, 0)
+            graph_layout.setSpacing(8)
+            graph_layout.addWidget(raw_scope, stretch=1)
+            graph_layout.addWidget(bp_scope, stretch=1)
+
+            result_box = QtWidgets.QWidget()
+            result_layout = QtWidgets.QVBoxLayout(result_box)
+            result_layout.setContentsMargins(0, 0, 0, 0)
+            result_layout.setSpacing(8)
+            result_layout.addWidget(prediction_box, stretch=3)
+            result_layout.addWidget(confidence_box, stretch=2)
+            result_layout.addWidget(controls, stretch=0)
+
+            row = QtWidgets.QGridLayout()
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(10)
+            row.addWidget(graph_box, 0, 0)
+            row.addWidget(spectrogram, 0, 1)
+            row.addWidget(result_box, 0, 2)
+            row.setColumnStretch(0, 4)
+            row.setColumnStretch(1, 4)
+            row.setColumnStretch(2, 2)
+            col.addLayout(row, stretch=1)
+
+        add_mic_row(
+            self.scope_std_raw, self.scope_std_bp, self.spectrogram_std,
+            self.prediction_box_std, self.confidence_box_std, self.std_controls
+        )
+        add_mic_row(
+            self.scope_laser_raw, self.scope_laser_bp, self.spectrogram_laser,
+            self.prediction_box_laser, self.confidence_box_laser, self.laser_controls
+        )
 
         return col
 
+    def _make_mic_controls(self, mic_name, record_slot, pause_slot, enhance_slot):
+        panel = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(panel)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(7)
+
+        title = QtWidgets.QLabel(mic_name)
+        title.setAlignment(QtCore.Qt.AlignCenter)
+        title.setStyleSheet(
+            f"color:{TEXT_COLOR}; font-family:{UI_FONT}; "
+            f"font-size:14px; font-weight:700;"
+        )
+        layout.addWidget(title)
+
+        buttons = QtWidgets.QHBoxLayout()
+        buttons.setSpacing(7)
+
+        record = CircleButton(diameter=58)
+        record.clicked.connect(record_slot)
+        buttons.addWidget(record)
+
+        pause = StopButton(width=78, height=52)
+        pause.clicked.connect(pause_slot)
+        pause.setEnabled(False)
+        buttons.addWidget(pause)
+
+        enhance = QtWidgets.QPushButton("Enhance Audio")
+        enhance.setCursor(QtCore.Qt.PointingHandCursor)
+        enhance.clicked.connect(enhance_slot)
+        enhance.setFixedHeight(52)
+        enhance.setStyleSheet(f"""
+            QPushButton {{
+                color: {TEXT_COLOR};
+                background-color: {STOP_COLOR};
+                border: 2px solid {BORDER_COLOR};
+                border-radius: 8px;
+                font-family: {UI_FONT};
+                font-size: 11px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{ background-color: #3a4453; }}
+            QPushButton:pressed {{ background-color: #21262d; }}
+        """)
+        buttons.addWidget(enhance)
+
+        layout.addLayout(buttons)
+        return panel
+
+    def _make_spectrogram(self, title):
+        """Build one themed spectrogram pane (an ImageView with the extra
+        photo-viewer controls hidden)."""
+        view = pg.ImageView(view=pg.PlotItem())
+        view.ui.histogram.hide()
+        view.ui.roiBtn.hide()
+        view.ui.menuBtn.hide()
+        # Same title size as the oscilloscope panes so the six panes match.
+        view.view.setTitle(title, color=TEXT_COLOR, size="10pt")
+        view.view.setLabel("bottom", "Time", color=DIM_TEXT_COLOR)
+        view.view.setLabel("left", "Frequency", color=DIM_TEXT_COLOR)
+        # ImageView locks the aspect ratio by default since it's meant for
+        # viewing photos - without turning that off, the image gets
+        # squeezed into a thin strip instead of filling the panel.
+        view.view.setAspectLocked(False)
+        view.setColorMap(pg.colormap.get(SPECTROGRAM_CMAP))
+        view.setStyleSheet(f"background-color:{PANEL_COLOR}; border:none;")
+        # Ignore the widget's own size hint so it can't out-grow the scope
+        # panes and break the equal-size grid.
+        view.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+        return view
+
     def build_result_panel(self):
         panel = QtWidgets.QWidget()
-        panel.setFixedWidth(290)
+        panel.setFixedWidth(RESULT_PANEL_WIDTH)
         layout = QtWidgets.QVBoxLayout(panel)
         layout.setSpacing(16)
 
@@ -623,10 +794,13 @@ class MainWindow(QtWidgets.QMainWindow):
         title.setStyleSheet(f"color: {TEXT_COLOR}; font-family: {UI_FONT}; font-size: 22px; font-weight: 700;")
         layout.addWidget(title)
 
-        self.prediction_box = ResultBox("PREDICTION", "--")
-        self.confidence_box = ResultBox("CONFIDENCE PERCENTAGE", "--", unit=" %")
-        layout.addWidget(self.prediction_box, stretch=1)
-        layout.addWidget(self.confidence_box, stretch=1)
+        self.prediction_box = ResultBox("PREDICTION", "--", value_px=PREDICTION_VALUE_PX)
+        self.confidence_box = ResultBox(
+            "CONFIDENCE PERCENTAGE", "--", unit=" %",
+            value_px=CONFIDENCE_VALUE_PX, unit_px=CONFIDENCE_UNIT_PX,
+        )
+        layout.addWidget(self.prediction_box, stretch=3)
+        layout.addWidget(self.confidence_box, stretch=2)
         layout.addStretch()
 
         status = "LIVE (PCM1808)" if self.hardware.available else "DEMO (no hardware found)"
@@ -710,10 +884,13 @@ class MainWindow(QtWidgets.QMainWindow):
             "std_bp": np.clip(std_bp_full * VISUAL_GAIN, -1.0, 1.0),
             "laser_raw": np.clip(laser_raw_full * VISUAL_GAIN, -1.0, 1.0),
             "laser_bp": np.clip(laser_bp_full * VISUAL_GAIN, -1.0, 1.0),
+            "std_bp_full": std_bp_full,
             "laser_bp_full": laser_bp_full,
         }
 
-    def _update_spectrogram(self, samples):
+    def _update_spectrogram(self, view, samples):
+        """Compute a spectrogram of `samples` and draw it into `view`
+        (one of the two ImageView widgets)."""
         try:
             f, _, sxx = scipy_spectrogram(
                 samples, fs=RATE, nperseg=SPECTROGRAM_NPERSEG, noverlap=SPECTROGRAM_NOVERLAP
@@ -730,7 +907,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # reads as a continuous field instead of a checkerboard.
             sxx_db = ndimage.zoom(sxx_db, SPECTROGRAM_ZOOM, order=1)
 
-            self.spectrogram.setImage(sxx_db.T, autoLevels=True, autoRange=True)
+            view.setImage(sxx_db.T, autoLevels=True, autoRange=True)
         except Exception as exc:
             print("[dashboard] spectrogram error:", repr(exc))
 
@@ -740,8 +917,12 @@ class MainWindow(QtWidgets.QMainWindow):
             result = self.backend.predict()      # (label, confidence%) or None
             if result is not None:
                 label, confidence = result
-                self.prediction_box.set_value(label)
-                self.confidence_box.set_value(f"{confidence:.1f}")
+                self._set_mic_prediction(
+                    self.prediction_box_std, self.confidence_box_std, label, confidence
+                )
+                self._set_mic_prediction(
+                    self.prediction_box_laser, self.confidence_box_laser, label, confidence
+                )
             # None = silence / not enough audio yet: leave the last reading as-is.
             return
 
@@ -750,12 +931,16 @@ class MainWindow(QtWidgets.QMainWindow):
         # laser_bp_full) as the input instead of random demo values.
         label = np.random.choice(PREDICTION_LABELS)
         confidence = np.random.uniform(72, 99.5)
-        self.prediction_box.set_value(label)
-        self.confidence_box.set_value(f"{confidence:.1f}")
+        self._set_mic_prediction(
+            self.prediction_box_std, self.confidence_box_std, label, confidence
+        )
+        self._set_mic_prediction(
+            self.prediction_box_laser, self.confidence_box_laser, label, confidence
+        )
 
     def update_frame(self):
         """Runs on every timer tick - pushes fresh data into all four
-        oscilloscopes, the spectrogram, and (while recording) the
+        oscilloscopes, both spectrograms, and (while recording) the
         prediction/confidence panel. Uses the live PCM1808 hardware when
         available, otherwise the synthetic demo fallback."""
         chunk = self.hardware.read() if self.hardware.available else None
@@ -769,10 +954,47 @@ class MainWindow(QtWidgets.QMainWindow):
         self.curve_laser_raw.setData(TIME_AXIS, chunk["laser_raw"])
         self.curve_laser_bp.setData(TIME_AXIS, chunk["laser_bp"])
 
-        self._update_spectrogram(chunk["laser_bp_full"])
+        self._update_spectrogram(self.spectrogram_std, chunk["std_bp_full"])
+        self._update_spectrogram(self.spectrogram_laser, chunk["laser_bp_full"])
 
-        if self.is_recording:
+        if self.std_recording or self.laser_recording:
             self.update_prediction()
+
+    # =====================================================================
+    # PER-MIC CONTROLS
+    # =====================================================================
+
+    def on_standard_record(self):
+        self.std_recording = True
+        self.std_record_btn.set_recording(True)
+        self.std_pause_btn.setEnabled(True)
+        print("Standard Mic recording started")
+        if self.backend is not None:
+            self.backend.start()
+
+    def on_standard_pause(self):
+        self.std_recording = False
+        self.std_record_btn.set_recording(False)
+        self.std_pause_btn.setEnabled(False)
+        print("Standard Mic recording paused")
+
+    def on_laser_record(self):
+        self.laser_recording = True
+        self.laser_record_btn.set_recording(True)
+        self.laser_pause_btn.setEnabled(True)
+        print("Laser Mic recording started")
+        if self.backend is not None:
+            self.backend.start()
+
+    def on_laser_pause(self):
+        self.laser_recording = False
+        self.laser_record_btn.set_recording(False)
+        self.laser_pause_btn.setEnabled(False)
+        print("Laser Mic recording paused")
+
+    def _set_mic_prediction(self, prediction_box, confidence_box, label, confidence):
+        prediction_box.set_value(label)
+        confidence_box.set_value(f"{confidence:.1f}")
 
     # =====================================================================
     # CONTROLS
@@ -790,15 +1012,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.is_recording = False
         self.record_btn.set_recording(False)
         self.stop_btn.setEnabled(False)
-        self.prediction_box.set_value("--")
-        self.confidence_box.set_value("--")
+        self.prediction_box_std.set_value("--")
+        self.confidence_box_std.set_value("--")
+        self.prediction_box_laser.set_value("--")
+        self.confidence_box_laser.set_value("--")
         print("Recording stopped")
         if self.backend is not None:
             self.backend.stop()
 
     def open_audio_file(self):
         """Switch the Prediction/Confidence panel from live mic to a
-        replayed audio/DAQ file. The four oscilloscopes and spectrogram
+        replayed audio/DAQ file. The four oscilloscopes and both spectrograms
         keep showing the live PCM1808 hardware regardless - this only
         affects what the classifier analyzes."""
         if SignalBackend is None:
