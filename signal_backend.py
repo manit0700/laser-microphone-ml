@@ -686,3 +686,132 @@ class SignalBackend:
             parts.append(f"device='{self._mic.device_name}'")
         parts.append(f"rate={self.sample_rate}Hz")
         return "SignalBackend: " + ", ".join(parts)
+
+
+class _LiveClassifier:
+    """Real classifier for a caller that already owns its own audio stream.
+
+    SignalBackend pulls samples itself (from _MicSource/_DAQSource/a file) on
+    every predict() call. Some callers -- signal_dashboard2.py's
+    HardwareAudioSource is the reason this exists -- already have their own
+    open PyAudio stream and hand out chunks on a GUI timer tick. Opening a
+    second SignalBackend(source="daq") there would mean two streams fighting
+    over the same PCM1808 device. This class gets the real model/silence-gate/
+    debounce/autosave behavior without owning any audio device itself: push()
+    chunks in as they arrive, predict() on the same cadence SignalBackend uses.
+
+    One instance per independent signal (e.g. one per microphone channel).
+    Not thread-safe: push()/predict() are meant to be called from the same
+    thread, typically a GUI timer tick.
+    """
+
+    def __init__(self, model: str = "ensemble", threshold: float = CONFIDENCE_THRESHOLD,
+                 silence_rms: float = DAQ_SILENCE_RMS, enhance: bool | None = None,
+                 autosave: bool = True, source_label: str = "live"):
+        # Default is the DAQ threshold, not the mic one: this class exists so a
+        # caller with its own hardware audio stream (PCM1808) gets real
+        # predictions, and that hardware's noise floor is much higher than a
+        # laptop mic's. Pass silence_rms explicitly to override.
+        self.model = model
+        self.threshold = threshold
+        self.silence_rms = silence_rms
+        self.enhance = ENABLE_ENHANCE if enhance is None else enhance
+        self.autosave = autosave
+        self.source_label = source_label
+
+        self.rate = SAMPLE_RATE
+        self._buf = np.zeros(0, dtype=np.float32)
+        self._max_len = int(BUFFER_SECONDS * self.rate)
+
+        self._committed = None
+        self._streak_label = None
+        self._streak_count = 0
+        self._last_predict_t = 0.0
+
+        self.model_available = True
+        self.model_error = None
+        try:
+            if model == "ensemble":
+                predict_mod._load("lstm")
+                predict_mod._load("cnn")
+            else:
+                predict_mod._load(model)
+        except Exception as e:  # noqa: BLE001
+            self.model_available = False
+            self.model_error = f"{type(e).__name__}: {e}"
+
+    def push(self, samples: np.ndarray, sample_rate: int) -> None:
+        """Feed in the newest chunk of mono float samples at `sample_rate`."""
+        if samples is None or len(samples) == 0:
+            return
+        if int(sample_rate) != self.rate:
+            self.rate = int(sample_rate)
+            self._max_len = int(BUFFER_SECONDS * self.rate)
+        chunk = np.asarray(samples, dtype=np.float32)
+        self._buf = np.concatenate([self._buf, chunk])[-self._max_len:]
+
+    def reset(self) -> None:
+        """Clear the rolling buffer and held result -- call when (re)starting."""
+        self._buf = np.zeros(0, dtype=np.float32)
+        self._committed = None
+        self._streak_label = None
+        self._streak_count = 0
+
+    def predict(self):
+        """Same throttle/silence-gate/debounce contract as SignalBackend.predict()."""
+        if not self.model_available:
+            return None
+
+        import time
+        now = time.monotonic()
+        if now - self._last_predict_t < PREDICT_EVERY_SEC:
+            return self._committed
+        self._last_predict_t = now
+
+        buf = self._buf[-int(PREDICT_WINDOW_SEC * self.rate):]
+        if buf.size < int(0.2 * self.rate):
+            return None
+
+        rms = float(np.sqrt(np.mean(buf ** 2))) if buf.size else 0.0
+        if rms < self.silence_rms:
+            self._streak_label = None
+            self._streak_count = 0
+            return self._committed
+
+        try:
+            waveform = load_waveform_from_array(buf, self.rate)
+            if self.enhance:
+                waveform = enhance_waveform(waveform)
+            if self.model == "ensemble":
+                result, _ = predict_mod.infer_ensemble(waveform, threshold=self.threshold)
+            else:
+                result, _ = predict_mod.infer(waveform, threshold=self.threshold,
+                                              model_type=self.model)
+        except Exception as e:  # noqa: BLE001 - keep the UI alive no matter what
+            print(f"[dashboard] prediction error ({self.source_label}): "
+                  f"{type(e).__name__}: {e}")
+            return self._committed
+
+        label = result["prediction"]
+        confident = result["status"] == "recognized" and result["confidence"] >= STABLE_CONF
+
+        if confident:
+            if label == self._streak_label:
+                self._streak_count += 1
+            else:
+                self._streak_label = label
+                self._streak_count = 1
+
+            committed_label = self._committed[0] if self._committed else None
+            if self._streak_count >= STABLE_HITS and label != committed_label:
+                self._committed = (label, result["confidence"] * 100.0)
+                if self.autosave:
+                    try:
+                        from utils import log_prediction
+                        log_prediction(result, samples=buf, sample_rate=self.rate,
+                                       source=self.source_label)
+                    except Exception:  # noqa: BLE001
+                        pass
+        elif self._committed is None:
+            self._committed = ("Unknown", result["confidence"] * 100.0)
+        return self._committed

@@ -339,6 +339,13 @@ class HardwareAudioSource:
                 # Unclipped, full-chunk filtered signals - for the spectrograms.
                 "std_bp_full": std_bp_full,
                 "laser_bp_full": laser_bp_full,
+                # Unclipped, unfiltered, un-gained continuous chunk - what the
+                # real classifier consumes, so its own filtering stage
+                # (preprocess.reduce_noise, config-toggleable) stays the one
+                # source of truth instead of double-filtering on top of this
+                # display-only bandpass.
+                "std_raw_full": std_raw_full,
+                "laser_raw_full": laser_raw_full,
             }
         except Exception as exc:
             print("[hardware] read error:", repr(exc))
@@ -541,15 +548,33 @@ class MainWindow(QtWidgets.QMainWindow):
         # ---------------------------------------------------------------
         # Real ML backend (trained classifier), optional.
         #
-        # ML TEAM: when live hardware is active, self.last_chunk (set every
-        # tick in update_frame) holds the most recent std_raw/std_bp/
-        # laser_raw/laser_bp/std_bp_full/laser_bp_full arrays straight from the PCM1808.
-        # Feed the classifier from that buffer instead of having
-        # SignalBackend open its own microphone stream - otherwise you'll
-        # have two processes fighting over the same audio device.
+        # Two paths, matching the two ways audio can reach this dashboard:
+        #   - Live PCM1808 hardware: HardwareAudioSource already has the one
+        #     PyAudio stream open (for the scopes/spectrograms). Real
+        #     predictions come from _LiveClassifier, fed the raw chunk on
+        #     every tick in update_frame() -- NOT a second SignalBackend,
+        #     which would open a second stream and fight the first for the
+        #     same device.
+        #   - No hardware (dev machine): fall back to SignalBackend's own
+        #     mic/file capture, same as the original signal_dashboard.py.
         # ---------------------------------------------------------------
         self.backend = None
-        if SignalBackend is not None and not self.hardware.available:
+        self.std_classifier = None
+        self.laser_classifier = None
+        if SignalBackend is not None and self.hardware.available:
+            try:
+                from signal_backend import _LiveClassifier
+                self.std_classifier = _LiveClassifier(model="ensemble", source_label="std-mic")
+                self.laser_classifier = _LiveClassifier(model="ensemble", source_label="laser-mic")
+                if not self.std_classifier.model_available:
+                    print(f"[dashboard] model unavailable: {self.std_classifier.model_error}")
+                else:
+                    print("[dashboard] live classifiers ready (std + laser, real PCM1808 audio)")
+            except Exception as e:  # noqa: BLE001
+                print(f"[dashboard] live classifier init failed, using demo predictions: {e}")
+                self.std_classifier = None
+                self.laser_classifier = None
+        elif SignalBackend is not None and not self.hardware.available:
             try:
                 source = os.environ.get("LMML_SIGNAL_SOURCE", "mic")
                 self.backend = SignalBackend(model="ensemble", source=source)
@@ -913,6 +938,25 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def update_prediction(self):
         """Update the Prediction + Confidence boxes from the model (or demo)."""
+        if self.hardware.available:
+            # Real PCM1808 audio: each mic panel gets its own independent
+            # classification, running only while that panel's own Record is on.
+            if self.std_recording and self.std_classifier is not None:
+                result = self.std_classifier.predict()
+                if result is not None:
+                    label, confidence = result
+                    self._set_mic_prediction(
+                        self.prediction_box_std, self.confidence_box_std, label, confidence
+                    )
+            if self.laser_recording and self.laser_classifier is not None:
+                result = self.laser_classifier.predict()
+                if result is not None:
+                    label, confidence = result
+                    self._set_mic_prediction(
+                        self.prediction_box_laser, self.confidence_box_laser, label, confidence
+                    )
+            return
+
         if self.backend is not None:
             result = self.backend.predict()      # (label, confidence%) or None
             if result is not None:
@@ -926,9 +970,8 @@ class MainWindow(QtWidgets.QMainWindow):
             # None = silence / not enough audio yet: leave the last reading as-is.
             return
 
-        # ML TEAM: replace this block with a call into your classifier,
-        # using self.last_chunk (std_raw/std_bp/laser_raw/laser_bp/
-        # laser_bp_full) as the input instead of random demo values.
+        # Neither real hardware nor SignalBackend available (e.g. torch/model
+        # missing entirely) -- demo values so the UI still has something to show.
         label = np.random.choice(PREDICTION_LABELS)
         confidence = np.random.uniform(72, 99.5)
         self._set_mic_prediction(
@@ -943,9 +986,8 @@ class MainWindow(QtWidgets.QMainWindow):
         oscilloscopes, both spectrograms, and (while recording) the
         prediction/confidence panel. Uses the live PCM1808 hardware when
         available, otherwise the synthetic demo fallback."""
-        chunk = self.hardware.read() if self.hardware.available else None
-        if chunk is None:
-            chunk = self._demo_chunk()
+        real_chunk = self.hardware.read() if self.hardware.available else None
+        chunk = real_chunk if real_chunk is not None else self._demo_chunk()
 
         self.last_chunk = chunk
 
@@ -956,6 +998,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._update_spectrogram(self.spectrogram_std, chunk["std_bp_full"])
         self._update_spectrogram(self.spectrogram_laser, chunk["laser_bp_full"])
+
+        # Feed the real classifiers from this same chunk -- only when it's
+        # genuine PCM1808 audio (not the demo dict, which has no *_raw_full).
+        if real_chunk is not None:
+            if self.std_classifier is not None:
+                self.std_classifier.push(real_chunk["std_raw_full"], RATE)
+            if self.laser_classifier is not None:
+                self.laser_classifier.push(real_chunk["laser_raw_full"], RATE)
 
         if self.std_recording or self.laser_recording:
             self.update_prediction()
@@ -969,6 +1019,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.std_record_btn.set_recording(True)
         self.std_pause_btn.setEnabled(True)
         print("Standard Mic recording started")
+        if self.std_classifier is not None:
+            self.std_classifier.reset()
         if self.backend is not None:
             self.backend.start()
 
@@ -983,6 +1035,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.laser_record_btn.set_recording(True)
         self.laser_pause_btn.setEnabled(True)
         print("Laser Mic recording started")
+        if self.laser_classifier is not None:
+            self.laser_classifier.reset()
         if self.backend is not None:
             self.backend.start()
 
