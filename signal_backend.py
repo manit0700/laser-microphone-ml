@@ -63,6 +63,14 @@ PREDICT_WINDOW_SEC = 1.3
 # laptop/demo microphones can be quiet; the confidence threshold + enhancement
 # handle the rest. (Auto-gain in enhance.py then brings the level up.)
 SILENCE_RMS = 0.003
+
+# The PCM1808/DAQ path has a much higher electrical noise floor than a laptop
+# mic -- idle RMS measured ~0.017-0.02 on the Jetson rig (2026-09-24, see
+# scripts/test_daq_signal.py), well above SILENCE_RMS above. Using the mic
+# threshold there means every window looks "loud enough" even at idle. Set
+# above the measured floor with margin; override with LMML_DAQ_SILENCE_RMS if
+# the real hardware's noise floor drifts (different cabling, gain, etc.).
+DAQ_SILENCE_RMS = 0.03
 # Don't re-run the model on every GUI frame (that's ~20x/sec). Re-classify at
 # most this often; between runs the dashboard shows the last result.
 PREDICT_EVERY_SEC = 0.30
@@ -486,6 +494,15 @@ class SignalBackend:
         self._streak_count = 0
         self._running = False
 
+        # The DAQ's electrical noise floor sits well above a laptop mic's, so
+        # it needs its own (higher) silence threshold. See DAQ_SILENCE_RMS.
+        if source == "daq":
+            import os
+            override = os.environ.get("LMML_DAQ_SILENCE_RMS")
+            self._silence_rms = float(override) if override else DAQ_SILENCE_RMS
+        else:
+            self._silence_rms = SILENCE_RMS
+
         # --- signal source: live mic, live DAQ, or replay a capture file ---
         if source == "mic":
             self._mic = _MicSource(SAMPLE_RATE, BUFFER_SECONDS)
@@ -600,7 +617,7 @@ class SignalBackend:
         # the next spoken digit is judged fresh, but HOLD the committed result on
         # screen (don't blank it between words).
         rms = float(np.sqrt(np.mean(buf ** 2))) if buf.size else 0.0
-        if rms < SILENCE_RMS:
+        if rms < self._silence_rms:
             self._streak_label = None
             self._streak_count = 0
             self._last_logged = None      # allow a repeat of the same digit later
