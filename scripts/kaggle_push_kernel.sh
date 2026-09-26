@@ -23,6 +23,12 @@ echo "Kaggle user: $USERNAME"
 
 STAGE="$(mktemp -d)"
 cp "$PROJECT_ROOT/notebooks/kaggle_train.ipynb" "$STAGE/kaggle_train.ipynb"
+# Optional: KAGGLE_MODEL=lstm bash scripts/kaggle_push_kernel.sh  (notebook default is cnn)
+if [ -n "$KAGGLE_MODEL" ]; then
+  sed "s/MODEL = 'cnn'/MODEL = '$KAGGLE_MODEL'/" "$STAGE/kaggle_train.ipynb" > "$STAGE/kt.tmp" \
+    && mv "$STAGE/kt.tmp" "$STAGE/kaggle_train.ipynb"
+  grep -q "MODEL = '$KAGGLE_MODEL'" "$STAGE/kaggle_train.ipynb" || { echo "ERROR: could not set MODEL"; exit 1; }
+fi
 
 # Kernel metadata Kaggle requires. We attach the code dataset and request GPU +
 # Internet so the notebook runs end-to-end unattended.
