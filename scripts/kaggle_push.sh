@@ -30,6 +30,8 @@ echo "Kaggle user: $USERNAME"
 # Stage just the code in a temp folder (Kaggle uploads a folder's contents).
 STAGE="$(mktemp -d)"
 cp "$PROJECT_ROOT"/src/*.py "$STAGE"/
+# The notebook downloads Speech Commands inside Kaggle using this script.
+cp "$PROJECT_ROOT"/scripts/download_speech_commands.py "$STAGE"/
 
 # Dataset metadata Kaggle requires.
 cat > "$STAGE/dataset-metadata.json" <<JSON

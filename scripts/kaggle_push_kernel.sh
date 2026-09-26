@@ -36,14 +36,21 @@ cat > "$STAGE/kernel-metadata.json" <<JSON
   "is_private": true,
   "enable_gpu": true,
   "enable_internet": true,
-  "dataset_sources": ["$USERNAME/$DATASET_SLUG"],
+  "dataset_sources": ["$USERNAME/$DATASET_SLUG", "yashdogra/speech-commands"],
   "competition_sources": [],
   "kernel_sources": []
 }
 JSON
 
 echo "Pushing kernel..."
-kaggle kernels push -p "$STAGE"
+# Optional: KAGGLE_ACCELERATOR=NvidiaTeslaT4 bash scripts/kaggle_push_kernel.sh
+# The default "Gpu" can hand out a P100, which the preinstalled PyTorch has no
+# kernels for ("no kernel image is available") -> training silently falls back to CPU.
+if [ -n "$KAGGLE_ACCELERATOR" ]; then
+  kaggle kernels push -p "$STAGE" --accelerator "$KAGGLE_ACCELERATOR"
+else
+  kaggle kernels push -p "$STAGE"
+fi
 
 echo ""
 echo "Done. Open: https://www.kaggle.com/code/$USERNAME/$KERNEL_SLUG"
