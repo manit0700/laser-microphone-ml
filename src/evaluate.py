@@ -98,7 +98,12 @@ def _predictions_single(model_type):
     feature = checkpoint.get("feature", FEATURE_FOR_MODEL[loaded_type])
     print(f"Evaluating model '{loaded_type}' (feature: {feature})")
 
-    dataset = SpokenDigitDataset(feature=feature)
+    # Build the dataset exactly as training did. If the model was trained with the
+    # 'unknown' class, the dataset must include it too -- otherwise it has fewer
+    # clips, the saved test indices don't line up, and evaluate silently falls back
+    # to a fresh random split that overlaps the TRAINING data (inflated accuracy).
+    dataset = SpokenDigitDataset(
+        feature=feature, include_unknown="unknown" in checkpoint.get("labels", []))
     test_ds = load_test_subset(dataset)
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False,
                              num_workers=NUM_WORKERS)
@@ -122,8 +127,12 @@ def _predictions_ensemble():
     import predict as predict_mod
     from preprocess import load_audio
 
-    # We need the raw files for the test split, so we can feed both models.
-    dataset = SpokenDigitDataset(cache_in_memory=False)
+    # We need the raw files for the test split, so we can feed both models. Build the
+    # dataset as training did (with 'unknown' if the checkpoints have that class) so
+    # the saved test indices line up with it.
+    include_unknown = "unknown" in predict_mod._load("lstm")["labels"]
+    dataset = SpokenDigitDataset(cache_in_memory=False, include_unknown=include_unknown)
+    unknown_idx = dataset.label_to_index.get("unknown")
     if Path(TEST_INDICES_PATH).exists():
         indices = load_json(TEST_INDICES_PATH)["test_indices"]
         if not indices or max(indices) >= len(dataset):
@@ -136,14 +145,24 @@ def _predictions_ensemble():
     label_index = {label: i for i, label in enumerate(DIGIT_LABELS)}
 
     all_preds, all_true = [], []
+    unk_total = unk_rejected = 0
     for i in indices:
         path, true_idx = dataset.samples[i]
-        _, probs = predict_mod.infer_ensemble(load_audio(path))
+        result, probs = predict_mod.infer_ensemble(load_audio(path))
+        if true_idx == unknown_idx:
+            # The ensemble only outputs digits; non-digits are rejected by the
+            # confidence threshold instead. Score that separately, not as a digit.
+            unk_total += 1
+            unk_rejected += result["status"] != "recognized"
+            continue
         digit_probs = {label: probs[label] for label in DIGIT_LABELS if label in probs}
         pred_label = max(digit_probs, key=digit_probs.get)  # argmax over digit labels
         all_preds.append(label_index[pred_label])
         all_true.append(true_idx)
-    print(f"Evaluating ENSEMBLE (lstm + cnn) on {len(all_true)} test samples")
+    print(f"Evaluating ENSEMBLE (lstm + cnn) on {len(all_true)} digit test samples")
+    if unk_total:
+        print(f"Non-digit ('unknown') clips rejected by the confidence threshold: "
+              f"{unk_rejected}/{unk_total} ({unk_rejected / unk_total:.1%})")
     return "ensemble", np.array(all_preds), np.array(all_true)
 
 
@@ -162,26 +181,32 @@ def main(model_type: str = MODEL_TYPE):
             )
         loaded_type, all_preds, all_true = _predictions_single(model_type)
 
+    # Include the 'unknown' class whenever it shows up (as a true label or a
+    # prediction). Restricting to the 10 digits would silently DROP digit clips the
+    # model called 'unknown' -- errors that must count against accuracy.
+    n_cls = max(len(DIGIT_LABELS), int(max(all_true.max(), all_preds.max())) + 1)
+    class_labels = (DIGIT_LABELS + ["unknown"])[:n_cls]
+
     overall_acc = accuracy_score(all_true, all_preds)
     cm = confusion_matrix(all_true, all_preds,
-                          labels=list(range(len(DIGIT_LABELS))))
+                          labels=list(range(len(class_labels))))
 
-    # Per-class accuracy = correct / total for each digit (diagonal / row sum).
+    # Per-class accuracy = correct / total for each class (diagonal / row sum).
     per_class_acc = {}
-    for i, label in enumerate(DIGIT_LABELS):
+    for i, label in enumerate(class_labels):
         row_total = cm[i].sum()
         per_class_acc[label] = float(cm[i, i] / row_total) if row_total > 0 else 0.0
 
     report_text = classification_report(
         all_true, all_preds,
-        labels=list(range(len(DIGIT_LABELS))),
-        target_names=DIGIT_LABELS,
+        labels=list(range(len(class_labels))),
+        target_names=class_labels,
         zero_division=0,
     )
 
     # ---- Save outputs (filenames tagged by model so LSTM/CNN don't clash) ----
     cm_path = PLOTS_DIR / f"confusion_matrix_{loaded_type}.png"
-    plot_confusion_matrix(cm, DIGIT_LABELS, cm_path)
+    plot_confusion_matrix(cm, class_labels, cm_path)
 
     report = {
         "model_type": loaded_type,
@@ -189,7 +214,7 @@ def main(model_type: str = MODEL_TYPE):
         "per_class_accuracy": per_class_acc,
         "num_test_samples": int(len(all_true)),
         "confusion_matrix": cm.tolist(),
-        "labels": DIGIT_LABELS,
+        "labels": class_labels,
     }
     save_json(report, REPORTS_DIR / f"evaluation_report_{loaded_type}.json")
     with open(REPORTS_DIR / f"evaluation_report_{loaded_type}.txt", "w") as f:
@@ -199,7 +224,7 @@ def main(model_type: str = MODEL_TYPE):
                 f"on {len(all_true)} samples\n\n")
         f.write("Per-class accuracy:\n")
         for label, acc in per_class_acc.items():
-            f.write(f"  digit {label}: {acc:.4f}\n")
+            f.write(f"  {label if label == 'unknown' else 'digit ' + label}: {acc:.4f}\n")
         f.write("\nFull classification report:\n")
         f.write(report_text)
 
@@ -207,7 +232,7 @@ def main(model_type: str = MODEL_TYPE):
     print(f"Overall test accuracy: {overall_acc:.4f} on {len(all_true)} samples\n")
     print("Per-class accuracy:")
     for label, acc in per_class_acc.items():
-        print(f"  digit {label}: {acc:.4f}")
+        print(f"  {label if label == 'unknown' else 'digit ' + label}: {acc:.4f}")
     print(f"\nConfusion matrix plot -> {cm_path}")
     print(f"Reports               -> {REPORTS_DIR}")
 

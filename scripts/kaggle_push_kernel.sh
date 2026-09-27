@@ -30,6 +30,21 @@ if [ -n "$KAGGLE_MODEL" ]; then
   grep -q "MODEL = '$KAGGLE_MODEL'" "$STAGE/kaggle_train.ipynb" || { echo "ERROR: could not set MODEL"; exit 1; }
 fi
 
+# Inputs: the code dataset + Speech Commands. In evaluate mode the saved models are attached too.
+SOURCES="\"$USERNAME/$DATASET_SLUG\", \"yashdogra/speech-commands\""
+# Optional: KAGGLE_MODE=evaluate bash scripts/kaggle_push_kernel.sh
+#   scores the saved lstm + cnn + ensemble on the held-out test split instead of training
+#   (needs the private dataset $USERNAME/laser-microphone-models: best_model.pt,
+#   best_model_cnn.pt, test_indices.json).
+if [ -n "$KAGGLE_MODE" ]; then
+  sed "s/MODE = 'train'/MODE = '$KAGGLE_MODE'/" "$STAGE/kaggle_train.ipynb" > "$STAGE/kt.tmp" \
+    && mv "$STAGE/kt.tmp" "$STAGE/kaggle_train.ipynb"
+  grep -q "MODE = '$KAGGLE_MODE'" "$STAGE/kaggle_train.ipynb" || { echo "ERROR: could not set MODE"; exit 1; }
+  if [ "$KAGGLE_MODE" = "evaluate" ]; then
+    SOURCES="$SOURCES, \"$USERNAME/laser-microphone-models\""
+  fi
+fi
+
 # Kernel metadata Kaggle requires. We attach the code dataset and request GPU +
 # Internet so the notebook runs end-to-end unattended.
 cat > "$STAGE/kernel-metadata.json" <<JSON
@@ -42,7 +57,7 @@ cat > "$STAGE/kernel-metadata.json" <<JSON
   "is_private": true,
   "enable_gpu": true,
   "enable_internet": true,
-  "dataset_sources": ["$USERNAME/$DATASET_SLUG", "yashdogra/speech-commands"],
+  "dataset_sources": [$SOURCES],
   "competition_sources": [],
   "kernel_sources": []
 }
