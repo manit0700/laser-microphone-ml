@@ -267,20 +267,36 @@ class _DAQSource:
     SignalBackend (resampling, filtering, prediction) doesn't change at all --
     this is the DAQ source promised in the LASER NOTE at the top of this file.
 
-    Captured at the ADC's own native rate (2-channel, 32-bit int), then
-    averaged to mono float32 into the same rolling buffer `_MicSource` uses.
-    No band-pass filtering happens here -- that stays downstream in
-    `preprocess.reduce_noise()` so the DAQ and mic paths share one filter.
+    Captured at the ADC's own native rate (2-channel, 32-bit int) into the same
+    kind of rolling float32 buffer `_MicSource` uses. No band-pass filtering
+    happens here -- that stays downstream in `preprocess.reduce_noise()` so the
+    DAQ and mic paths share one filter.
+
+    On this rig the PCM1808's LEFT channel is the standard reference microphone
+    and the RIGHT channel is the laser receiver (see signal_dashboard2.py).
+    `channel` picks what `latest()` returns:
+        "mix"   -> average of both (default; what the single-panel dashboard uses)
+        "std"   -> left/standard mic only
+        "laser" -> right/laser receiver only
+    `latest_channels()` always returns both, sample-aligned, for paired recording.
     """
 
     CHANNELS = 2
+    STD_CHANNEL = 0
+    LASER_CHANNEL = 1
 
-    def __init__(self, buffer_seconds: float, rate: int = 48000, chunk: int = _DAQ_CHUNK):
+    def __init__(self, buffer_seconds: float, rate: int = 48000, chunk: int = _DAQ_CHUNK,
+                 channel: str = "mix"):
+        if channel not in ("mix", "std", "laser"):
+            raise ValueError(f"channel must be 'mix', 'std' or 'laser', got {channel!r}")
+        self.channel = channel
         self.rate = int(rate)
         self._buffer_seconds = buffer_seconds
         self._chunk = chunk
         self.max_len = int(buffer_seconds * self.rate)
         self._buf = np.zeros(0, dtype=np.float32)
+        self._buf_std = np.zeros(0, dtype=np.float32)
+        self._buf_laser = np.zeros(0, dtype=np.float32)
         self._lock = threading.Lock()
         self._pa = None
         self._stream = None
@@ -323,18 +339,33 @@ class _DAQSource:
             ints = np.frombuffer(raw, dtype=np.int32)
             if ints.size != self._chunk * self.CHANNELS:
                 continue
-            # Stereo -> mono (average channels), matching the WAV path's
-            # convention (docs/laser_daq_interface.md).
-            stereo = ints.reshape(-1, self.CHANNELS).astype(np.float32)
-            mono = stereo.mean(axis=1) / 2147483648.0  # int32 full-scale
+            selected, std, laser = self._split_channels(ints, self.channel)
             with self._lock:
-                self._buf = np.concatenate([self._buf, mono])[-self.max_len:]
+                self._buf = np.concatenate([self._buf, selected])[-self.max_len:]
+                self._buf_std = np.concatenate([self._buf_std, std])[-self.max_len:]
+                self._buf_laser = np.concatenate([self._buf_laser, laser])[-self.max_len:]
+
+    @classmethod
+    def _split_channels(cls, ints: np.ndarray, channel: str):
+        """Interleaved int32 stereo -> (selected, std, laser) float32 in [-1, 1]."""
+        stereo = ints.reshape(-1, cls.CHANNELS).astype(np.float32) / 2147483648.0
+        std = stereo[:, cls.STD_CHANNEL]
+        laser = stereo[:, cls.LASER_CHANNEL]
+        if channel == "std":
+            selected = std
+        elif channel == "laser":
+            selected = laser
+        else:
+            selected = stereo.mean(axis=1)   # matches the WAV path (docs/laser_daq_interface.md)
+        return selected, std, laser
 
     def start(self):
         if not self.available or self._stream is not None:
             return
         with self._lock:
             self._buf = np.zeros(0, dtype=np.float32)
+            self._buf_std = np.zeros(0, dtype=np.float32)
+            self._buf_laser = np.zeros(0, dtype=np.float32)
         self._stream = self._pa.open(
             format=self._pyaudio.paInt32,
             channels=self.CHANNELS,
@@ -368,6 +399,15 @@ class _DAQSource:
             return buf
         n = int(seconds * self.rate)
         return buf[-n:] if len(buf) > n else buf
+
+    def latest_channels(self, seconds: float | None = None):
+        """Most recent (std, laser) audio, sample-aligned -- for paired recording."""
+        with self._lock:
+            std, laser = self._buf_std.copy(), self._buf_laser.copy()
+        if seconds is None:
+            return std, laser
+        n = int(seconds * self.rate)
+        return (std[-n:] if len(std) > n else std), (laser[-n:] if len(laser) > n else laser)
 
 
 def _read_signal_file(path: str):
