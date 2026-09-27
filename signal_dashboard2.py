@@ -48,6 +48,7 @@ change app.exec_() to app.exec() at the bottom.
 
 import sys
 import os
+import time
 import numpy as np
 from PyQt5 import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
@@ -152,6 +153,7 @@ TIME_AXIS = np.arange(PLOT_POINTS, dtype=np.float64) / RATE
 SPECTROGRAM_NPERSEG = 1024
 SPECTROGRAM_NOVERLAP = 896       # ~87.5% overlap -> more time bins per chunk
 SPECTROGRAM_ZOOM = (4, 3)        # (time, frequency) display upsample factor
+SPECTROGRAM_MIN_INTERVAL = 0.12     # seconds between spectrogram redraws (~8 fps)
 
 
 def find_audio_device(p):
@@ -563,13 +565,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.laser_classifier = None
         if SignalBackend is not None and self.hardware.available:
             try:
-                from signal_backend import _LiveClassifier
-                self.std_classifier = _LiveClassifier(model="ensemble", source_label="std-mic")
-                self.laser_classifier = _LiveClassifier(model="ensemble", source_label="laser-mic")
+                from signal_backend import _LiveClassifier, DAQ_SILENCE_RMS
+                # The two channels sit at different levels (standard mic vs laser
+                # receiver), so each has its own silence gate. Measure each with
+                # scripts/test_daq_signal.py, then override if the default is off:
+                #   LMML_STD_SILENCE_RMS=0.02 LMML_LASER_SILENCE_RMS=0.005 python signal_dashboard2.py
+                std_gate = float(os.environ.get("LMML_STD_SILENCE_RMS", DAQ_SILENCE_RMS))
+                laser_gate = float(os.environ.get("LMML_LASER_SILENCE_RMS", DAQ_SILENCE_RMS))
+                self.std_classifier = _LiveClassifier(
+                    model="ensemble", source_label="std-mic", silence_rms=std_gate)
+                self.laser_classifier = _LiveClassifier(
+                    model="ensemble", source_label="laser-mic", silence_rms=laser_gate)
                 if not self.std_classifier.model_available:
                     print(f"[dashboard] model unavailable: {self.std_classifier.model_error}")
                 else:
-                    print("[dashboard] live classifiers ready (std + laser, real PCM1808 audio)")
+                    print("[dashboard] live classifiers ready (std + laser, real PCM1808 audio) | "
+                          f"silence gates: std {std_gate}, laser {laser_gate}")
             except Exception as e:  # noqa: BLE001
                 print(f"[dashboard] live classifier init failed, using demo predictions: {e}")
                 self.std_classifier = None
@@ -622,7 +633,12 @@ class MainWindow(QtWidgets.QMainWindow):
         plot.getAxis("left").setPen(BORDER_COLOR)
         plot.getAxis("bottom").setTextPen(DIM_TEXT_COLOR)
         plot.getAxis("left").setTextPen(DIM_TEXT_COLOR)
-        curve = plot.plot(pen=pg.mkPen(color=color, width=1.5))
+        # Antialiasing on a 12K-point, 1.5 px line is what makes the UI lag (~3x the
+        # paint time), and the plot is only ~750 px wide -- so draw without it and let
+        # pyqtgraph reduce to a min/max pair per pixel column ('peak' keeps the envelope).
+        curve = plot.plot(pen=pg.mkPen(color=color, width=1.5), antialias=False)
+        curve.setDownsampling(auto=True, method="peak")
+        curve.setClipToView(True)
         return plot, curve
 
     def build_graphs_column(self):
@@ -828,7 +844,14 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.confidence_box, stretch=2)
         layout.addStretch()
 
-        status = "LIVE (PCM1808)" if self.hardware.available else "DEMO (no hardware found)"
+        mic_mode = (not self.hardware.available and self.backend is not None
+                    and getattr(self.backend, "audio_available", False))
+        if self.hardware.available:
+            status = "LIVE (PCM1808)"
+        elif mic_mode:
+            status = "MIC MODE (no PCM1808): Standard = live mic, Laser = no sensor"
+        else:
+            status = "DEMO (no hardware found)"
         status_label = QtWidgets.QLabel(status)
         status_label.setAlignment(QtCore.Qt.AlignHCenter)
         status_color = ACCENT_COLOR if self.hardware.available else "#ffb454"
@@ -881,6 +904,34 @@ class MainWindow(QtWidgets.QMainWindow):
     # =====================================================================
     # DATA ACQUISITION
     # =====================================================================
+
+    def _mic_chunk(self):
+        """No PCM1808 (dev machine): show the live SignalBackend microphone in the
+        Standard panels instead of fake tones. There is no laser sensor here, so the
+        Laser panels stay flat. Returns None until the mic is streaming (before
+        Record), and update_frame then falls back to the demo signal."""
+        backend = self.backend
+        mic = getattr(backend, "_mic", None)
+        if mic is None or not getattr(mic, "available", False) or not backend.running:
+            return None
+        needed = int(PLOT_POINTS * mic.rate / RATE)      # samples of mic audio in one window
+        raw = mic.latest(needed / mic.rate)
+        if raw.size < needed // 2:
+            return None                                   # still filling
+        if raw.size < needed:
+            raw = np.pad(raw, (needed - raw.size, 0))
+        raw = np.interp(np.linspace(0, raw.size - 1, PLOT_POINTS),
+                        np.arange(raw.size), raw.astype(np.float64))
+        bp = sosfilt(SOS, raw, zi=sosfilt_zi(SOS) * raw[0])[0]
+        flat = np.zeros(PLOT_POINTS)
+        return {
+            "std_raw": np.clip(raw * VISUAL_GAIN, -1.0, 1.0),
+            "std_bp": np.clip(bp * VISUAL_GAIN, -1.0, 1.0),
+            "laser_raw": flat,
+            "laser_bp": flat,
+            "std_bp_full": bp,
+            "laser_bp_full": flat,
+        }
 
     def _demo_chunk(self):
         """Synthetic stand-in used only when the PCM1808 can't be opened,
@@ -961,11 +1012,10 @@ class MainWindow(QtWidgets.QMainWindow):
             result = self.backend.predict()      # (label, confidence%) or None
             if result is not None:
                 label, confidence = result
+                # One source here (a mic or a replayed file), so it belongs to the
+                # Standard panel only -- there is no laser signal to classify.
                 self._set_mic_prediction(
                     self.prediction_box_std, self.confidence_box_std, label, confidence
-                )
-                self._set_mic_prediction(
-                    self.prediction_box_laser, self.confidence_box_laser, label, confidence
                 )
             # None = silence / not enough audio yet: leave the last reading as-is.
             return
@@ -987,7 +1037,10 @@ class MainWindow(QtWidgets.QMainWindow):
         prediction/confidence panel. Uses the live PCM1808 hardware when
         available, otherwise the synthetic demo fallback."""
         real_chunk = self.hardware.read() if self.hardware.available else None
-        chunk = real_chunk if real_chunk is not None else self._demo_chunk()
+        mic_chunk = None
+        if real_chunk is None and not self.hardware.available and self.backend is not None:
+            mic_chunk = self._mic_chunk()
+        chunk = real_chunk if real_chunk is not None else (mic_chunk or self._demo_chunk())
 
         self.last_chunk = chunk
 
@@ -996,8 +1049,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.curve_laser_raw.setData(TIME_AXIS, chunk["laser_raw"])
         self.curve_laser_bp.setData(TIME_AXIS, chunk["laser_bp"])
 
-        self._update_spectrogram(self.spectrogram_std, chunk["std_bp_full"])
-        self._update_spectrogram(self.spectrogram_laser, chunk["laser_bp_full"])
+        # The spectrogram images are the expensive redraw (STFT + upsample + repaint);
+        # ~8 fps looks continuous, so don't redo them on every 40 ms tick.
+        now = time.monotonic()
+        if now - getattr(self, "_last_spectrogram_t", 0.0) >= SPECTROGRAM_MIN_INTERVAL:
+            self._last_spectrogram_t = now
+            self._update_spectrogram(self.spectrogram_std, chunk["std_bp_full"])
+            self._update_spectrogram(self.spectrogram_laser, chunk["laser_bp_full"])
 
         # Feed the real classifiers from this same chunk -- only when it's
         # genuine PCM1808 audio (not the demo dict, which has no *_raw_full).

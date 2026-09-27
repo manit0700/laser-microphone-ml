@@ -29,6 +29,7 @@ arrives, swap `_MicSource` for a DAQ source that fills the same rolling buffer
 resampling, filtering, and model are all downstream of the buffer.
 """
 
+import os
 import sys
 import threading
 from pathlib import Path
@@ -59,10 +60,12 @@ BUFFER_SECONDS = 1.5
 # The window (seconds) actually fed to the model for each prediction.
 PREDICT_WINDOW_SEC = 1.3
 # Below this RMS loudness the window is treated as silence and NOT classified,
-# so background quiet doesn't produce a confident random digit. Kept low because
-# laptop/demo microphones can be quiet; the confidence threshold + enhancement
-# handle the rest. (Auto-gain in enhance.py then brings the level up.)
-SILENCE_RMS = 0.003
+# so background quiet doesn't produce a confident random digit. Room noise on a
+# laptop mic measured ~0.005 RMS, and auto-gain (enhance.py) turns that up to
+# speech level -- at the old 0.003 it was sent to the model as if it were speech.
+# Normal speech at arm's length is ~0.02-0.1 RMS. Override for very quiet mics or
+# noisy rooms with LMML_SILENCE_RMS=<value>.
+SILENCE_RMS = float(os.environ.get("LMML_SILENCE_RMS", 0.008))
 
 # The PCM1808/DAQ path has a much higher electrical noise floor than a laptop
 # mic -- idle RMS measured ~0.017-0.02 on the Jetson rig (2026-09-24, see
