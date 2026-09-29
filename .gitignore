@@ -32,3 +32,6 @@ results/threshold_sweep_*.png
 
 # Large downloaded dataset cache (do not push - 2.3GB)
 data/speech_commands_cache/
+
+# Kaggle run downloads (kaggle kernels output ...)
+kaggle_sweep_*/

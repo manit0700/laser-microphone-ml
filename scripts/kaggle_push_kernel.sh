@@ -30,6 +30,46 @@ if [ -n "$KAGGLE_MODEL" ]; then
   grep -q "MODEL = '$KAGGLE_MODEL'" "$STAGE/kaggle_train.ipynb" || { echo "ERROR: could not set MODEL"; exit 1; }
 fi
 
+# Optional run settings (set any of these in front of the command):
+#   KAGGLE_EPOCHS=80          max epochs per run (early stopping may end sooner)
+#   KAGGLE_DROPOUTS=0.4       dropout value(s) tried in MODE=sweep, comma-separated (e.g. 0.3,0.4)
+#   KAGGLE_DROPOUT=0.4        dropout for MODE=train
+#   KAGGLE_PATIENCE=10        early-stopping patience in epochs (0 = off)
+# e.g.  KAGGLE_MODE=sweep KAGGLE_MODEL=cnn KAGGLE_DROPOUTS=0.4 KAGGLE_EPOCHS=80 bash scripts/kaggle_push_kernel.sh
+if [ -n "$KAGGLE_EPOCHS$KAGGLE_DROPOUTS$KAGGLE_DROPOUT$KAGGLE_PATIENCE" ]; then
+  NB="$STAGE/kaggle_train.ipynb" python - <<'PYEDIT' || { echo "ERROR: could not apply run settings"; exit 1; }
+import json, os, re
+path = os.environ["NB"]
+nb = json.load(open(path))
+subs = []
+if os.environ.get("KAGGLE_EPOCHS"):
+    subs.append((r"^MAX_EPOCHS = \S+", "MAX_EPOCHS = %d" % int(os.environ["KAGGLE_EPOCHS"])))
+if os.environ.get("KAGGLE_DROPOUTS"):
+    vals = [float(v) for v in os.environ["KAGGLE_DROPOUTS"].split(",") if v.strip()]
+    assert vals and all(0.0 <= v < 1.0 for v in vals), "dropouts must be between 0 and 1"
+    subs.append((r"^SWEEP_DROPOUTS = \[[^\]]*\]", "SWEEP_DROPOUTS = [%s]" % ", ".join("%g" % v for v in vals)))
+if os.environ.get("KAGGLE_DROPOUT"):
+    v = float(os.environ["KAGGLE_DROPOUT"]); assert 0.0 <= v < 1.0
+    subs.append((r"^DROPOUT = \S+", "DROPOUT = %g" % v))
+if os.environ.get("KAGGLE_PATIENCE"):
+    subs.append((r"^PATIENCE = \S+", "PATIENCE = %d" % int(os.environ["KAGGLE_PATIENCE"])))
+for pattern, repl in subs:
+    hits = 0
+    for cell in nb["cells"]:
+        if cell["cell_type"] != "code":
+            continue
+        new = []
+        for line in cell["source"]:
+            line2, n = re.subn(pattern, repl, line)
+            hits += n
+            new.append(line2)
+        cell["source"] = new
+    assert hits == 1, "setting %r matched %d lines (expected 1)" % (pattern, hits)
+    print("  set:", repl)
+json.dump(nb, open(path, "w"), indent=1, ensure_ascii=False)
+PYEDIT
+fi
+
 # Inputs: the code dataset + Speech Commands. In evaluate mode the saved models are attached too.
 SOURCES="\"$USERNAME/$DATASET_SLUG\", \"yashdogra/speech-commands\""
 # Optional: KAGGLE_MODE=evaluate bash scripts/kaggle_push_kernel.sh
