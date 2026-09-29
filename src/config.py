@@ -181,6 +181,22 @@ SEED = 42                # random seed for reproducible splits/results
 EARLY_STOP_PATIENCE = int(os.environ.get("LMML_PATIENCE", 6))
 EARLY_STOP_MIN_DELTA = 1e-3
 
+# How train/val/test are formed. "grouped" (default) removes duplicate recordings
+# and puts every speaker in exactly ONE split, so the test set measures accuracy on
+# unseen speakers (see src/splits.py). "random" is the old clip-by-clip split, kept
+# only for reproducing earlier numbers. Override with LMML_SPLIT or train.py --split.
+SPLIT_METHOD = os.environ.get("LMML_SPLIT", "grouped")
+
+# Learning-rate schedule: "plateau" halves the LR when val loss stalls for 2 epochs
+# (ReduceLROnPlateau), "cosine" decays it smoothly to ~0 over the run, "none" keeps
+# LEARNING_RATE fixed (the old behaviour). Override with train.py --scheduler.
+LR_SCHEDULER = os.environ.get("LMML_SCHEDULER", "plateau")
+
+# SpecAugment: randomly mask frequency bands and time steps of the training features
+# (never at eval/inference). Helps with uneven frequency response, e.g. the laser.
+# Off by default so old runs reproduce; enable with train.py --specaugment.
+SPECAUGMENT = os.environ.get("LMML_SPECAUGMENT", "0") == "1"
+
 # Dataset split ratios (must sum to 1.0).
 TRAIN_SPLIT = 0.8
 VAL_SPLIT = 0.1

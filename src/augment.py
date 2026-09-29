@@ -40,7 +40,10 @@ _P_SPEED = 0.6
 # Random gain range (multiply amplitude): models speaker distance / mic volume.
 _GAIN_MIN, _GAIN_MAX = 0.6, 1.4
 # Additive-noise strength as signal-to-noise ratio in dB (higher = cleaner).
-_SNR_MIN_DB, _SNR_MAX_DB = 8.0, 30.0
+# Default minimum 8 dB; laser captures can be much noisier, so training with
+# --noise-min-snr 0 (or LMML_AUG_MIN_SNR=0) exposes the model to 0-30 dB.
+_SNR_MIN_DB = float(__import__("os").environ.get("LMML_AUG_MIN_SNR", 8.0))
+_SNR_MAX_DB = 30.0
 # Max time shift as a fraction of the clip length (rolls the digit left/right).
 _SHIFT_FRAC = 0.15
 # Speed/tempo perturbation: models different accents, speaking speeds, and vowel
@@ -146,3 +149,26 @@ if __name__ == "__main__":
     y = augment_waveform(x)
     print(f"in shape {tuple(x.shape)} -> out shape {tuple(y.shape)}")
     print(f"changed: {not torch.allclose(x, y)}")
+
+
+# ---------------------------------------------------------------------------
+# SpecAugment (feature-level augmentation; Park et al., 2019)
+# ---------------------------------------------------------------------------
+# Randomly blank out whole frequency bands and time spans of the features, so the
+# model cannot depend on any single band being present -- useful for the laser,
+# whose frequency response is uneven (some bands weak or missing). Features are
+# already standardised (mean 0), so masking with 0 = "average", not "silence".
+def spec_augment(feat: torch.Tensor, kind: str, n_freq: int = 2, n_time: int = 2) -> torch.Tensor:
+    """feat: mel (n_mels, time) for the CNN, or mfcc (time, n_mfcc) for the LSTM."""
+    import torchaudio.transforms as T
+    x = feat.transpose(0, 1) if kind == "mfcc" else feat          # -> (freq, time)
+    f_max = max(1, x.shape[0] // 8)       # mel: 5 of 40 bands; mfcc: 1 of 13 coeffs
+    t_max = max(1, x.shape[1] // 8)       # ~8 of 63 frames (~125 ms)
+    fm, tm = T.FrequencyMasking(f_max), T.TimeMasking(t_max)
+    x = x.unsqueeze(0).clone()
+    for _ in range(n_freq):
+        x = fm(x)
+    for _ in range(n_time):
+        x = tm(x)
+    x = x.squeeze(0)
+    return (x.transpose(0, 1) if kind == "mfcc" else x).contiguous()

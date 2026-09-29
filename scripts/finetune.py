@@ -79,6 +79,7 @@ def _subset(template: SpokenDigitDataset, samples, augment: bool, feature: str):
     ds.include_unknown = template.include_unknown
     ds.feature = feature
     ds.augment = augment
+    ds.specaugment = False
     ds.cache_in_memory = not augment
     ds.label_to_index = template.label_to_index
     ds.samples = list(samples)
@@ -119,6 +120,15 @@ def finetune_one(model_type: str, args, speakers) -> None:
         print(f"  SKIP: checkpoint labels {labels} don't match dataset labels "
               f"{list(full.label_to_index)}")
         return
+
+    # Drop '_dupN' copies and byte-identical duplicates first, so the same recording
+    # can never be in both the training part and the held-out part of the check.
+    from splits import dedupe_indices
+    before = len(full.samples)
+    keep = dedupe_indices([p for p, _ in full.samples])
+    full.samples = [full.samples[i] for i in keep]
+    if before != len(full.samples):
+        print(f"  removed {before - len(full.samples)} duplicate clips")
 
     rng = random.Random(SEED)
     new = [s for s in full.samples if _is_speaker_clip(s[0], speakers)]

@@ -88,6 +88,7 @@ class SpokenDigitDataset(Dataset):
         cache_in_memory: bool = True,
         feature: str = "mfcc",
         augment: bool = False,
+        specaugment: bool = False,
     ) -> None:
         self.data_dir = Path(data_dir)
         self.include_unknown = include_unknown
@@ -97,6 +98,8 @@ class SpokenDigitDataset(Dataset):
         # every epoch, so we must NOT cache -- a cached feature would freeze the
         # randomness and defeat the purpose.
         self.augment = augment
+        # SpecAugment (feature masking) -- only ever applied together with augment.
+        self.specaugment = specaugment and augment
         self.cache_in_memory = cache_in_memory and not augment
         self.label_to_index = _build_label_index(include_unknown)
 
@@ -177,6 +180,9 @@ class SpokenDigitDataset(Dataset):
             from augment import augment_waveform
             waveform = augment_waveform(waveform)
         feat = extract_features(waveform, self.feature)  # mfcc -> (time,n_mfcc); mel -> (n_mels,time)
+        if getattr(self, "specaugment", False):
+            from augment import spec_augment
+            feat = spec_augment(feat, self.feature)
         item = (feat.float(), label_index)
 
         if self.cache_in_memory:

@@ -44,6 +44,9 @@ from config import (
     DROPOUT,
     EARLY_STOP_MIN_DELTA,
     EARLY_STOP_PATIENCE,
+    LR_SCHEDULER,
+    SPECAUGMENT,
+    SPLIT_METHOD,
     DIGIT_LABELS,
     FEATURE_FOR_MODEL,
     LEARNING_RATE,
@@ -67,8 +70,26 @@ from utils import ensure_dirs, save_json, set_seed
 TEST_INDICES_PATH = model_checkpoint("lstm").parent / "test_indices.json"
 
 
-def split_dataset(dataset):
-    """Split the dataset into train/val/test subsets reproducibly."""
+def split_dataset(dataset, method: str | None = None, verbose: bool = False):
+    """Split the dataset into train/val/test subsets reproducibly.
+
+    method "grouped" (default, config.SPLIT_METHOD): drop duplicate recordings and
+    keep each speaker in exactly one split, so test = unseen speakers (src/splits.py).
+    method "random": the old clip-by-clip random split (speakers and duplicate
+    clips leak across splits -- only for reproducing earlier numbers).
+    """
+    method = method or SPLIT_METHOD
+    if method == "grouped":
+        from config import RESULTS_DIR
+        from splits import dedupe_indices, grouped_split, split_summary
+        paths = [p for p, _ in dataset.samples]
+        keep = dedupe_indices(paths, cache_file=Path(RESULTS_DIR) / "hash_cache.json")
+        train_ix, val_ix, test_ix = grouped_split(paths, keep, VAL_SPLIT, TEST_SPLIT, SEED)
+        if verbose:
+            print(f"Removed {len(paths) - len(keep)} duplicate clips. "
+                  + split_summary(paths, train_ix, val_ix, test_ix))
+        return Subset(dataset, train_ix), Subset(dataset, val_ix), Subset(dataset, test_ix)
+
     n = len(dataset)
     n_train = int(TRAIN_SPLIT * n)
     n_val = int(VAL_SPLIT * n)
@@ -139,7 +160,7 @@ def diagnose_fit(history: dict, best_epoch: int, augment: bool) -> dict:
     if len(after) >= 3 and sustained and train_drop > 0:
         verdict = "OVERFITTING: val loss rose {:.0%} after epoch {} while train loss kept falling".format(
             val_rise, best_epoch)
-    elif after and sustained and train_drop > 0:
+    elif len(after) >= 2 and sustained and train_drop > 0:
         verdict = ("POSSIBLE OVERFITTING: val loss rose {:.0%} in the {} epoch(s) after epoch {} "
                    "(use a larger --patience to confirm)").format(val_rise, len(after), best_epoch)
     elif best_epoch >= n - 1:
@@ -179,7 +200,9 @@ def plot_curves(history: dict, best_epoch: int, title: str, out_path: Path) -> N
 
 def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = False,
          dropout: float | None = None, patience: int | None = None,
-         epochs: int | None = None, min_delta: float | None = None) -> dict:
+         epochs: int | None = None, min_delta: float | None = None,
+         specaugment: bool | None = None, scheduler: str | None = None,
+         noise_min_snr: float | None = None, split: str | None = None) -> dict:
     set_seed(SEED)
     ensure_dirs()
 
@@ -187,6 +210,14 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
     patience = EARLY_STOP_PATIENCE if patience is None else int(patience)
     epochs = NUM_EPOCHS if epochs is None else int(epochs)
     min_delta = EARLY_STOP_MIN_DELTA if min_delta is None else float(min_delta)
+    specaugment = SPECAUGMENT if specaugment is None else bool(specaugment)
+    scheduler = LR_SCHEDULER if scheduler is None else scheduler
+    split = SPLIT_METHOD if split is None else split
+    if noise_min_snr is not None:
+        import augment as _aug
+        _aug._SNR_MIN_DB = float(noise_min_snr)
+    import augment as _aug
+    noise_min_snr = _aug._SNR_MIN_DB
 
     feature = FEATURE_FOR_MODEL[model_type]
     checkpoint_path = model_checkpoint(model_type)
@@ -194,6 +225,8 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
           f"  |  augment: {augment}  |  unknown-class: {unknown}")
     print(f"Dropout: {dropout}  |  max epochs: {epochs}  |  early stopping: "
           + (f"patience {patience} on val loss (min delta {min_delta})" if patience > 0 else "off"))
+    print(f"Split: {split}  |  LR schedule: {scheduler}  |  SpecAugment: {specaugment}"
+          f"  |  augment noise SNR: {noise_min_snr:g}-30 dB")
     print("Loading dataset...")
     # Clean dataset supplies val/test. When augmenting, a second (augmented)
     # instance supplies train. Both are split with the SAME seed, so the index
@@ -206,13 +239,13 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
     labels = [lbl for lbl, _ in sorted(dataset.label_to_index.items(), key=lambda kv: kv[1])]
     num_classes = len(labels)
 
-    _, val_ds, test_ds = split_dataset(dataset)
+    _, val_ds, test_ds = split_dataset(dataset, split, verbose=True)
     if augment:
         train_source = SpokenDigitDataset(feature=feature, augment=True,
-                                          include_unknown=unknown)
-        train_ds, _, _ = split_dataset(train_source)
+                                          include_unknown=unknown, specaugment=specaugment)
+        train_ds, _, _ = split_dataset(train_source, split)
     else:
-        train_ds, _, _ = split_dataset(dataset)
+        train_ds, _, _ = split_dataset(dataset, split)
     print(f"Split -> train: {len(train_ds)}, val: {len(val_ds)}, test: {len(test_ds)}")
 
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
@@ -234,7 +267,17 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE,
                                  weight_decay=WEIGHT_DECAY)
 
-    history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
+    if scheduler == "plateau":
+        lr_sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode="min", factor=0.5, patience=2, min_lr=1e-5)
+    elif scheduler == "cosine":
+        lr_sched = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-5)
+    elif scheduler == "none":
+        lr_sched = None
+    else:
+        raise ValueError(f"unknown scheduler {scheduler!r} (plateau, cosine or none)")
+
+    history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": [], "lr": []}
     best_val_loss = float("inf")
     best_epoch = 0
     bad_epochs = 0
@@ -248,6 +291,10 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
         history["train_acc"].append(train_acc)
         history["val_loss"].append(val_loss)
         history["val_acc"].append(val_acc)
+        lr_now = optimizer.param_groups[0]["lr"]
+        history["lr"].append(lr_now)
+        if lr_sched is not None:
+            lr_sched.step(val_loss) if scheduler == "plateau" else lr_sched.step()
 
         improved = val_loss < best_val_loss - min_delta
         note = ""
@@ -270,6 +317,10 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
                     "val_loss": val_loss,
                     "epoch": epoch,
                     "dropout": dropout,
+                    "split": split,
+                    "scheduler": scheduler,
+                    "specaugment": specaugment,
+                    "noise_min_snr": noise_min_snr,
                 },
                 checkpoint_path,
             )
@@ -280,7 +331,7 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
 
         print(f"Epoch {epoch:3d}/{epochs} | "
               f"train loss {train_loss:.4f} acc {train_acc:.3f} | "
-              f"val loss {val_loss:.4f} acc {val_acc:.3f}{note}")
+              f"val loss {val_loss:.4f} acc {val_acc:.3f} | lr {lr_now:.1e}{note}")
 
         if patience > 0 and bad_epochs >= patience:
             print(f"\nEarly stopping: val loss has not improved for {patience} epochs "
@@ -294,7 +345,10 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
     # --- Overfitting check ---------------------------------------------------
     fit = diagnose_fit(history, best_epoch, augment)
     run = {"model": model_type, "dropout": dropout, "patience": patience,
-           "max_epochs": epochs, "n_samples": len(dataset), **fit}
+           "max_epochs": epochs, "split": split, "scheduler": scheduler,
+           "specaugment": specaugment, "noise_min_snr": noise_min_snr,
+           "n_samples": len(dataset), "n_train": len(train_ds), "n_val": len(val_ds),
+           "n_test": len(test_ds), **fit}
     from config import PLOTS_DIR, REPORTS_DIR
     tag = f"{model_type}_d{dropout:g}"
     plot_path = Path(PLOTS_DIR) / f"training_curves_{tag}.png"
@@ -344,6 +398,16 @@ if __name__ == "__main__":
                              "(default config.EARLY_STOP_PATIENCE=6; 0 disables)")
     parser.add_argument("--epochs", type=int, default=None,
                         help="maximum epochs (default config.NUM_EPOCHS=40)")
+    parser.add_argument("--specaugment", action="store_true",
+                        help="mask random frequency bands / time steps of training features")
+    parser.add_argument("--scheduler", choices=["plateau", "cosine", "none"], default=None,
+                        help="learning-rate schedule (default config.LR_SCHEDULER='plateau')")
+    parser.add_argument("--noise-min-snr", type=float, default=None,
+                        help="lowest SNR (dB) for augmentation noise (default 8; try 0 for laser)")
+    parser.add_argument("--split", choices=["grouped", "random"], default=None,
+                        help="grouped = by speaker, duplicates removed (default); random = old split")
     args = parser.parse_args()
     main(model_type=args.model, augment=args.augment, unknown=args.unknown,
-         dropout=args.dropout, patience=args.patience, epochs=args.epochs)
+         dropout=args.dropout, patience=args.patience, epochs=args.epochs,
+         specaugment=True if args.specaugment else None, scheduler=args.scheduler,
+         noise_min_snr=args.noise_min_snr, split=args.split)
