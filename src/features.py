@@ -126,6 +126,23 @@ def extract_mel_for_cnn(waveform: torch.Tensor) -> torch.Tensor:
     return ((mel - mean) / std).contiguous()
 
 
+def extract_mfcc_with_deltas(waveform: torch.Tensor) -> torch.Tensor:
+    """MFCC + delta + delta-delta: (time_steps, 3 * n_mfcc) = (63, 39).
+
+    MFCCs describe the sound in each frame; deltas describe how it is CHANGING
+    (first derivative over time) and delta-deltas how fast that change changes
+    (second derivative) -- e.g. the glide from "s" into "e" in "seven". Each of
+    the 39 rows is standardised over time like the plain MFCCs.
+    """
+    import torchaudio.functional as AF_
+    mfcc = extract_mfcc(waveform).transpose(0, 1)        # (n_mfcc, time), already standardised
+    d1 = AF_.compute_deltas(mfcc.unsqueeze(0)).squeeze(0)
+    d2 = AF_.compute_deltas(d1.unsqueeze(0)).squeeze(0)
+    feats = torch.cat([mfcc, d1, d2], dim=0)             # (3*n_mfcc, time)
+    feats = (feats - feats.mean(dim=1, keepdim=True)) / (feats.std(dim=1, keepdim=True) + 1e-8)
+    return feats.transpose(0, 1).contiguous()
+
+
 def extract_features(waveform: torch.Tensor, kind: str) -> torch.Tensor:
     """Single entry point that returns the right feature for the chosen model.
 
@@ -136,9 +153,11 @@ def extract_features(waveform: torch.Tensor, kind: str) -> torch.Tensor:
     """
     if kind == "mfcc":
         return extract_mfcc(waveform)
+    if kind == "mfcc_delta":
+        return extract_mfcc_with_deltas(waveform)
     if kind == "mel":
         return extract_mel_for_cnn(waveform)
-    raise ValueError(f"Unknown feature kind: {kind!r} (expected 'mfcc' or 'mel')")
+    raise ValueError(f"Unknown feature kind: {kind!r} (expected 'mfcc', 'mfcc_delta' or 'mel')")
 
 
 def extract_spectrogram(waveform: torch.Tensor) -> torch.Tensor:

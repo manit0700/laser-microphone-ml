@@ -61,7 +61,7 @@ from config import (  # noqa: E402
     RAW_DATA_DIR, SEED, UNKNOWN_LABEL, WEIGHT_DECAY, model_checkpoint,
 )
 from dataset import SpokenDigitDataset  # noqa: E402
-from model import build_model  # noqa: E402
+from model import model_from_checkpoint  # noqa: E402
 from train import run_epoch  # noqa: E402
 from utils import set_seed  # noqa: E402
 
@@ -109,8 +109,7 @@ def finetune_one(model_type: str, args, speakers) -> None:
     feature = ckpt.get("feature", FEATURE_FOR_MODEL[model_type])
     include_unknown = UNKNOWN_LABEL in labels
 
-    model = build_model(ckpt.get("model_type", model_type), num_classes=len(labels)).to(DEVICE)
-    model.load_state_dict(ckpt["model_state"])
+    model = model_from_checkpoint(ckpt).to(DEVICE)
 
     # Scan data/raw once with the SAME label order the checkpoint was trained on.
     full = SpokenDigitDataset(data_dir=args.data_dir, include_unknown=include_unknown,
@@ -224,6 +223,20 @@ def finetune_one(model_type: str, args, speakers) -> None:
     shutil.copy2(ckpt_path, backup)
     ckpt = dict(ckpt)
     ckpt["model_state"] = best[3]
+    # Re-fit the confidence temperature for the fine-tuned weights (calibration.py),
+    # on the held-out clips of both kinds: your speakers + base data.
+    try:
+        from calibration import calibrate_model
+        from torch.utils.data import ConcatDataset
+        model.load_state_dict(best[3])
+        cal_sets = [d for d in (new_val_ds, base_val_ds) if len(d)]
+        if cal_sets:
+            cal_loader = DataLoader(ConcatDataset(cal_sets), batch_size=BATCH_SIZE, shuffle=False)
+            t, e0, e1 = calibrate_model(model, cal_loader, DEVICE)
+            ckpt["temperature"] = t
+            print(f"  Calibration: temperature {t:.3f} | ECE {e0:.4f} -> {e1:.4f}")
+    except Exception as e:  # noqa: BLE001 - calibration is a bonus, never block saving
+        print(f"  (calibration skipped: {type(e).__name__}: {e})")
     ckpt["finetuned_on"] = sorted(speakers)
     ckpt["finetune_epoch"] = best[2]
     torch.save(ckpt, ckpt_path)

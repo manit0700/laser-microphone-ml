@@ -44,7 +44,9 @@ from config import (
     DROPOUT,
     EARLY_STOP_MIN_DELTA,
     EARLY_STOP_PATIENCE,
+    LABEL_SMOOTHING,
     LR_SCHEDULER,
+    MFCC_DELTAS,
     SPECAUGMENT,
     SPLIT_METHOD,
     DIGIT_LABELS,
@@ -79,6 +81,18 @@ def split_dataset(dataset, method: str | None = None, verbose: bool = False):
     clips leak across splits -- only for reproducing earlier numbers).
     """
     method = method or SPLIT_METHOD
+    if method.startswith("kfold:"):
+        # "kfold:<fold>/<K>", e.g. kfold:2/5 = third of five speaker-grouped folds is the test set
+        from config import RESULTS_DIR
+        from splits import dedupe_indices, kfold_split, split_summary
+        fold, k = (int(x) for x in method.split(":", 1)[1].split("/"))
+        paths = [p for p, _ in dataset.samples]
+        keep = dedupe_indices(paths, cache_file=Path(RESULTS_DIR) / "hash_cache.json")
+        train_ix, val_ix, test_ix = kfold_split(paths, keep, k, fold, VAL_SPLIT, SEED)
+        if verbose:
+            print(f"Removed {len(paths) - len(keep)} duplicate clips. Fold {fold + 1}/{k}: "
+                  + split_summary(paths, train_ix, val_ix, test_ix))
+        return Subset(dataset, train_ix), Subset(dataset, val_ix), Subset(dataset, test_ix)
     if method == "grouped":
         from config import RESULTS_DIR
         from splits import dedupe_indices, grouped_split, split_summary
@@ -202,7 +216,9 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
          dropout: float | None = None, patience: int | None = None,
          epochs: int | None = None, min_delta: float | None = None,
          specaugment: bool | None = None, scheduler: str | None = None,
-         noise_min_snr: float | None = None, split: str | None = None) -> dict:
+         noise_min_snr: float | None = None, split: str | None = None,
+         deltas: bool | None = None, label_smoothing: float | None = None,
+         calibrate: bool = True) -> dict:
     set_seed(SEED)
     ensure_dirs()
 
@@ -211,6 +227,8 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
     epochs = NUM_EPOCHS if epochs is None else int(epochs)
     min_delta = EARLY_STOP_MIN_DELTA if min_delta is None else float(min_delta)
     specaugment = SPECAUGMENT if specaugment is None else bool(specaugment)
+    deltas = MFCC_DELTAS if deltas is None else bool(deltas)
+    label_smoothing = LABEL_SMOOTHING if label_smoothing is None else float(label_smoothing)
     scheduler = LR_SCHEDULER if scheduler is None else scheduler
     split = SPLIT_METHOD if split is None else split
     if noise_min_snr is not None:
@@ -220,6 +238,8 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
     noise_min_snr = _aug._SNR_MIN_DB
 
     feature = FEATURE_FOR_MODEL[model_type]
+    if model_type == "lstm" and deltas:
+        feature = "mfcc_delta"          # 39 inputs per frame: MFCC + delta + delta-delta
     checkpoint_path = model_checkpoint(model_type)
     print(f"Model: {model_type}  |  feature: {feature}  |  device: {DEVICE}"
           f"  |  augment: {augment}  |  unknown-class: {unknown}")
@@ -227,6 +247,8 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
           + (f"patience {patience} on val loss (min delta {min_delta})" if patience > 0 else "off"))
     print(f"Split: {split}  |  LR schedule: {scheduler}  |  SpecAugment: {specaugment}"
           f"  |  augment noise SNR: {noise_min_snr:g}-30 dB")
+    print(f"Feature: {feature}  |  label smoothing: {label_smoothing:g}  |  "
+          f"temperature calibration: {'on' if calibrate else 'off'}")
     print("Loading dataset...")
     # Clean dataset supplies val/test. When augmenting, a second (augmented)
     # instance supplies train. Both are split with the SAME seed, so the index
@@ -253,7 +275,11 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
     val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False,
                             num_workers=NUM_WORKERS)
 
-    model = build_model(model_type, num_classes=num_classes, dropout=dropout).to(DEVICE)
+    input_size = None
+    if model_type == "lstm":
+        input_size = dataset[0][0].shape[-1]      # 13 for MFCC, 39 with deltas
+    model = build_model(model_type, num_classes=num_classes, dropout=dropout,
+                        input_size=input_size).to(DEVICE)
 
     # Use BOTH GPUs when available ("2x GPU"). DataParallel splits each batch
     # across cards. For this small LSTM the win is modest, but it honors the
@@ -263,7 +289,7 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
         print(f"Using {GPU_COUNT} GPUs via DataParallel.")
         model = nn.DataParallel(model)
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=label_smoothing)
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE,
                                  weight_decay=WEIGHT_DECAY)
 
@@ -321,6 +347,7 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
                     "scheduler": scheduler,
                     "specaugment": specaugment,
                     "noise_min_snr": noise_min_snr,
+                    "label_smoothing": label_smoothing,
                 },
                 checkpoint_path,
             )
@@ -338,6 +365,20 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
                   f"(best {best_val_loss:.4f} at epoch {best_epoch}).")
             break
 
+    # --- Confidence calibration (temperature scaling on the validation set) ---
+    temperature, ece_before, ece_after = 1.0, float("nan"), float("nan")
+    if calibrate and best_epoch > 0:
+        from calibration import calibrate_model
+        from model import model_from_checkpoint
+        ckpt = torch.load(checkpoint_path, map_location=DEVICE)
+        best_model = model_from_checkpoint(ckpt).to(DEVICE)
+        temperature, ece_before, ece_after = calibrate_model(best_model, val_loader, DEVICE)
+        ckpt["temperature"] = temperature
+        ckpt["val_ece_before"], ckpt["val_ece_after"] = ece_before, ece_after
+        torch.save(ckpt, checkpoint_path)
+        print(f"Calibration: temperature {temperature:.3f} | validation ECE "
+              f"{ece_before:.4f} -> {ece_after:.4f} (0 = confidence matches accuracy)")
+
     # Persist history and the test indices for evaluate.py.
     save_json(history, TRAINING_HISTORY_PATH)
     save_json({"test_indices": list(test_ds.indices)}, TEST_INDICES_PATH)
@@ -347,6 +388,9 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
     run = {"model": model_type, "dropout": dropout, "patience": patience,
            "max_epochs": epochs, "split": split, "scheduler": scheduler,
            "specaugment": specaugment, "noise_min_snr": noise_min_snr,
+           "feature": feature, "label_smoothing": label_smoothing,
+           "temperature": round(temperature, 4), "val_ece_before": round(ece_before, 4),
+           "val_ece_after": round(ece_after, 4),
            "n_samples": len(dataset), "n_train": len(train_ds), "n_val": len(val_ds),
            "n_test": len(test_ds), **fit}
     from config import PLOTS_DIR, REPORTS_DIR
@@ -404,10 +448,19 @@ if __name__ == "__main__":
                         help="learning-rate schedule (default config.LR_SCHEDULER='plateau')")
     parser.add_argument("--noise-min-snr", type=float, default=None,
                         help="lowest SNR (dB) for augmentation noise (default 8; try 0 for laser)")
-    parser.add_argument("--split", choices=["grouped", "random"], default=None,
-                        help="grouped = by speaker, duplicates removed (default); random = old split")
+    parser.add_argument("--split", default=None,
+                        help="grouped = by speaker, duplicates removed (default); random = old split; "
+                             "kfold:<fold>/<K> = speaker-grouped K-fold (used by cross_validate.py)")
+    parser.add_argument("--deltas", action="store_true",
+                        help="LSTM only: use MFCC + delta + delta-delta features (39 per frame)")
+    parser.add_argument("--label-smoothing", type=float, default=None,
+                        help="label smoothing for the loss (default 0; try 0.1)")
+    parser.add_argument("--no-calibrate", action="store_true",
+                        help="skip temperature scaling on the validation set after training")
     args = parser.parse_args()
     main(model_type=args.model, augment=args.augment, unknown=args.unknown,
          dropout=args.dropout, patience=args.patience, epochs=args.epochs,
          specaugment=True if args.specaugment else None, scheduler=args.scheduler,
-         noise_min_snr=args.noise_min_snr, split=args.split)
+         noise_min_snr=args.noise_min_snr, split=args.split,
+         deltas=True if args.deltas else None, label_smoothing=args.label_smoothing,
+         calibrate=not args.no_calibrate)

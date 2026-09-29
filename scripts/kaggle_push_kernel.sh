@@ -35,8 +35,10 @@ fi
 #   KAGGLE_DROPOUTS=0.4       dropout value(s) tried in MODE=sweep, comma-separated (e.g. 0.3,0.4)
 #   KAGGLE_DROPOUT=0.4        dropout for MODE=train
 #   KAGGLE_PATIENCE=10        early-stopping patience in epochs (0 = off)
+#   KAGGLE_FOLDS=5            number of speaker-grouped folds for MODE=cv
+#   KAGGLE_EXTRA="--deltas --label-smoothing 0.1"   extra train.py flags for MODE=train / sweep / cv
 # e.g.  KAGGLE_MODE=sweep KAGGLE_MODEL=cnn KAGGLE_DROPOUTS=0.4 KAGGLE_EPOCHS=80 bash scripts/kaggle_push_kernel.sh
-if [ -n "$KAGGLE_EPOCHS$KAGGLE_DROPOUTS$KAGGLE_DROPOUT$KAGGLE_PATIENCE" ]; then
+if [ -n "$KAGGLE_EPOCHS$KAGGLE_DROPOUTS$KAGGLE_DROPOUT$KAGGLE_PATIENCE$KAGGLE_FOLDS$KAGGLE_EXTRA" ]; then
   NB="$STAGE/kaggle_train.ipynb" python - <<'PYEDIT' || { echo "ERROR: could not apply run settings"; exit 1; }
 import json, os, re
 path = os.environ["NB"]
@@ -53,6 +55,12 @@ if os.environ.get("KAGGLE_DROPOUT"):
     subs.append((r"^DROPOUT = \S+", "DROPOUT = %g" % v))
 if os.environ.get("KAGGLE_PATIENCE"):
     subs.append((r"^PATIENCE = \S+", "PATIENCE = %d" % int(os.environ["KAGGLE_PATIENCE"])))
+if os.environ.get("KAGGLE_FOLDS"):
+    subs.append((r"^CV_FOLDS = \S+", "CV_FOLDS = %d" % int(os.environ["KAGGLE_FOLDS"])))
+if os.environ.get("KAGGLE_EXTRA"):
+    import shlex
+    extra = shlex.split(os.environ["KAGGLE_EXTRA"])
+    subs.append((r"^EXTRA_TRAIN_ARGS = .*$", "EXTRA_TRAIN_ARGS = %r" % extra))
 for pattern, repl in subs:
     hits = 0
     for cell in nb["cells"]:

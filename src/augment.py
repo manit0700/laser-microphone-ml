@@ -161,7 +161,8 @@ if __name__ == "__main__":
 def spec_augment(feat: torch.Tensor, kind: str, n_freq: int = 2, n_time: int = 2) -> torch.Tensor:
     """feat: mel (n_mels, time) for the CNN, or mfcc (time, n_mfcc) for the LSTM."""
     import torchaudio.transforms as T
-    x = feat.transpose(0, 1) if kind == "mfcc" else feat          # -> (freq, time)
+    is_seq = kind.startswith("mfcc")                              # (time, coeffs) layout
+    x = feat.transpose(0, 1) if is_seq else feat                  # -> (freq, time)
     f_max = max(1, x.shape[0] // 8)       # mel: 5 of 40 bands; mfcc: 1 of 13 coeffs
     t_max = max(1, x.shape[1] // 8)       # ~8 of 63 frames (~125 ms)
     fm, tm = T.FrequencyMasking(f_max), T.TimeMasking(t_max)
@@ -171,4 +172,4 @@ def spec_augment(feat: torch.Tensor, kind: str, n_freq: int = 2, n_time: int = 2
     for _ in range(n_time):
         x = tm(x)
     x = x.squeeze(0)
-    return (x.transpose(0, 1) if kind == "mfcc" else x).contiguous()
+    return (x.transpose(0, 1) if is_seq else x).contiguous()

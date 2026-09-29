@@ -32,6 +32,8 @@ STAGE="$(mktemp -d)"
 cp "$PROJECT_ROOT"/src/*.py "$STAGE"/
 # The notebook downloads Speech Commands inside Kaggle using this script.
 cp "$PROJECT_ROOT"/scripts/download_speech_commands.py "$STAGE"/
+# Cross-validation driver used by MODE=cv in the notebook.
+cp "$PROJECT_ROOT"/scripts/cross_validate.py "$STAGE"/
 
 # Dataset metadata Kaggle requires.
 cat > "$STAGE/dataset-metadata.json" <<JSON

@@ -40,7 +40,7 @@ from config import (  # noqa: E402
     DEVICE, FEATURE_FOR_MODEL, MAX_AUDIO_SAMPLES, MODELS_DIR, MODEL_TYPE,
     SAMPLE_RATE, model_checkpoint,
 )
-from model import build_model  # noqa: E402
+from model import build_model, model_from_checkpoint  # noqa: F401  # noqa: E402
 from features import extract_features  # noqa: E402
 from preprocess import preprocess_waveform  # noqa: E402
 
@@ -63,8 +63,7 @@ def export(model_type):
     loaded_type = checkpoint.get("model_type", model_type)
     feature = checkpoint.get("feature", FEATURE_FOR_MODEL[loaded_type])
 
-    model = build_model(loaded_type).to(DEVICE)
-    model.load_state_dict(checkpoint["model_state"])
+    model = model_from_checkpoint(checkpoint).to(DEVICE)
     model.eval()
 
     example = _example_feature(feature).to(DEVICE)

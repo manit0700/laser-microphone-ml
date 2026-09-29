@@ -143,3 +143,45 @@ def split_summary(paths, train, val, test) -> str:
     return (f"grouped split: train {len(train)} clips / {len(s_tr)} speakers | "
             f"val {len(val)} / {len(s_va)} | test {len(test)} / {len(s_te)} | "
             f"speakers shared between splits: {len(overlap)}")
+
+
+def kfold_split(paths, keep, k_folds: int, fold: int, val_frac: float, seed: int):
+    """Speaker-grouped K-fold: fold `fold` (0-based) of `k_folds` is the test set.
+
+    Speakers are spread over K folds so each fold holds ~1/K of the clips (largest
+    speakers placed first, each into the currently smallest fold). Every speaker is
+    in exactly one fold, so across the K runs every clip is tested exactly once, by
+    a model that never heard that speaker. From the remaining speakers, ~val_frac of
+    the clips go to validation (for early stopping / calibration); the rest train.
+    Derived clips always train.
+    """
+    if not 0 <= fold < k_folds:
+        raise ValueError(f"fold must be in 0..{k_folds - 1}, got {fold}")
+    by_spk: dict[str, list[int]] = {}
+    for i in keep:
+        by_spk.setdefault(speaker_of(paths[i]), []).append(i)
+    derived = [s for s in by_spk if s.startswith("DERIVED:")]
+    real = sorted(s for s in by_spk if not s.startswith("DERIVED:"))
+    rng = random.Random(seed)
+    rng.shuffle(real)
+    order = sorted(real, key=lambda s: -len(by_spk[s]))     # stable: ties keep shuffled order
+    folds = [[] for _ in range(k_folds)]
+    sizes = [0] * k_folds
+    for s in order:
+        j = min(range(k_folds), key=lambda f: sizes[f])
+        folds[j].append(s)
+        sizes[j] += len(by_spk[s])
+
+    n_real = sum(sizes)
+    test = [i for s in folds[fold] for i in by_spk[s]]
+    rest = [s for f in range(k_folds) if f != fold for s in folds[f]]
+    random.Random(seed + 1000 + fold).shuffle(rest)
+    val, train = [], []
+    for s in rest:
+        if len(val) < val_frac * n_real:
+            val += by_spk[s]
+        else:
+            train += by_spk[s]
+    for s in derived:
+        train += by_spk[s]
+    return sorted(train), sorted(val), sorted(test)

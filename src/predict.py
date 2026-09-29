@@ -46,7 +46,7 @@ from config import (
     model_checkpoint,
 )
 from features import extract_features
-from model import build_model
+from model import build_model, model_from_checkpoint
 from preprocess import load_audio, preprocess_waveform
 from utils import format_prediction
 
@@ -73,13 +73,15 @@ def _load(model_type: str = MODEL_TYPE) -> dict:
         labels = checkpoint.get("labels", DIGIT_LABELS)
         # Build with the checkpoint's class count so an 'unknown'-class model
         # (11 outputs) loads correctly alongside plain 10-class models.
-        model = build_model(loaded_type, num_classes=len(labels)).to(DEVICE)
-        model.load_state_dict(checkpoint["model_state"])
+        model = model_from_checkpoint(checkpoint).to(DEVICE)
         model.eval()
         _cache[model_type] = {
             "model": model,
             "labels": labels,
             "feature": checkpoint.get("feature", FEATURE_FOR_MODEL[loaded_type]),
+            # Temperature fitted on validation data after training (calibration.py);
+            # 1.0 for older checkpoints = raw softmax, exactly as before.
+            "temperature": float(checkpoint.get("temperature", 1.0)),
         }
     return _cache[model_type]
 
@@ -88,7 +90,7 @@ def _probs(clean_waveform: torch.Tensor, entry: dict) -> torch.Tensor:
     """Softmax probabilities (1, num_classes) for one loaded model on a clean clip."""
     feat = extract_features(clean_waveform, entry["feature"]).unsqueeze(0).to(DEVICE)
     with torch.no_grad():
-        return F.softmax(entry["model"](feat), dim=1)
+        return F.softmax(entry["model"](feat) / entry.get("temperature", 1.0), dim=1)
 
 
 def _result_from_probs(probs: torch.Tensor, labels, threshold: float):

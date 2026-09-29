@@ -197,6 +197,15 @@ LR_SCHEDULER = os.environ.get("LMML_SCHEDULER", "plateau")
 # Off by default so old runs reproduce; enable with train.py --specaugment.
 SPECAUGMENT = os.environ.get("LMML_SPECAUGMENT", "0") == "1"
 
+# LSTM features: plain MFCC (13 per frame) or MFCC + delta + delta-delta (39).
+# Enable with train.py --deltas or LMML_DELTAS=1. The feature a model was trained
+# with is stored in its checkpoint, so prediction always matches automatically.
+MFCC_DELTAS = os.environ.get("LMML_DELTAS", "0") == "1"
+
+# Label smoothing: train toward 0.9/0.01... instead of 1/0 targets so the model is
+# less over-confident. 0 = off (default); 0.1 is typical. train.py --label-smoothing.
+LABEL_SMOOTHING = float(os.environ.get("LMML_LABEL_SMOOTHING", 0.0))
+
 # Dataset split ratios (must sum to 1.0).
 TRAIN_SPLIT = 0.8
 VAL_SPLIT = 0.1

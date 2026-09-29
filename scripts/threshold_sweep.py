@@ -42,7 +42,7 @@ from config import (  # noqa: E402
     NUM_WORKERS, RESULTS_DIR, model_checkpoint,
 )
 from dataset import SpokenDigitDataset  # noqa: E402
-from model import build_model  # noqa: E402
+from model import build_model, model_from_checkpoint  # noqa: F401  # noqa: E402
 from utils import load_json  # noqa: E402
 from torch.utils.data import DataLoader, Subset  # noqa: E402
 
@@ -55,19 +55,21 @@ def _conf_correct_single(model_type):
     loaded_type = checkpoint.get("model_type", model_type)
     feature = checkpoint.get("feature", FEATURE_FOR_MODEL[loaded_type])
 
-    dataset = SpokenDigitDataset(feature=feature)
+    # Must include the 'unknown' clips exactly when the model was trained with them,
+    # otherwise the saved test indices point at the wrong files (same fix as evaluate.py).
+    dataset = SpokenDigitDataset(feature=feature,
+                                 include_unknown="unknown" in checkpoint.get("labels", []))
     indices = load_json(TEST_INDICES_PATH)["test_indices"]
     loader = DataLoader(Subset(dataset, indices), batch_size=BATCH_SIZE,
                         shuffle=False, num_workers=NUM_WORKERS)
 
-    model = build_model(loaded_type).to(DEVICE)
-    model.load_state_dict(checkpoint["model_state"])
+    model = model_from_checkpoint(checkpoint).to(DEVICE)
     model.eval()
 
     confs, correct = [], []
     with torch.no_grad():
         for feats, labels in loader:
-            probs = F.softmax(model(feats.to(DEVICE)), dim=1)
+            probs = F.softmax(model(feats.to(DEVICE)) / float(checkpoint.get("temperature", 1.0)), dim=1)
             conf, pred = probs.max(dim=1)
             confs.extend(conf.cpu().numpy().tolist())
             correct.extend((pred.cpu() == labels).numpy().tolist())
@@ -79,13 +81,17 @@ def _conf_correct_ensemble():
     import predict as predict_mod
     from preprocess import load_audio
 
-    dataset = SpokenDigitDataset(cache_in_memory=False)
+    lstm_ckpt = torch.load(model_checkpoint("lstm"), map_location="cpu")
+    dataset = SpokenDigitDataset(cache_in_memory=False,
+                                 include_unknown="unknown" in lstm_ckpt.get("labels", []))
     indices = load_json(TEST_INDICES_PATH)["test_indices"]
     label_index = {label: i for i, label in enumerate(DIGIT_LABELS)}
 
     confs, correct = [], []
     for i in indices:
         path, true_idx = dataset.samples[i]
+        if true_idx >= len(DIGIT_LABELS):
+            continue  # 'unknown' clips: the ensemble outputs digits only, so skip them here
         _, probs = predict_mod.infer_ensemble(load_audio(path))
         pred_label = max(probs, key=probs.get)
         confs.append(probs[pred_label])

@@ -126,7 +126,7 @@ class DigitCNN(nn.Module):
 
 
 def build_model(model_type: str = "lstm", num_classes: int = NUM_CLASSES,
-                dropout: float | None = None) -> nn.Module:
+                dropout: float | None = None, input_size: int | None = None) -> nn.Module:
     """Factory used by train/evaluate/predict so they all build the same model.
 
     model_type="lstm" -> DigitLSTM (MFCC)   |   "cnn" -> DigitCNN (mel spectrogram)
@@ -137,6 +137,8 @@ def build_model(model_type: str = "lstm", num_classes: int = NUM_CLASSES,
     """
     extra = {} if dropout is None else {"dropout": float(dropout)}
     if model_type == "lstm":
+        if input_size is not None:
+            extra["input_size"] = int(input_size)   # 13 (MFCC) or 39 (MFCC + deltas)
         return DigitLSTM(num_classes=num_classes, **extra)
     if model_type == "cnn":
         return DigitCNN(num_classes=num_classes, **extra)
@@ -154,3 +156,22 @@ if __name__ == "__main__":
     out = model(fake_batch)
     print(f"Input  shape: {tuple(fake_batch.shape)}  (batch, time, n_mfcc)")
     print(f"Output shape: {tuple(out.shape)}  (batch, num_classes={NUM_CLASSES})")
+
+
+def model_from_checkpoint(checkpoint: dict) -> nn.Module:
+    """Rebuild the exact network a checkpoint was trained with and load its weights.
+
+    Handles every checkpoint variant in this project: LSTM or CNN, 10 or 11
+    classes, and MFCC (13 inputs) or MFCC+deltas (39 inputs) -- the LSTM input
+    size is read from the saved weights, so old checkpoints keep working.
+    """
+    from config import DIGIT_LABELS
+    state = checkpoint["model_state"]
+    model_type = checkpoint.get("model_type", "lstm")
+    labels = checkpoint.get("labels", DIGIT_LABELS)
+    input_size = None
+    if model_type == "lstm" and "lstm.weight_ih_l0" in state:
+        input_size = state["lstm.weight_ih_l0"].shape[1]
+    model = build_model(model_type, num_classes=len(labels), input_size=input_size)
+    model.load_state_dict(state)
+    return model

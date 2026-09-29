@@ -35,3 +35,5 @@ data/speech_commands_cache/
 
 # Kaggle run downloads (kaggle kernels output ...)
 kaggle_sweep_*/
+models/*.onnx
+models/*.engine

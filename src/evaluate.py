@@ -48,7 +48,7 @@ from config import (
     model_checkpoint,
 )
 from dataset import SpokenDigitDataset
-from model import build_model
+from model import build_model, model_from_checkpoint  # noqa: F401
 from train import TEST_INDICES_PATH, split_dataset
 from utils import ensure_dirs, load_json, save_json, set_seed
 
@@ -108,9 +108,7 @@ def _predictions_single(model_type):
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False,
                              num_workers=NUM_WORKERS)
 
-    n_classes = len(checkpoint.get("labels", DIGIT_LABELS))
-    model = build_model(loaded_type, num_classes=n_classes).to(DEVICE)
-    model.load_state_dict(checkpoint["model_state"])
+    model = model_from_checkpoint(checkpoint).to(DEVICE)
     model.eval()
 
     all_preds, all_true = [], []
