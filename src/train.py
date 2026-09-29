@@ -436,12 +436,18 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
     save_json(run, Path(REPORTS_DIR) / f"training_run_{tag}.json")
     import csv
     runs_csv = Path(REPORTS_DIR) / "training_runs.csv"
-    new_file = not runs_csv.exists()
-    with open(runs_csv, "a", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(run.keys()))
-        if new_file:
-            w.writeheader()
-        w.writerow(run)
+    # Runs from different code versions log different columns: merge them into one
+    # header instead of crashing at the very end of a long training run.
+    old_rows = []
+    if runs_csv.exists():
+        with open(runs_csv, newline="") as fh:
+            old_rows = list(csv.DictReader(fh))
+    all_rows = old_rows + [run]
+    fields = list(dict.fromkeys(k for r in all_rows for k in r))
+    with open(runs_csv, "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=fields, restval="")
+        w.writeheader()
+        w.writerows(all_rows)
 
     print(f"\nBest epoch {best_epoch}: val loss {fit['best_val_loss']}, val acc {fit['best_val_acc']}"
           f" (train acc {fit['train_acc_at_best']})")

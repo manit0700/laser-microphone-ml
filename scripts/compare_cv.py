@@ -202,7 +202,7 @@ def main() -> int:
                   flush=True)
     import csv
     with open(res_path, "w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        w = csv.DictWriter(fh, fieldnames=list(dict.fromkeys(k for r in rows for k in r)), restval="")
         w.writeheader()
         w.writerows(rows)
     sel = json.load(open(sel_path))

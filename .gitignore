@@ -37,3 +37,7 @@ data/speech_commands_cache/
 kaggle_sweep_*/
 models/*.onnx
 models/*.engine
+kaggle_failed/
+kaggle_compare_*/
+kaggle_cvcompare_*/
+kaggle_cnn_*/
