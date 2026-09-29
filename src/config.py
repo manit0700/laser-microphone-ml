@@ -159,7 +159,11 @@ def model_checkpoint(model_type: str = MODEL_TYPE):
 LSTM_HIDDEN_SIZE = 128   # neurons in each LSTM layer
 LSTM_NUM_LAYERS = 2      # stacked LSTM layers
 LSTM_BIDIRECTIONAL = True
-DROPOUT = 0.3            # regularization to reduce overfitting
+# Dropout probability used by BOTH models (LSTM between/after layers, CNN before the
+# classifier). Override per run with `train.py --dropout 0.25` or LMML_DROPOUT=0.25.
+# Sensible range 0.2-0.5: lower = less regularization (fits faster, may overfit),
+# higher = more regularization (more robust, may underfit).
+DROPOUT = float(os.environ.get("LMML_DROPOUT", 0.3))
 
 # ---------------------------------------------------------------------------
 # 6. TRAINING HYPERPARAMETERS  (initial values for Sprint 2)
@@ -169,6 +173,13 @@ LEARNING_RATE = 1e-3
 NUM_EPOCHS = 40
 WEIGHT_DECAY = 1e-5      # small L2 regularization
 SEED = 42                # random seed for reproducible splits/results
+
+# Early stopping: stop training when validation LOSS has not improved by at least
+# EARLY_STOP_MIN_DELTA for EARLY_STOP_PATIENCE epochs in a row, and keep the checkpoint
+# with the lowest validation loss. Set patience to 0 to disable. Override with
+# `train.py --patience N` or LMML_PATIENCE=N.
+EARLY_STOP_PATIENCE = int(os.environ.get("LMML_PATIENCE", 6))
+EARLY_STOP_MIN_DELTA = 1e-3
 
 # Dataset split ratios (must sum to 1.0).
 TRAIN_SPLIT = 0.8
@@ -221,4 +232,4 @@ DEVICE = _select_device()
 GPU_COUNT = torch.cuda.device_count() if DEVICE.type == "cuda" else 0
 
 # Number of background workers for the DataLoader. 0 is safest/most portable.
-NUM_WORKERS = 0
+NUM_WORKERS = int(os.environ.get("LMML_NUM_WORKERS", 0))
