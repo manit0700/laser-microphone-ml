@@ -29,6 +29,8 @@ USAGE (project root; this is 2 x K full trainings -- run it on Kaggle)
       -- --augment --unknown-class --dropout 0.4 --epochs 60 --patience 8
 
   Everything after "--" goes to src/train.py for every run.
+  Inside a --config, LMML_*=value tokens are environment settings for that config, e.g.
+      --config sr8k="LMML_SAMPLE_RATE=8000"  --config sr16k="LMML_SAMPLE_RATE=16000"
   Re-running resumes: finished fold trainings are skipped.
 
 OUTPUT (--out, default <results>/cvcompare_<model>/)
@@ -98,6 +100,20 @@ def evaluate_fold(run_dir: Path, model: str) -> dict:
     return m
 
 
+def evaluate_fold_subprocess(run_dir: Path, model: str, extra_env: dict) -> dict:
+    """Run evaluate_fold in a fresh process so each config's sample rate (read by
+    config.py at import) is applied -- 8 kHz and 16 kHz models can't share one process."""
+    code = ("import json,sys; sys.path.insert(0, %r); sys.argv=['x']; import compare_cv as c; "
+            "print('__RESULT__' + json.dumps(c.evaluate_fold(__import__('pathlib').Path(%r), %r)))"
+            % (str(Path(__file__).resolve().parent), str(run_dir), model))
+    env = dict(os.environ, LMML_OUTPUT_DIR=str(run_dir), PYTHONPATH=str(SRC), **extra_env)
+    out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True)
+    line = next((l for l in out.stdout.splitlines() if l.startswith("__RESULT__")), None)
+    if out.returncode != 0 or line is None:
+        raise RuntimeError(f"evaluation failed for {run_dir}:\n{out.stdout[-2000:]}\n{out.stderr[-2000:]}")
+    return json.loads(line[len("__RESULT__"):])
+
+
 def main() -> int:
     argv = sys.argv[1:]
     common = []
@@ -115,10 +131,14 @@ def main() -> int:
     ap.add_argument("--force", action="store_true", help="allow phase 3 to run again (normally refused)")
     args = ap.parse_args(argv)
 
-    configs = {}
+    configs, config_env = {}, {}
     for c in args.config:
         name, _, flags = c.partition("=")
-        configs[name.strip()] = shlex.split(flags)
+        toks = shlex.split(flags)
+        # Tokens like LMML_SAMPLE_RATE=16000 are environment settings for that config
+        # (they must be set before train.py imports config), everything else is a flag.
+        config_env[name.strip()] = dict(t.split("=", 1) for t in toks if t.startswith("LMML_") and "=" in t)
+        configs[name.strip()] = [t for t in toks if not (t.startswith("LMML_") and "=" in t)]
     from config import RESULTS_DIR  # noqa: E402
     out = Path(args.out) if args.out else Path(RESULTS_DIR) / f"cvcompare_{args.model}"
     out.mkdir(parents=True, exist_ok=True)
@@ -131,7 +151,7 @@ def main() -> int:
             run_json = sorted((run_dir / "results" / "reports").glob(f"training_run_{args.model}_*.json"))
             if not (run_json and (run_dir / "models" / _ckpt_name(args.model)).exists()):
                 print("\n" + "#" * 72 + f"\n#  PHASE 1  {name}  fold {k + 1}/{args.folds}\n" + "#" * 72, flush=True)
-                env = dict(os.environ, LMML_OUTPUT_DIR=str(run_dir))
+                env = dict(os.environ, LMML_OUTPUT_DIR=str(run_dir), **config_env[name])
                 subprocess.run([sys.executable, str(SRC / "train.py"), "--model", args.model,
                                 "--split", f"kfold:{k}/{args.folds}", *common, *flags], check=True, env=env)
                 run_json = sorted((run_dir / "results" / "reports").glob(f"training_run_{args.model}_*.json"))
@@ -175,7 +195,7 @@ def main() -> int:
     print("\n" + "=" * 72 + f"\nPHASE 3  final TEST evaluation (once): {', '.join(to_test)}")
     for name in to_test:
         for r in runs[name]:
-            m = evaluate_fold(Path(r["run_dir"]), args.model)
+            m = evaluate_fold_subprocess(Path(r["run_dir"]), args.model, config_env[name])
             rows.append({"config": name, "fold": r["fold"], **m})
             print(f"  {name:<12} fold {r['fold'] + 1}: balanced {m['balanced_acc']:.2%} | digits "
                   f"{m['digit_acc']:.2%} | unknown rejected {m['unknown_rejection']:.2%} | thr {m['threshold']:.2f}",

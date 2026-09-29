@@ -68,7 +68,38 @@ CAPTURES_DIR = RESULTS_DIR / "captures"
 # the model always sees a consistent input.
 # LASER NOTE: laser/DAQ data may be sampled at a very different rate. Set this to
 # match (or resample to) whatever rate makes the digit content clear.
-SAMPLE_RATE = 8000
+#
+# 8000 keeps only < 4 kHz: fine for vowels, but it drops most of the "s" in "six"
+# (measured: ~11% of that word's energy is above 4 kHz) and the quiet "th"/"f"/"v"
+# consonants. 16000 keeps up to 8 kHz. Choose with LMML_SAMPLE_RATE=16000 when
+# TRAINING; train.py records the rate in each checkpoint and in
+# models/model_meta.json, and this file picks it up from there automatically, so
+# the dashboard always runs at the rate its models were trained at.
+def _default_sample_rate() -> int:
+    env = os.environ.get("LMML_SAMPLE_RATE")
+    if env:
+        return int(env)
+    try:
+        import json as _json
+        meta = MODELS_DIR / "model_meta.json"
+        if meta.exists():
+            return int(_json.loads(meta.read_text())["sample_rate"])
+    except Exception:  # noqa: BLE001 - unreadable meta: fall back to the default
+        pass
+    return 8000
+
+
+SAMPLE_RATE = _default_sample_rate()
+if SAMPLE_RATE % 8000:
+    raise ValueError(f"SAMPLE_RATE must be a multiple of 8000 (8000, 16000, ...), got {SAMPLE_RATE}")
+# Window/hop sizes below are defined for 8 kHz and scaled with the rate, so every
+# rate gives the same ~32 ms windows, 16 ms hops and 63 frames per second -- the
+# model's input shape does not change.
+_SR_SCALE = SAMPLE_RATE // 8000
+
+# New recordings are always saved at this rate (or higher), whatever rate the
+# model uses, so no capture ever throws away its high frequencies.
+RECORD_SAMPLE_RATE = max(16000, SAMPLE_RATE)
 
 # All clips are padded or truncated to this fixed length (in seconds) so every
 # sample produces a tensor of the same size. Spoken digits are short (< 1 s).
@@ -93,7 +124,7 @@ ENABLE_ENHANCE = True
 # high-frequency hiss. Butterworth = flat in-band. High cutoff must stay below
 # the Nyquist frequency (SAMPLE_RATE / 2 = 4000 Hz at 8 kHz).
 BANDPASS_LOW_HZ = 200
-BANDPASS_HIGH_HZ = 3800          # < 4000 Hz Nyquist at 8 kHz
+BANDPASS_HIGH_HZ = int(SAMPLE_RATE / 2 * 0.95)   # just under Nyquist (3800 Hz at 8 kHz)
 BANDPASS_ORDER = 6               # 6-pole, matches the team's DSP filter plan
 
 # Pre-emphasis boosts high frequencies to sharpen consonants (y[n] = x[n] - a*x[n-1]).
@@ -107,8 +138,8 @@ PREEMPHASIS_COEF = 0.97
 # - FRAME_LENGTH/FRAME_HOP: window used to measure energy over time.
 # - ENERGY_THRESHOLD_RATIO: a frame is "speech" if its energy is above this
 #   fraction of the clip's peak frame energy. Higher = more aggressive trimming.
-FRAME_LENGTH = 256
-FRAME_HOP = 128
+FRAME_LENGTH = 256 * _SR_SCALE
+FRAME_HOP = 128 * _SR_SCALE
 ENERGY_THRESHOLD_RATIO = 0.05
 
 # ---------------------------------------------------------------------------
@@ -118,8 +149,8 @@ ENERGY_THRESHOLD_RATIO = 0.05
 # a small set of numbers that capture the *shape* of the sound (timbre), which is
 # what distinguishes spoken digits. See features.py for details.
 N_MFCC = 13          # number of MFCC coefficients per time frame (13 is standard)
-N_FFT = 256          # FFT window size used inside MFCC
-HOP_LENGTH = 128     # step between frames; controls the time resolution
+N_FFT = 256 * _SR_SCALE       # FFT window (32 ms at any rate)
+HOP_LENGTH = 128 * _SR_SCALE  # step between frames (16 ms); controls the time resolution
 N_MELS = 40          # mel filterbank size used before the cepstral step
 
 # Mel spectrogram settings (backup / comparison feature, and for visualization).

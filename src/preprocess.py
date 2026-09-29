@@ -125,6 +125,20 @@ def save_wav(samples, path: str | Path, sample_rate: int = SAMPLE_RATE) -> Path:
     return path
 
 
+def save_capture(samples, sample_rate: int, path: str | Path) -> Path:
+    """Save a raw hardware capture at config.RECORD_SAMPLE_RATE (>= 16 kHz).
+
+    Recordings are kept at the higher rate even when the model runs at 8 kHz, so
+    they can be reused if the pipeline moves to 16 kHz (resampling DOWN later is
+    free; high frequencies thrown away now could never be recovered).
+    """
+    from config import RECORD_SAMPLE_RATE
+    x = torch.as_tensor(np.asarray(samples, dtype=np.float32)).reshape(-1)
+    if int(sample_rate) != RECORD_SAMPLE_RATE:
+        x = AF.resample(x, orig_freq=int(sample_rate), new_freq=RECORD_SAMPLE_RATE)
+    return save_wav(x, path, RECORD_SAMPLE_RATE)
+
+
 def load_waveform_from_array(samples, sample_rate: int) -> torch.Tensor:
     """Build a clean mono waveform from a raw array (numpy or list or tensor).
 

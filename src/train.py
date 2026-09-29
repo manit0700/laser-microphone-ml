@@ -47,6 +47,7 @@ from config import (
     LABEL_SMOOTHING,
     LR_SCHEDULER,
     MFCC_DELTAS,
+    SAMPLE_RATE,
     SPECAUGMENT,
     SPLIT_METHOD,
     DIGIT_LABELS,
@@ -245,7 +246,7 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
           f"  |  augment: {augment}  |  unknown-class: {unknown}")
     print(f"Dropout: {dropout}  |  max epochs: {epochs}  |  early stopping: "
           + (f"patience {patience} on val loss (min delta {min_delta})" if patience > 0 else "off"))
-    print(f"Split: {split}  |  LR schedule: {scheduler}  |  SpecAugment: {specaugment}"
+    print(f"Sample rate: {SAMPLE_RATE} Hz  |  split: {split}  |  LR schedule: {scheduler}  |  SpecAugment: {specaugment}"
           f"  |  augment noise SNR: {noise_min_snr:g}-30 dB")
     print(f"Feature: {feature}  |  label smoothing: {label_smoothing:g}  |  "
           f"temperature calibration: {'on' if calibrate else 'off'}")
@@ -348,6 +349,7 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
                     "specaugment": specaugment,
                     "noise_min_snr": noise_min_snr,
                     "label_smoothing": label_smoothing,
+                    "sample_rate": SAMPLE_RATE,
                 },
                 checkpoint_path,
             )
@@ -394,6 +396,19 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
 
     # Persist history and the test indices for evaluate.py.
     save_json(history, TRAINING_HISTORY_PATH)
+    # Record the sample rate next to the models so config.py (and so the dashboard)
+    # runs at the same rate automatically. Warn if the other model in this folder
+    # was trained at a different rate -- the ensemble needs both to match.
+    meta_path = Path(checkpoint_path).parent / "model_meta.json"
+    for other in ("lstm", "cnn"):
+        other_path = model_checkpoint(other)
+        if other != model_type and Path(other_path).exists():
+            other_sr = int(torch.load(other_path, map_location="cpu").get("sample_rate", 8000))
+            if other_sr != SAMPLE_RATE:
+                print(f"WARNING: {Path(other_path).name} was trained at {other_sr} Hz but this model at "
+                      f"{SAMPLE_RATE} Hz. Retrain it at {SAMPLE_RATE} Hz before using the ensemble.")
+    save_json({"sample_rate": SAMPLE_RATE}, meta_path)
+
     # Validation indices are saved too, so threshold tools tune on VALIDATION data
     # and the test set is only ever used for the final score.
     save_json({"test_indices": list(test_ds.indices), "val_indices": list(val_ds.indices)},
@@ -404,7 +419,7 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
     run = {"model": model_type, "dropout": dropout, "patience": patience,
            "max_epochs": epochs, "split": split, "scheduler": scheduler,
            "specaugment": specaugment, "noise_min_snr": noise_min_snr,
-           "feature": feature, "label_smoothing": label_smoothing,
+           "feature": feature, "label_smoothing": label_smoothing, "sample_rate": SAMPLE_RATE,
            "temperature": round(temperature, 4), "val_ece_before": round(ece_before, 4),
            "val_ece_after": round(ece_after, 4),
            "threshold": threshold,

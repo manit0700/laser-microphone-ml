@@ -165,7 +165,13 @@ def model_from_checkpoint(checkpoint: dict) -> nn.Module:
     classes, and MFCC (13 inputs) or MFCC+deltas (39 inputs) -- the LSTM input
     size is read from the saved weights, so old checkpoints keep working.
     """
-    from config import DIGIT_LABELS
+    from config import DIGIT_LABELS, SAMPLE_RATE
+    trained_sr = int(checkpoint.get("sample_rate", 8000))   # checkpoints before this key were 8 kHz
+    if trained_sr != SAMPLE_RATE:
+        raise RuntimeError(
+            f"This model was trained at {trained_sr} Hz but the pipeline is running at {SAMPLE_RATE} Hz, "
+            f"so its features would not match. Run with LMML_SAMPLE_RATE={trained_sr}, or put the matching "
+            f"models/model_meta.json next to the models (train.py writes it).")
     state = checkpoint["model_state"]
     model_type = checkpoint.get("model_type", "lstm")
     labels = checkpoint.get("labels", DIGIT_LABELS)

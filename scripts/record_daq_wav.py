@@ -68,7 +68,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
 from config import DIGIT_LABELS, RAW_DATA_DIR, SAMPLE_RATE  # noqa: E402
-from preprocess import load_waveform_from_array, save_wav  # noqa: E402
+from preprocess import load_waveform_from_array, save_capture, save_wav  # noqa: E402,F401
 from signal_backend import _DAQSource  # noqa: E402
 
 # A channel quieter than this while speaking is effectively silence (full scale = 1.0).
@@ -87,7 +87,7 @@ def _rms(x: np.ndarray) -> float:
 
 def _save(raw: np.ndarray, rate: int, path: Path) -> None:
     """Resample a captured channel to the project SAMPLE_RATE and write the WAV."""
-    save_wav(load_waveform_from_array(raw, rate), path, SAMPLE_RATE)
+    save_capture(raw, rate, path)   # kept at >= 16 kHz (config.RECORD_SAMPLE_RATE)
 
 
 def record_one(daq: _DAQSource, digit: str, speaker: str, channel: str, indices: dict,
@@ -154,7 +154,8 @@ def main():
         sys.exit(1)
 
     print(f"Device: [{daq.device}] {daq.device_name}")
-    print(f"Recording at {daq.rate} Hz (resampled to {SAMPLE_RATE} Hz), speaker='{args.speaker}', "
+    from config import RECORD_SAMPLE_RATE
+    print(f"Recording at {daq.rate} Hz (saved at {RECORD_SAMPLE_RATE} Hz), speaker='{args.speaker}', "
           f"channel={args.channel}, {args.takes} take(s) per digit. Files go to {out_dir}")
 
     digits = DIGIT_LABELS if args.all else ([args.digit] if args.digit is not None else [])

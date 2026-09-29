@@ -79,7 +79,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from config import DIGIT_LABELS, PLOTS_DIR, RAW_DATA_DIR, RESULTS_DIR, SAMPLE_RATE, UNKNOWN_LABEL  # noqa: E402
-from preprocess import load_waveform_from_array, save_wav  # noqa: E402
+from preprocess import load_waveform_from_array, save_capture, save_wav  # noqa: E402,F401
 
 FS = 16000  # internal simulation rate (Hz); output is resampled to SAMPLE_RATE
 SKIP_TAGS = ("_laser_", "laserplay", "lasersynth", "physlaser")  # never re-simulate laser/derived clips
@@ -343,7 +343,7 @@ def main() -> int:
                 next_idx[key] = len(list(folder.glob(f"{prefix}_{args.speaker}_*.wav")))
             out = folder / f"{prefix}_{args.speaker}_{next_idx[key]}.wav"
             next_idx[key] += 1
-            save_wav(load_waveform_from_array(sim.astype(np.float32), FS), out, SAMPLE_RATE)
+            save_capture(sim.astype(np.float32), FS, out)   # kept at 16 kHz
 
             row = {"file": out.name, "label": label, "source": src.name, **prm}
             if writer is None:

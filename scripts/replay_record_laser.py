@@ -69,7 +69,7 @@ import soundfile as sf  # noqa: E402
 from scipy.signal import butter, resample_poly, sosfiltfilt  # noqa: E402
 
 from config import DIGIT_LABELS, RAW_DATA_DIR, SAMPLE_RATE, UNKNOWN_LABEL  # noqa: E402
-from preprocess import load_waveform_from_array, save_wav  # noqa: E402
+from preprocess import load_waveform_from_array, save_capture, save_wav  # noqa: E402,F401
 from signal_backend import _DAQSource  # noqa: E402
 
 PRE_SEC = 0.4    # background captured before playback (noise reference)
@@ -282,14 +282,14 @@ def main() -> int:
                     out = unk_dir / f"unk_{tag}_{idx_for(label, tag)}.wav"
                 else:
                     out = raw_dir / f"{label}_{tag}_{idx_for(label, tag)}.wav"
-                save_wav(load_waveform_from_array(laser[pre_n // 2:], daq.rate), out, SAMPLE_RATE)
+                save_capture(laser[pre_n // 2:], daq.rate, out)
                 line += f"  {out.name}"
                 if args.save_std:
                     rtag = f"{args.speaker}ref_std"
                     folder = unk_dir if label == UNKNOWN_LABEL else raw_dir
                     prefix = "unk" if label == UNKNOWN_LABEL else label
-                    save_wav(load_waveform_from_array(std[pre_n // 2:], daq.rate),
-                             folder / f"{prefix}_{rtag}_{idx_for(label, rtag)}.wav", SAMPLE_RATE)
+                    save_capture(std[pre_n // 2:], daq.rate,
+                                 folder / f"{prefix}_{rtag}_{idx_for(label, rtag)}.wav")
             print(line)
             kept += int(ok)
             skipped += int(not ok)

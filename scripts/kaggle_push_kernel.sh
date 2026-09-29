@@ -36,9 +36,11 @@ fi
 #   KAGGLE_DROPOUT=0.4        dropout for MODE=train
 #   KAGGLE_PATIENCE=10        early-stopping patience in epochs (0 = off)
 #   KAGGLE_FOLDS=5            number of speaker-grouped folds for MODE=cv
+#   KAGGLE_SAMPLE_RATE=16000  sample rate for MODE=train/sweep/cv (default 8000)
+#   KAGGLE_COMPARE=sr         MODE=cvcompare: compare 8 kHz vs 16 kHz instead of baseline vs improved
 #   KAGGLE_EXTRA="--deltas --label-smoothing 0.1"   extra train.py flags for MODE=train / sweep / cv
 # e.g.  KAGGLE_MODE=sweep KAGGLE_MODEL=cnn KAGGLE_DROPOUTS=0.4 KAGGLE_EPOCHS=80 bash scripts/kaggle_push_kernel.sh
-if [ -n "$KAGGLE_EPOCHS$KAGGLE_DROPOUTS$KAGGLE_DROPOUT$KAGGLE_PATIENCE$KAGGLE_FOLDS$KAGGLE_EXTRA" ]; then
+if [ -n "$KAGGLE_EPOCHS$KAGGLE_DROPOUTS$KAGGLE_DROPOUT$KAGGLE_PATIENCE$KAGGLE_FOLDS$KAGGLE_EXTRA$KAGGLE_SAMPLE_RATE$KAGGLE_COMPARE" ]; then
   NB="$STAGE/kaggle_train.ipynb" python - <<'PYEDIT' || { echo "ERROR: could not apply run settings"; exit 1; }
 import json, os, re
 path = os.environ["NB"]
@@ -57,6 +59,21 @@ if os.environ.get("KAGGLE_PATIENCE"):
     subs.append((r"^PATIENCE = \S+", "PATIENCE = %d" % int(os.environ["KAGGLE_PATIENCE"])))
 if os.environ.get("KAGGLE_FOLDS"):
     subs.append((r"^CV_FOLDS = \S+", "CV_FOLDS = %d" % int(os.environ["KAGGLE_FOLDS"])))
+if os.environ.get("KAGGLE_SAMPLE_RATE"):
+    subs.append((r"^SAMPLE_RATE = \S+", "SAMPLE_RATE = %d" % int(os.environ["KAGGLE_SAMPLE_RATE"])))
+if os.environ.get("KAGGLE_COMPARE") == "sr":
+    # Same (improved) recipe at both rates; only the sample rate differs.
+    common = "specaugment=True, scheduler='plateau', noise_min_snr=0, label_smoothing=0.1, deltas=True"
+    new_cfg = ("COMPARE_CONFIGS = {'sr8k': dict(%s, sample_rate=8000), "
+               "'sr16k': dict(%s, sample_rate=16000)}" % (common, common))
+    for cell in nb["cells"]:
+        if cell["cell_type"] == "code":
+            src = "".join(cell["source"])
+            if "COMPARE_CONFIGS = {" in src:
+                import re as _re
+                src = _re.sub(r"COMPARE_CONFIGS = \{.*?\n\}\n", new_cfg + "\n", src, flags=_re.S)
+                cell["source"] = [l + "\n" for l in src.split("\n")[:-1]] + [src.split("\n")[-1]]
+                print("  set: COMPARE_CONFIGS = sr8k vs sr16k")
 if os.environ.get("KAGGLE_EXTRA"):
     import shlex
     extra = shlex.split(os.environ["KAGGLE_EXTRA"])
