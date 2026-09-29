@@ -82,6 +82,10 @@ def _load(model_type: str = MODEL_TYPE) -> dict:
             # Temperature fitted on validation data after training (calibration.py);
             # 1.0 for older checkpoints = raw softmax, exactly as before.
             "temperature": float(checkpoint.get("temperature", 1.0)),
+            # 'unknown' threshold tuned on validation data after training (None = use config).
+            "threshold": checkpoint.get("threshold"),
+            # Threshold for the LSTM+CNN ensemble, tuned by scripts/tune_threshold.py.
+            "ensemble_threshold": checkpoint.get("ensemble_threshold"),
         }
     return _cache[model_type]
 
@@ -102,19 +106,37 @@ def _result_from_probs(probs: torch.Tensor, labels, threshold: float):
     return result, probabilities
 
 
-def infer(waveform: torch.Tensor, threshold: float = CONFIDENCE_THRESHOLD,
+def _resolve_threshold(threshold, entries, ensemble: bool) -> float:
+    """Explicit argument > threshold tuned on validation (stored in the checkpoint) > config."""
+    if threshold is not None:
+        return float(threshold)
+    if ensemble:
+        tuned = [e.get("ensemble_threshold") for e in entries]
+        if tuned and all(t is not None for t in tuned):
+            return float(sum(tuned) / len(tuned))
+        tuned = [e.get("threshold") for e in entries]
+        if tuned and all(t is not None for t in tuned):
+            return float(sum(tuned) / len(tuned))
+    else:
+        if entries[0].get("threshold") is not None:
+            return float(entries[0]["threshold"])
+    return CONFIDENCE_THRESHOLD
+
+
+def infer(waveform: torch.Tensor, threshold: float | None = None,
           model_type: str = MODEL_TYPE):
     """Core single-model inference on a raw waveform (shared by all entry points).
 
     Returns (result, probabilities). `model_type` selects "lstm" or "cnn".
+    `threshold=None` uses the model's validation-tuned threshold if it has one.
     """
     entry = _load(model_type)
     clean = preprocess_waveform(waveform)               # normalize/trim/pad
     probs = _probs(clean, entry)
-    return _result_from_probs(probs, entry["labels"], threshold)
+    return _result_from_probs(probs, entry["labels"], _resolve_threshold(threshold, [entry], False))
 
 
-def infer_ensemble(waveform: torch.Tensor, threshold: float = CONFIDENCE_THRESHOLD,
+def infer_ensemble(waveform: torch.Tensor, threshold: float | None = None,
                    model_types=("lstm", "cnn")):
     """Ensemble inference: average the probabilities of several models.
 
@@ -123,26 +145,31 @@ def infer_ensemble(waveform: torch.Tensor, threshold: float = CONFIDENCE_THRESHO
     one alone. We preprocess the audio ONCE, then extract each model's own feature
     from that same clean clip.
 
+    When every model has a trained 'unknown' class, its probability is averaged
+    too, so the ensemble can answer "unknown" directly (previously only the 10
+    digit outputs were averaged and the reject class was thrown away).
+
     Returns (result, probabilities) in the same format as infer().
     """
     entries = [_load(mt) for mt in model_types]
     clean = preprocess_waveform(waveform)
+    out_labels = list(DIGIT_LABELS)
+    if all("unknown" in e["labels"] for e in entries):
+        out_labels.append("unknown")
     probs_sum = None
     for entry in entries:
         p = _probs(clean, entry)
-        # Older checkpoints may include an extra "unknown" output while newer
-        # digit-only checkpoints have 10 outputs. Average by label name so mixed
-        # checkpoints still ensemble safely.
-        aligned = torch.zeros((1, len(DIGIT_LABELS)), dtype=p.dtype, device=p.device)
+        # Average by label NAME, so 10-class and 11-class checkpoints still combine safely.
+        aligned = torch.zeros((1, len(out_labels)), dtype=p.dtype, device=p.device)
         for src_idx, label in enumerate(entry["labels"]):
-            if label in DIGIT_LABELS:
-                aligned[0, DIGIT_LABELS.index(label)] = p[0, src_idx]
+            if label in out_labels:
+                aligned[0, out_labels.index(label)] = p[0, src_idx]
         probs_sum = aligned if probs_sum is None else probs_sum + aligned
     probs = probs_sum / len(entries)                    # simple average
-    return _result_from_probs(probs, DIGIT_LABELS, threshold)
+    return _result_from_probs(probs, out_labels, _resolve_threshold(threshold, entries, True))
 
 
-def predict_waveform(waveform: torch.Tensor, threshold: float = CONFIDENCE_THRESHOLD) -> dict:
+def predict_waveform(waveform: torch.Tensor, threshold: float | None = None) -> dict:
     """Predict a digit from a raw (un-preprocessed) waveform tensor.
 
     Use this for live laser/stream input. Returns the JSON-style dict.
@@ -151,7 +178,7 @@ def predict_waveform(waveform: torch.Tensor, threshold: float = CONFIDENCE_THRES
     return result
 
 
-def predict_file(path: str | Path, threshold: float = CONFIDENCE_THRESHOLD,
+def predict_file(path: str | Path, threshold: float | None = None,
                  model: str = MODEL_TYPE) -> dict:
     """Predict a digit from a WAV file path. Returns the JSON-style dict.
 

@@ -34,6 +34,7 @@ cp "$PROJECT_ROOT"/src/*.py "$STAGE"/
 cp "$PROJECT_ROOT"/scripts/download_speech_commands.py "$STAGE"/
 # Cross-validation driver used by MODE=cv in the notebook.
 cp "$PROJECT_ROOT"/scripts/cross_validate.py "$STAGE"/
+cp "$PROJECT_ROOT"/scripts/compare_cv.py "$STAGE"/
 
 # Dataset metadata Kaggle requires.
 cat > "$STAGE/dataset-metadata.json" <<JSON

@@ -49,6 +49,24 @@ from torch.utils.data import DataLoader, Subset  # noqa: E402
 TEST_INDICES_PATH = model_checkpoint("lstm").parent / "test_indices.json"
 
 
+USE_TEST = False  # set by --on-test; the default is the VALIDATION split
+
+
+def _eval_indices():
+    """Validation indices by default. Picking a threshold on the TEST set would tune on
+    the data that is supposed to give the final, unbiased score -- use --on-test only
+    to report the already-chosen threshold at the very end."""
+    data = load_json(TEST_INDICES_PATH)
+    if USE_TEST:
+        print("NOTE: using the TEST split (--on-test) -- report only, do not pick a threshold from this.")
+        return data["test_indices"]
+    if "val_indices" not in data:
+        raise SystemExit("This model's split file has no validation indices (trained before they were "
+                         "saved). Retrain, or pass --on-test to look at the test split for reporting only.")
+    print("Using the VALIDATION split.")
+    return data["val_indices"]
+
+
 def _conf_correct_single(model_type):
     """Return (confidence, correct) arrays over the test split for one model."""
     checkpoint = torch.load(model_checkpoint(model_type), map_location=DEVICE)
@@ -59,7 +77,7 @@ def _conf_correct_single(model_type):
     # otherwise the saved test indices point at the wrong files (same fix as evaluate.py).
     dataset = SpokenDigitDataset(feature=feature,
                                  include_unknown="unknown" in checkpoint.get("labels", []))
-    indices = load_json(TEST_INDICES_PATH)["test_indices"]
+    indices = _eval_indices()
     loader = DataLoader(Subset(dataset, indices), batch_size=BATCH_SIZE,
                         shuffle=False, num_workers=NUM_WORKERS)
 
@@ -84,7 +102,7 @@ def _conf_correct_ensemble():
     lstm_ckpt = torch.load(model_checkpoint("lstm"), map_location="cpu")
     dataset = SpokenDigitDataset(cache_in_memory=False,
                                  include_unknown="unknown" in lstm_ckpt.get("labels", []))
-    indices = load_json(TEST_INDICES_PATH)["test_indices"]
+    indices = _eval_indices()
     label_index = {label: i for i, label in enumerate(DIGIT_LABELS)}
 
     confs, correct = [], []
@@ -166,7 +184,10 @@ def main(model_type):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Calibrate the confidence threshold.")
+    parser.add_argument("--on-test", action="store_true",
+                        help="use the test split instead of validation (final reporting only)")
     parser.add_argument("--model", choices=["lstm", "cnn", "ensemble"],
                         default=MODEL_TYPE)
     args = parser.parse_args()
+    USE_TEST = args.on_test
     main(args.model)

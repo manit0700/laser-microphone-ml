@@ -218,7 +218,7 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
          specaugment: bool | None = None, scheduler: str | None = None,
          noise_min_snr: float | None = None, split: str | None = None,
          deltas: bool | None = None, label_smoothing: float | None = None,
-         calibrate: bool = True) -> dict:
+         calibrate: bool = True, tune_thresh: bool = True) -> dict:
     set_seed(SEED)
     ensure_dirs()
 
@@ -365,23 +365,39 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
                   f"(best {best_val_loss:.4f} at epoch {best_epoch}).")
             break
 
-    # --- Confidence calibration (temperature scaling on the validation set) ---
+    # --- Confidence calibration + 'unknown' threshold (VALIDATION data only) ---
     temperature, ece_before, ece_after = 1.0, float("nan"), float("nan")
-    if calibrate and best_epoch > 0:
-        from calibration import calibrate_model
+    threshold, thr_metrics, thr_default = None, {}, {}
+    if best_epoch > 0:
+        import torch.nn.functional as _F
+        from calibration import calibrate_model, collect_logits, tune_threshold
         from model import model_from_checkpoint
         ckpt = torch.load(checkpoint_path, map_location=DEVICE)
         best_model = model_from_checkpoint(ckpt).to(DEVICE)
-        temperature, ece_before, ece_after = calibrate_model(best_model, val_loader, DEVICE)
-        ckpt["temperature"] = temperature
-        ckpt["val_ece_before"], ckpt["val_ece_after"] = ece_before, ece_after
+        if calibrate:
+            temperature, ece_before, ece_after = calibrate_model(best_model, val_loader, DEVICE)
+            ckpt["temperature"] = temperature
+            ckpt["val_ece_before"], ckpt["val_ece_after"] = ece_before, ece_after
+            print(f"Calibration: temperature {temperature:.3f} | validation ECE "
+                  f"{ece_before:.4f} -> {ece_after:.4f} (0 = confidence matches accuracy)")
+        if tune_thresh and "unknown" in labels:
+            v_logits, v_labels = collect_logits(best_model, val_loader, DEVICE)
+            v_probs = _F.softmax(v_logits / temperature, dim=1)
+            threshold, thr_metrics, thr_default = tune_threshold(
+                v_probs, v_labels, labels.index("unknown"))
+            ckpt["threshold"] = threshold
+            ckpt["val_threshold_metrics"] = thr_metrics
+            print(f"Unknown threshold (tuned on validation): 0.60 -> {threshold:.2f} | balanced acc "
+                  f"{thr_default['balanced_acc']:.4f} -> {thr_metrics['balanced_acc']:.4f} | digits "
+                  f"{thr_metrics['digit_acc']:.4f}, unknown rejected {thr_metrics['unknown_rejection']:.4f}")
         torch.save(ckpt, checkpoint_path)
-        print(f"Calibration: temperature {temperature:.3f} | validation ECE "
-              f"{ece_before:.4f} -> {ece_after:.4f} (0 = confidence matches accuracy)")
 
     # Persist history and the test indices for evaluate.py.
     save_json(history, TRAINING_HISTORY_PATH)
-    save_json({"test_indices": list(test_ds.indices)}, TEST_INDICES_PATH)
+    # Validation indices are saved too, so threshold tools tune on VALIDATION data
+    # and the test set is only ever used for the final score.
+    save_json({"test_indices": list(test_ds.indices), "val_indices": list(val_ds.indices)},
+              TEST_INDICES_PATH)
 
     # --- Overfitting check ---------------------------------------------------
     fit = diagnose_fit(history, best_epoch, augment)
@@ -391,6 +407,10 @@ def main(model_type: str = MODEL_TYPE, augment: bool = False, unknown: bool = Fa
            "feature": feature, "label_smoothing": label_smoothing,
            "temperature": round(temperature, 4), "val_ece_before": round(ece_before, 4),
            "val_ece_after": round(ece_after, 4),
+           "threshold": threshold,
+           "val_balanced_acc": round(thr_metrics.get("balanced_acc", float("nan")), 4),
+           "val_digit_acc_thr": round(thr_metrics.get("digit_acc", float("nan")), 4),
+           "val_unknown_rejection_thr": round(thr_metrics.get("unknown_rejection", float("nan")), 4),
            "n_samples": len(dataset), "n_train": len(train_ds), "n_val": len(val_ds),
            "n_test": len(test_ds), **fit}
     from config import PLOTS_DIR, REPORTS_DIR
@@ -457,10 +477,12 @@ if __name__ == "__main__":
                         help="label smoothing for the loss (default 0; try 0.1)")
     parser.add_argument("--no-calibrate", action="store_true",
                         help="skip temperature scaling on the validation set after training")
+    parser.add_argument("--no-tune-threshold", action="store_true",
+                        help="keep the fixed 0.60 'unknown' threshold instead of tuning it on validation")
     args = parser.parse_args()
     main(model_type=args.model, augment=args.augment, unknown=args.unknown,
          dropout=args.dropout, patience=args.patience, epochs=args.epochs,
          specaugment=True if args.specaugment else None, scheduler=args.scheduler,
          noise_min_snr=args.noise_min_snr, split=args.split,
          deltas=True if args.deltas else None, label_smoothing=args.label_smoothing,
-         calibrate=not args.no_calibrate)
+         calibrate=not args.no_calibrate, tune_thresh=not args.no_tune_threshold)

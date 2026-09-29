@@ -102,6 +102,9 @@ def format_prediction(
         {"prediction": "unknown", "confidence": 0.42, "status": "low_confidence"}
     """
     confidence = float(confidence)
+    if label == UNKNOWN_LABEL:
+        # The trained 'unknown' class itself won: a confident rejection.
+        return {"prediction": UNKNOWN_LABEL, "confidence": round(confidence, 4), "status": "rejected"}
     if confidence < threshold:
         return {
             "prediction": UNKNOWN_LABEL,

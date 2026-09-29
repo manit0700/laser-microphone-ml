@@ -84,7 +84,12 @@ PREDICT_EVERY_SEC = 0.30
 # number STABLE we only "commit" a digit once the SAME label repeats on
 # STABLE_HITS consecutive windows at >= STABLE_CONF confidence, and then hold it
 # until a different digit is confirmed the same way.
-STABLE_CONF = 0.60          # a window must be at least this confident to count
+# Extra confidence floor for the live display, ON TOP of the model's own 'unknown'
+# threshold. 0 = just use the model's threshold (tuned on validation data after
+# training, or config.CONFIDENCE_THRESHOLD=0.60 for older models) -- a separate
+# hard-coded 0.60 here would silently undo a tuned threshold. LMML_STABLE_CONF=0.7
+# makes the live readout stricter than the model if you ever need that.
+STABLE_CONF = float(os.environ.get("LMML_STABLE_CONF", 0.0))
 STABLE_HITS = 1             # demo mode: show a recognized digit immediately
 # How many samples the oscilloscope trace shows (a short, recent slice).
 SCOPE_SECONDS = 0.4
@@ -519,7 +524,7 @@ class SignalBackend:
                           hardware, or play back a real laser capture in Sprint 4)
     """
 
-    def __init__(self, threshold: float = CONFIDENCE_THRESHOLD, model: str = "lstm",
+    def __init__(self, threshold: float | None = None, model: str = "lstm",
                  source: str = "mic", autosave: bool = True):
         self.sample_rate = SAMPLE_RATE
         self.threshold = threshold
@@ -748,7 +753,7 @@ class _LiveClassifier:
     thread, typically a GUI timer tick.
     """
 
-    def __init__(self, model: str = "ensemble", threshold: float = CONFIDENCE_THRESHOLD,
+    def __init__(self, model: str = "ensemble", threshold: float | None = None,
                  silence_rms: float = DAQ_SILENCE_RMS, enhance: bool | None = None,
                  autosave: bool = True, source_label: str = "live"):
         # Default is the DAQ threshold, not the mic one: this class exists so a

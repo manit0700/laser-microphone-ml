@@ -74,3 +74,51 @@ def calibrate_model(model, loader, device):
         # Don't make things worse: keep the raw softmax.
         return 1.0, before, before
     return t, before, after
+
+
+# ---------------------------------------------------------------------------
+# "Unknown" threshold tuning (on VALIDATION data only -- never the test set)
+# ---------------------------------------------------------------------------
+# The final decision is: answer = top class, but "unknown" if confidence < threshold.
+# The old fixed 0.60 was a guess. Label smoothing deliberately lowers confidence
+# (targets 0.9 instead of 1.0), so a fixed cutoff starts rejecting real digits.
+# Instead we pick the threshold that maximises BALANCED accuracy on the validation
+# set: the average of per-class recall over all 11 classes, so rejecting non-digits
+# counts as much as recognising each digit (plain accuracy would favour digits,
+# which outnumber 'unknown' clips 14:1).
+
+def apply_threshold(probs: torch.Tensor, threshold: float, unknown_idx: int) -> torch.Tensor:
+    conf, pred = probs.max(dim=1)
+    pred = pred.clone()
+    pred[conf < threshold] = unknown_idx
+    return pred
+
+
+def decision_metrics(pred: torch.Tensor, labels: torch.Tensor, unknown_idx: int) -> dict:
+    classes = labels.unique().tolist()
+    recalls = [float((pred[labels == c] == c).float().mean()) for c in classes]
+    is_unk = labels == unknown_idx
+    return {
+        "balanced_acc": sum(recalls) / len(recalls),
+        "overall_acc": float((pred == labels).float().mean()),
+        "digit_acc": float((pred[~is_unk] == labels[~is_unk]).float().mean()) if (~is_unk).any() else float("nan"),
+        "digit_rejected": float((pred[~is_unk] == unknown_idx).float().mean()) if (~is_unk).any() else float("nan"),
+        "unknown_rejection": float((pred[is_unk] == unknown_idx).float().mean()) if is_unk.any() else float("nan"),
+    }
+
+
+def tune_threshold(probs: torch.Tensor, labels: torch.Tensor, unknown_idx: int,
+                   lo: float = 0.20, hi: float = 0.95, step: float = 0.01):
+    """Best 'unknown' threshold on validation data. Returns (threshold, metrics, metrics_at_0.60).
+
+    Among thresholds within 0.2 points of the best balanced accuracy, the middle one
+    is chosen, so the result doesn't jump around on a flat curve.
+    """
+    grid = [round(lo + i * step, 4) for i in range(int(round((hi - lo) / step)) + 1)]
+    scores = [(t, decision_metrics(apply_threshold(probs, t, unknown_idx), labels, unknown_idx)) for t in grid]
+    best = max(m["balanced_acc"] for _, m in scores)
+    near = [t for t, m in scores if m["balanced_acc"] >= best - 0.002]
+    t_best = near[len(near) // 2]
+    m_best = dict(scores)[t_best]
+    m_default = decision_metrics(apply_threshold(probs, 0.60, unknown_idx), labels, unknown_idx)
+    return t_best, m_best, m_default
