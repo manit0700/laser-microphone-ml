@@ -15,13 +15,13 @@ all test numbers are on **speakers never seen in training**.
 | Item | State |
 |---|---|
 | Best honest result (CNN, unseen speakers) | **93.8 % overall · 95.2 % digits · 80.8 % unknown rejected** (Exp 4, "improved") |
-| Running now | Exp 5 — 8 kHz vs 16 kHz, 5-fold speaker-grouped CV |
+| Report-grade result (5-fold CV, CNN, 8 kHz) | **92.4 % ± 0.5 overall · 93.6 % ± 0.4 digits · 76.2 % ± 3.2 unknown rejected** (Exp 5) |
 | Laser hardware | Receiver + wiring fixed; laser channel does **not** yet pick up speech (hum-dominated). No real laser training data yet. |
 | Training data | Public microphone datasets only (Speech Commands, FSDD) + team PCM1808 recordings. **No laser recordings.** |
 
 ---
 
-## Exp 5 — Sample rate: 8 kHz vs 16 kHz (running)
+## Exp 5 — Sample rate: 8 kHz vs 16 kHz (5-fold CV)
 
 **Question.** Everything was resampled to 8 kHz, which discards all content above
 4 kHz. Does keeping 16 kHz improve recognition — especially "six", which the
@@ -51,7 +51,35 @@ KAGGLE_ACCELERATOR=NvidiaTeslaT4 KAGGLE_MODE=cvcompare KAGGLE_MODEL=cnn KAGGLE_C
   KAGGLE_FOLDS=5 KAGGLE_DROPOUT=0.4 KAGGLE_EPOCHS=40 KAGGLE_PATIENCE=6 bash scripts/kaggle_push_kernel.sh
 ```
 
-**Results.** _pending_
+**Results** (5 folds, 44.8 K clips, 793 duplicates removed; each test fold ≈ 8,800
+clips from ~500 unseen speakers; "unknown" threshold tuned on validation):
+
+| Test metric (mean ± std over 5 folds) | 8 kHz | 16 kHz |
+|---|---|---|
+| Balanced accuracy (11 classes) | 92.00 % ± 0.63 | 92.35 % ± 0.89 |
+| Overall accuracy | 92.42 % ± 0.54 | 92.77 % ± 0.65 |
+| Digits correct | 93.58 % ± 0.42 | 93.96 % ± 0.70 |
+| Digits wrongly rejected | 1.31 % ± 0.15 | 1.38 % ± 0.20 |
+| Unknown rejected | 76.22 % ± 3.24 | 76.29 % ± 2.99 |
+| Validation balanced acc (used for selection) | **92.06 %** | 91.92 % |
+| Epochs run per fold | 40, 37, 29, 32, 40 | 40, 40, 40, 40, 40 |
+| Tuned threshold / temperature | 0.30–0.31 / ≈0.49 | 0.31–0.33 / ≈0.50 |
+
+Paired difference (16 kHz − 8 kHz, same folds): **+0.35 % ± 0.75 %**, 16 kHz better
+on 3 of 5 folds. Selected on validation (before testing): **8 kHz**.
+
+**Conclusions.**
+- **No meaningful difference.** The gap (+0.35 pts) is smaller than the fold-to-fold
+  spread; validation slightly preferred 8 kHz, test slightly preferred 16 kHz.
+  Keep **8 kHz** (the pre-registered choice; cheaper; the laser's usable bandwidth
+  is likely below 4 kHz anyway).
+- Caveat: every 16 kHz fold hit the 40-epoch cap (8 kHz mostly early-stopped), so
+  16 kHz may still have been improving. Worth one longer run only if needed.
+- The tuned "unknown" threshold landed at ~0.30, confirming a fixed 0.60 would
+  reject too many real digits under label smoothing.
+- Unknown rejection (~76 %) is the weakest number → more/realistic "unknown"
+  data (hardware recordings) is the next lever, not sample rate.
+- Per-class ("six") breakdown was not saved by this run's test phase.
 
 ---
 
