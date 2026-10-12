@@ -755,7 +755,8 @@ class _LiveClassifier:
 
     def __init__(self, model: str = "ensemble", threshold: float | None = None,
                  silence_rms: float = DAQ_SILENCE_RMS, enhance: bool | None = None,
-                 autosave: bool = True, source_label: str = "live"):
+                 autosave: bool = True, source_label: str = "live",
+                 bandpass: tuple | None = None):
         # Default is the DAQ threshold, not the mic one: this class exists so a
         # caller with its own hardware audio stream (PCM1808) gets real
         # predictions, and that hardware's noise floor is much higher than a
@@ -766,6 +767,14 @@ class _LiveClassifier:
         self.enhance = ENABLE_ENHANCE if enhance is None else enhance
         self.autosave = autosave
         self.source_label = source_label
+        # Optional (low_hz, high_hz) speech band-pass applied BEFORE the silence
+        # gate and the model. The laser channel needs it: its raw signal is
+        # dominated by 60 Hz mains hum (raw RMS ~0.3, speech-band RMS ~0.013 when
+        # quiet, ~0.03 when speaking -- measured 2026-10-12), so a raw-RMS gate is
+        # always open and the model mostly sees hum.
+        self.bandpass = tuple(bandpass) if bandpass else None
+        self._sos = None
+        self._sos_rate = None
 
         self.rate = SAMPLE_RATE
         self._buf = np.zeros(0, dtype=np.float32)
@@ -798,6 +807,19 @@ class _LiveClassifier:
         chunk = np.asarray(samples, dtype=np.float32)
         self._buf = np.concatenate([self._buf, chunk])[-self._max_len:]
 
+    def _filter(self, x: np.ndarray) -> np.ndarray:
+        """Zero-phase speech band-pass (only when self.bandpass is set)."""
+        if not self.bandpass or x.size < 64:
+            return x
+        if self._sos is None or self._sos_rate != self.rate:
+            from scipy.signal import butter
+            low, high = self.bandpass
+            high = min(float(high), self.rate / 2 * 0.95)
+            self._sos = butter(4, [float(low), high], btype="band", fs=self.rate, output="sos")
+            self._sos_rate = self.rate
+        from scipy.signal import sosfiltfilt
+        return sosfiltfilt(self._sos, x).astype(np.float32)
+
     def reset(self) -> None:
         """Clear the rolling buffer and held result -- call when (re)starting."""
         self._buf = np.zeros(0, dtype=np.float32)
@@ -816,9 +838,10 @@ class _LiveClassifier:
             return self._committed
         self._last_predict_t = now
 
-        buf = self._buf[-int(PREDICT_WINDOW_SEC * self.rate):]
-        if buf.size < int(0.2 * self.rate):
+        raw = self._buf[-int(PREDICT_WINDOW_SEC * self.rate):]
+        if raw.size < int(0.2 * self.rate):
             return None
+        buf = self._filter(raw)          # no-op unless a band-pass was requested
 
         rms = float(np.sqrt(np.mean(buf ** 2))) if buf.size else 0.0
         if rms < self.silence_rms:
@@ -856,7 +879,7 @@ class _LiveClassifier:
                 if self.autosave:
                     try:
                         from utils import log_prediction
-                        log_prediction(result, samples=buf, sample_rate=self.rate,
+                        log_prediction(result, samples=raw, sample_rate=self.rate,
                                        source=self.source_label)
                     except Exception:  # noqa: BLE001
                         pass

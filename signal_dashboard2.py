@@ -570,17 +570,27 @@ class MainWindow(QtWidgets.QMainWindow):
                 # receiver), so each has its own silence gate. Measure each with
                 # scripts/test_daq_signal.py, then override if the default is off:
                 #   LMML_STD_SILENCE_RMS=0.02 LMML_LASER_SILENCE_RMS=0.005 python signal_dashboard2.py
+                # The laser channel is hum-dominated, so by default it is band-passed
+                # (200-3800 Hz) BEFORE its silence gate and the model, and its gate is
+                # measured on that filtered signal (quiet ~0.013, speech ~0.03).
+                # LMML_LASER_BANDPASS=off restores the old raw behaviour.
+                bp_env = os.environ.get("LMML_LASER_BANDPASS", "200,3800").strip().lower()
+                laser_bp = None if bp_env in ("", "0", "off", "none", "no") else \
+                    tuple(float(v) for v in bp_env.split(","))
                 std_gate = float(os.environ.get("LMML_STD_SILENCE_RMS", DAQ_SILENCE_RMS))
-                laser_gate = float(os.environ.get("LMML_LASER_SILENCE_RMS", DAQ_SILENCE_RMS))
+                laser_gate = float(os.environ.get("LMML_LASER_SILENCE_RMS",
+                                                  0.02 if laser_bp else DAQ_SILENCE_RMS))
                 self.std_classifier = _LiveClassifier(
                     model="ensemble", source_label="std-mic", silence_rms=std_gate)
                 self.laser_classifier = _LiveClassifier(
-                    model="ensemble", source_label="laser-mic", silence_rms=laser_gate)
+                    model="ensemble", source_label="laser-mic", silence_rms=laser_gate,
+                    bandpass=laser_bp)
                 if not self.std_classifier.model_available:
                     print(f"[dashboard] model unavailable: {self.std_classifier.model_error}")
                 else:
                     print("[dashboard] live classifiers ready (std + laser, real PCM1808 audio) | "
-                          f"silence gates: std {std_gate}, laser {laser_gate}")
+                          f"silence gates: std {std_gate}, laser {laser_gate}"
+                          f" | laser band-pass: {laser_bp or 'off'}")
             except Exception as e:  # noqa: BLE001
                 print(f"[dashboard] live classifier init failed, using demo predictions: {e}")
                 self.std_classifier = None
