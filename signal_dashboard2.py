@@ -582,15 +582,20 @@ class MainWindow(QtWidgets.QMainWindow):
                                                   0.02 if laser_bp else DAQ_SILENCE_RMS))
                 self.std_classifier = _LiveClassifier(
                     model="ensemble", source_label="std-mic", silence_rms=std_gate)
+                # Laser channel defaults to the CNN alone: it is the model that was
+                # fine-tuned on simulated laser audio (scripts/physics_laser_sim.py +
+                # finetune.py --model cnn); the LSTM in the ensemble never saw laser
+                # audio. LMML_LASER_MODEL=ensemble|lstm|cnn overrides.
+                laser_model = os.environ.get("LMML_LASER_MODEL", "cnn").strip().lower()
                 self.laser_classifier = _LiveClassifier(
-                    model="ensemble", source_label="laser-mic", silence_rms=laser_gate,
+                    model=laser_model, source_label="laser-mic", silence_rms=laser_gate,
                     bandpass=laser_bp)
                 if not self.std_classifier.model_available:
                     print(f"[dashboard] model unavailable: {self.std_classifier.model_error}")
                 else:
                     print("[dashboard] live classifiers ready (std + laser, real PCM1808 audio) | "
                           f"silence gates: std {std_gate}, laser {laser_gate}"
-                          f" | laser band-pass: {laser_bp or 'off'}")
+                          f" | laser band-pass: {laser_bp or 'off'} | laser model: {laser_model}")
             except Exception as e:  # noqa: BLE001
                 print(f"[dashboard] live classifier init failed, using demo predictions: {e}")
                 self.std_classifier = None
