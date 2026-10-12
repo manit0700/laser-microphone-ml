@@ -134,6 +134,7 @@ class _Player:
         self.channels = 2 if info.get("maxOutputChannels", 1) >= 2 else 1
         self.stream = self.pa.open(format=pyaudio.paFloat32, channels=self.channels,
                                    rate=self.rate, output=True, output_device_index=self.index)
+        self._use_aplay = os.environ.get("LMML_USE_APLAY") == "1"
 
     def play(self, samples: np.ndarray, rate: int, volume: float):
         x = samples.astype(np.float32)
@@ -145,12 +146,43 @@ class _Player:
             x = x / peak * volume
         if self.channels == 2:
             x = np.repeat(x[:, None], 2, axis=1).reshape(-1)
-        self.stream.write(x.astype(np.float32).tobytes())
+        if not self._use_aplay:
+            try:
+                self.stream.write(x.astype(np.float32).tobytes())
+                return
+            except SystemError as e:
+                # Ubuntu's apt PyAudio (0.2.11) is broken on Python 3.10+ for output:
+                # "PY_SSIZE_T_CLEAN macro must be defined for '#' formats".
+                # Fall back to ALSA's aplay so collection still works.
+                print(f"NOTE: PyAudio playback failed ({e}); switching to aplay.")
+                self._use_aplay = True
+                self._close_stream()
+        self._play_aplay(x)
+
+    def _play_aplay(self, x: np.ndarray):
+        import subprocess
+        import tempfile
+        data = x.reshape(-1, self.channels) if self.channels == 2 else x
+        with tempfile.NamedTemporaryFile(suffix=".wav") as f:
+            sf.write(f.name, data, self.rate, subtype="PCM_16")
+            cmd = ["aplay", "-q"]
+            dev = os.environ.get("LMML_APLAY_DEVICE")  # e.g. plughw:1,0 (see `aplay -L`)
+            if dev:
+                cmd += ["-D", dev]
+            subprocess.run(cmd + [f.name], check=True)
+
+    def _close_stream(self):
+        if self.stream is not None:
+            try:
+                self.stream.stop_stream()
+                self.stream.close()
+            except Exception:  # noqa: BLE001
+                pass
+            self.stream = None
 
     def close(self):
         try:
-            self.stream.stop_stream()
-            self.stream.close()
+            self._close_stream()
         finally:
             self.pa.terminate()
 
