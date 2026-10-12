@@ -16,8 +16,64 @@ all test numbers are on **speakers never seen in training**.
 |---|---|
 | Best honest result (CNN, unseen speakers) | **93.8 % overall · 95.2 % digits · 80.8 % unknown rejected** (Exp 4, "improved") |
 | Report-grade result (5-fold CV, CNN, 8 kHz) | **92.4 % ± 0.5 overall · 93.6 % ± 0.4 digits · 76.2 % ± 3.2 unknown rejected** (Exp 5) |
-| Laser hardware | Receiver + wiring fixed; laser channel does **not** yet pick up speech (hum-dominated). No real laser training data yet. |
-| Training data | Public microphone datasets only (Speech Commands, FSDD) + team PCM1808 recordings. **No laser recordings.** |
+| Laser hardware | Laser **does** pick up loud speech, but only ~2× above its noise after a 200–4000 Hz band-pass (raw signal is ~96 % 60 Hz hum). Live laser recognition works on some loud digits, not reliably (Exp 6). |
+| Training data | Public microphone datasets (Speech Commands, FSDD) + team PCM1808 recordings + 3,500 **simulated** laser clips. **No real laser recordings yet.** |
+
+---
+
+## Exp 6 — First laser session on the Jetson + simulated-laser fine-tune (Oct 12)
+
+**1. Simulated laser audio (cloud, newest Kaggle CNN, 8 kHz fold 0, 1,100 clips from unseen speakers).**
+Each test clip was passed through `physics_laser_sim.py` (surface resonance, knife-edge
+optics, shot/electronic noise, 60/120 Hz hum, AC coupling, ADC clipping), then the model
+was fine-tuned on simulated clips from **training speakers only** (+ clean replay).
+
+| Model | Mic audio: digits / unknown rejected | Simulated laser: digits / unknown rejected |
+|---|---|---|
+| Base CNN (never saw laser audio) | 94.0 % / 74 % | **63.8 %** / 52 % |
+| Fine-tuned on simulated laser | 92.5 % / 84 % | **75.9 %** / 70 % |
+
+By simulated laser quality (digits, base → fine-tuned): good SNR > 20 dB 67 → 79 %,
+medium 10–20 dB 65 → 78 %, poor < 10 dB 62 → 72 %. ±3 % at this sample size.
+
+**2. Same fine-tune on the Jetson** (`physics_laser_sim.py --per-digit 300 --unknown 500`,
+then `finetune.py --speakers physlaser --model cnn`): held-out simulated laser clips
+68.6 % → 77.0 % (10 epochs, still improving), base-data accuracy 98.0 → 97.7 %
+(that check includes training voices, so it only shows nothing was forgotten).
+Saved with 15 epochs on the Nano; the previous model is in `models/backups/`.
+**Not pushed to `main`** — it is an experiment until it is checked on real laser audio.
+
+**3. Real laser channel measurements (PCM1808, 44.1 kHz, `test_daq_signal.py` + a band-limited version).**
+
+| Channel | Raw RMS quiet | 200–4000 Hz RMS quiet | 200–4000 Hz RMS speaking |
+|---|---|---|---|
+| Standard mic | 0.0037 | 0.003 | 0.004–0.05 |
+| Laser | 0.25–0.43 | 0.012–0.015 | 0.021–0.031 (same moments as the mic) |
+
+- ~96 % of the laser signal is low-frequency hum. In the speech band the laser **does**
+  respond to speech (~2× its floor), and the jump is ~8× larger than the mic's, so it is
+  not electrical crosstalk.
+- The dashboard was gating and classifying the laser channel on the **raw** signal
+  (`ENABLE_FILTER = False`), so the 0.03 gate was always open and the model mostly saw hum.
+  **Fix (commit `b794ce9`):** the laser classifier band-passes 200–3800 Hz before the gate
+  and the model; gate 0.02 on the filtered signal (`LMML_LASER_BANDPASS`,
+  `LMML_LASER_SILENCE_RMS` override). Commit `13a9d1d`: the laser side uses the
+  sim-fine-tuned CNN instead of the ensemble (`LMML_LASER_MODEL`).
+- Result: better, but laser recognition is still unreliable — some digits wrong, some not
+  detected. At a speech-to-noise ratio of ~2 this is expected; the limit is signal quality,
+  not the model.
+
+**4. Speaker playback.** The first automated collection (`replay_record_laser.py`, 2,300
+clips) produced nothing usable: the Nano's default output is HDMI (no speaker), so both
+channels heard silence (mic SNR 1.0). The 231 clips it kept by chance were moved out of
+`data/raw`. The rig speaker is driven by the function generator, so automatic collection
+needs a USB/Bluetooth speaker on the Nano. Also fixed: Ubuntu's PyAudio playback crash on
+Python 3.10 (`replay_record_laser.py` falls back to `aplay`, commit `19ab92c`).
+
+**Conclusion.** The ML side is ready for laser audio; the hardware needs a higher
+speech-to-noise ratio (target ≥ 5: battery power, shared ground, lower receiver gain,
+beam on the photodiode edge). Next: record real team voices through the laser
+(`record_daq_wav.py --channel laser`) and fine-tune on those.
 
 ---
 
@@ -227,9 +283,11 @@ Jetson FP16/TensorRT numbers: `python3 scripts/export_jetson.py` on the Nano.
 
 ## Open items
 
-1. Laser: get speech onto the laser channel (edge alignment, lighter surface,
-   shared ground, battery power) — measure with `replay_record_laser.py --test`
-   (need laser SNR ≥ 2).
+1. Laser: raise the speech-band SNR from ~2 to ≥ 5 (battery power, shared ground,
+   lower receiver gain, beam on the photodiode edge). Measure with the band-limited
+   RMS check (Exp 6) or `replay_record_laser.py --test` (needs a speaker on the Nano).
+1b. Real team voices through the laser: `record_daq_wav.py --all --channel laser
+   --speaker laser<name> --takes 10`, then fine-tune with the same band-pass as the dashboard.
 2. Real laser data via `replay_record_laser.py`, then calibrate the physics
    simulator (`--calibrate-from laserplay`).
 3. Device test set: team PCM1808 recordings kept out of training (`data/device_test/`).
