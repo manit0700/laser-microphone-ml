@@ -72,9 +72,43 @@ def _is_speaker_clip(path: Path, speakers) -> bool:
     return len(parts) >= 2 and parts[1] in speakers
 
 
+class _LivePathDataset(SpokenDigitDataset):
+    """Loads each clip the way the dashboard's LASER channel sees live audio:
+    band-pass (e.g. 200-3800 Hz) -> enhance (denoise + auto-gain) -> preprocess.
+    Training on exactly what the model gets live removes the train/live mismatch."""
+
+    bandpass = None
+    enhance = False
+
+    def _load_one_waveform(self, path):
+        from preprocess import load_audio, preprocess_waveform
+        from config import SAMPLE_RATE
+        w = load_audio(path)
+        if self.bandpass:
+            import numpy as np
+            from scipy.signal import butter, sosfiltfilt
+            low, high = self.bandpass
+            high = min(float(high), SAMPLE_RATE / 2 * 0.95)
+            sos = butter(4, [float(low), high], btype="band", fs=SAMPLE_RATE, output="sos")
+            if w.numel() > 64:
+                w = torch.from_numpy(np.ascontiguousarray(sosfiltfilt(sos, w.numpy()), dtype=np.float32))
+        if self.enhance:
+            from enhance import enhance_waveform
+            w = enhance_waveform(w)
+        return preprocess_waveform(w)
+
+
+_LIVE_PATH = {"bandpass": None, "enhance": False}
+
+
 def _subset(template: SpokenDigitDataset, samples, augment: bool, feature: str):
     """A dataset with the same label mapping as `template` but only `samples`."""
-    ds = SpokenDigitDataset.__new__(SpokenDigitDataset)
+    if _LIVE_PATH["bandpass"] or _LIVE_PATH["enhance"]:
+        ds = _LivePathDataset.__new__(_LivePathDataset)
+        ds.bandpass = _LIVE_PATH["bandpass"]
+        ds.enhance = _LIVE_PATH["enhance"]
+    else:
+        ds = SpokenDigitDataset.__new__(SpokenDigitDataset)
     ds.data_dir = template.data_dir
     ds.include_unknown = template.include_unknown
     ds.feature = feature
@@ -96,9 +130,12 @@ def _counts(samples, label_to_index):
 
 
 def finetune_one(model_type: str, args, speakers) -> None:
-    ckpt_path = Path(model_checkpoint(model_type))
+    ckpt_path = Path(args.base) if args.base else Path(model_checkpoint(model_type))
+    out_path = Path(args.out) if args.out else ckpt_path
     print("\n" + "=" * 70)
-    print(f"  FINE-TUNE {model_type.upper()}   ({ckpt_path.name})")
+    print(f"  FINE-TUNE {model_type.upper()}   ({ckpt_path.name} -> {out_path.name})")
+    if _LIVE_PATH["bandpass"] or _LIVE_PATH["enhance"]:
+        print(f"  live laser path: band-pass {_LIVE_PATH['bandpass']} | enhance {_LIVE_PATH['enhance']}")
     print("=" * 70)
     if not ckpt_path.exists():
         print(f"  SKIP: no checkpoint at {ckpt_path}")
@@ -130,7 +167,9 @@ def finetune_one(model_type: str, args, speakers) -> None:
         print(f"  removed {before - len(full.samples)} duplicate clips")
 
     rng = random.Random(SEED)
-    new = [s for s in full.samples if _is_speaker_clip(s[0], speakers)]
+    new = [s for s in full.samples if _is_speaker_clip(s[0], speakers)
+           and (not args.only_tag or f"_{args.only_tag}_" in Path(s[0]).name)]
+    # Clips of these speakers WITHOUT the tag (e.g. their std-mic copies) are left out entirely.
     base = [s for s in full.samples if not _is_speaker_clip(s[0], speakers)]
     if len(new) < 10:
         print(f"  SKIP: only {len(new)} clips found for speakers {sorted(speakers)} in "
@@ -138,15 +177,21 @@ def finetune_one(model_type: str, args, speakers) -> None:
         return
 
     # Split YOUR clips 80/20 (stratified by label) so accuracy on them is honest.
-    by_label = {}
-    for s in new:
-        by_label.setdefault(s[1], []).append(s)
     new_train, new_val = [], []
-    for items in by_label.values():
-        rng.shuffle(items)
-        k = max(1, round(len(items) * 0.2)) if len(items) >= 3 else 0
-        new_val += items[:k]
-        new_train += items[k:]
+    if args.holdout_speaker:
+        # Honest check: every clip of one person is held out, the model never hears them.
+        new_val = [s for s in new if Path(s[0]).stem.split("_")[1] == args.holdout_speaker]
+        new_train = [s for s in new if Path(s[0]).stem.split("_")[1] != args.holdout_speaker]
+        print(f"  held-out speaker: {args.holdout_speaker} ({len(new_val)} clips, never trained on)")
+    else:
+        by_label = {}
+        for s in new:
+            by_label.setdefault(s[1], []).append(s)
+        for items in by_label.values():
+            rng.shuffle(items)
+            k = max(1, round(len(items) * 0.2)) if len(items) >= 3 else 0
+            new_val += items[:k]
+            new_train += items[k:]
 
     # Replay: a class-balanced sample of the base data, split into train/val.
     base_by_label = {}
@@ -217,10 +262,12 @@ def finetune_one(model_type: str, args, speakers) -> None:
         print("  --no-save: leaving the checkpoint unchanged.")
         return
 
-    backup_dir = Path(MODELS_DIR) / "backups"
-    backup_dir.mkdir(parents=True, exist_ok=True)
-    backup = backup_dir / f"{ckpt_path.stem}_before_finetune_{time.strftime('%Y%m%d_%H%M%S')}.pt"
-    shutil.copy2(ckpt_path, backup)
+    backup = None
+    if out_path.exists():
+        backup_dir = Path(MODELS_DIR) / "backups"
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        backup = backup_dir / f"{out_path.stem}_before_finetune_{time.strftime('%Y%m%d_%H%M%S')}.pt"
+        shutil.copy2(out_path, backup)
     ckpt = dict(ckpt)
     ckpt["model_state"] = best[3]
     # Re-fit the confidence temperature for the fine-tuned weights (calibration.py),
@@ -239,9 +286,11 @@ def finetune_one(model_type: str, args, speakers) -> None:
         print(f"  (calibration skipped: {type(e).__name__}: {e})")
     ckpt["finetuned_on"] = sorted(speakers)
     ckpt["finetune_epoch"] = best[2]
-    torch.save(ckpt, ckpt_path)
-    print(f"  Saved -> {ckpt_path}")
-    print(f"  Backup of the previous model -> {backup}")
+    ckpt["live_path"] = dict(_LIVE_PATH)
+    torch.save(ckpt, out_path)
+    print(f"  Saved -> {out_path}")
+    if backup:
+        print(f"  Backup of the previous model -> {backup}")
 
 
 def main() -> int:
@@ -263,7 +312,22 @@ def main() -> int:
                    help="max allowed drop in base-data accuracy for an epoch to be kept")
     p.add_argument("--data-dir", default=str(RAW_DATA_DIR))
     p.add_argument("--no-save", action="store_true", help="dry run: report accuracy, don't save")
+    p.add_argument("--only-tag", default=None,
+                   help="only files containing _<tag>_ count as your clips, e.g. laser")
+    p.add_argument("--holdout-speaker", default=None,
+                   help="hold out ALL clips of this speaker for the check (honest; needs 2+ speakers)")
+    p.add_argument("--bandpass", default=None,
+                   help="train on band-passed audio like the dashboard's laser channel, e.g. 200,3800")
+    p.add_argument("--enhance", action="store_true",
+                   help="also apply the live denoise + auto-gain (enhance.py) to training clips")
+    p.add_argument("--base", default=None, help="checkpoint to start from (default models/best_model_<model>.pt)")
+    p.add_argument("--out", default=None, help="where to save (default: overwrite the base checkpoint)")
     args = p.parse_args()
+    if args.bandpass:
+        _LIVE_PATH["bandpass"] = tuple(float(v) for v in args.bandpass.split(","))
+    _LIVE_PATH["enhance"] = bool(args.enhance)
+    if (args.base or args.out) and args.model == "both":
+        p.error("--base/--out need a single --model (cnn or lstm)")
 
     set_seed(SEED)
     speakers = {s.strip() for s in args.speakers.split(",") if s.strip()}

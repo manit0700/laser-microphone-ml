@@ -586,7 +586,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 # fine-tuned on simulated laser audio (scripts/physics_laser_sim.py +
                 # finetune.py --model cnn); the LSTM in the ensemble never saw laser
                 # audio. LMML_LASER_MODEL=ensemble|lstm|cnn overrides.
-                laser_model = os.environ.get("LMML_LASER_MODEL", "cnn").strip().lower()
+                # The laser channel uses its own CNN when models/best_model_cnn_laser.pt exists
+                # (fine-tuned on real laser recordings with the same band-pass + enhance as
+                # here: scripts/finetune.py --bandpass 200,3800 --enhance --out ...);
+                # otherwise the shared models/best_model_cnn.pt. LMML_LASER_MODEL overrides.
+                from config import model_checkpoint
+                _default_laser = "cnn_laser" if os.path.exists(model_checkpoint("cnn_laser")) else "cnn"
+                laser_model = os.environ.get("LMML_LASER_MODEL", _default_laser).strip().lower()
                 self.laser_classifier = _LiveClassifier(
                     model=laser_model, source_label="laser-mic", silence_rms=laser_gate,
                     bandpass=laser_bp)
