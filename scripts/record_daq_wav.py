@@ -58,6 +58,7 @@ Wrong device picked up? Same override as the rest of the DAQ tooling:
 
 import argparse
 import sys
+import os
 import time
 from pathlib import Path
 
@@ -85,6 +86,9 @@ def _rms(x: np.ndarray) -> float:
     return float(np.sqrt(np.mean(x ** 2))) if x.size else 0.0
 
 
+PRE_DELAY_S = float(os.environ.get("LMML_REC_PREDELAY", 0.7))
+
+
 def _save(raw: np.ndarray, rate: int, path: Path) -> None:
     """Resample a captured channel to the project SAMPLE_RATE and write the WAV."""
     save_capture(raw, rate, path)   # kept at >= 16 kHz (config.RECORD_SAMPLE_RATE)
@@ -93,6 +97,10 @@ def _save(raw: np.ndarray, rate: int, path: Path) -> None:
 def record_one(daq: _DAQSource, digit: str, speaker: str, channel: str, indices: dict,
                seconds: float, out_dir: Path):
     """Record one take from the already-open DAQ stream and save it."""
+    # The laser is a vibration sensor: the ENTER key press (and the hand leaving the
+    # keyboard) shakes the table and lands at the start of the take, louder than the
+    # voice. Wait a moment so that thump is OUTSIDE the recorded window.
+    time.sleep(PRE_DELAY_S)
     if digit == "unk":
         print(f"  >> Make the sound NOW ({seconds:.1f}s)")
     else:
@@ -132,7 +140,7 @@ def main():
                         help="speaker label used in the filename")
     parser.add_argument("--takes", type=int, default=3,
                         help="recordings per digit")
-    parser.add_argument("--seconds", type=float, default=1.5,
+    parser.add_argument("--seconds", type=float, default=2.0,
                         help="length of each recording (seconds)")
     parser.add_argument("--unknown", type=int, default=0, metavar="N",
                         help="record N NON-digit takes for the 'unknown' class (silence, room noise, "
