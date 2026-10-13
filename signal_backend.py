@@ -756,7 +756,7 @@ class _LiveClassifier:
     def __init__(self, model: str = "ensemble", threshold: float | None = None,
                  silence_rms: float = DAQ_SILENCE_RMS, enhance: bool | None = None,
                  autosave: bool = True, source_label: str = "live",
-                 bandpass: tuple | None = None):
+                 bandpass: tuple | None = None, word_mode: bool = False):
         # Default is the DAQ threshold, not the mic one: this class exists so a
         # caller with its own hardware audio stream (PCM1808) gets real
         # predictions, and that hardware's noise floor is much higher than a
@@ -775,6 +775,16 @@ class _LiveClassifier:
         self.bandpass = tuple(bandpass) if bandpass else None
         self._sos = None
         self._sos_rate = None
+        # End-of-word mode: instead of classifying a sliding window every 0.3 s and
+        # showing the first result (often half a word, or noise), wait until the
+        # word is OVER and classify it once, with the whole word in the window --
+        # the same shape as the training clips. One answer per spoken word.
+        self.word_mode = bool(word_mode)
+        self._in_word = False
+        self._word_start = 0.0
+        self._last_active = 0.0
+        self._t0 = None
+        self._n_pushed = 0
 
         self.rate = SAMPLE_RATE
         self._buf = np.zeros(0, dtype=np.float32)
@@ -806,6 +816,7 @@ class _LiveClassifier:
             self._max_len = int(BUFFER_SECONDS * self.rate)
         chunk = np.asarray(samples, dtype=np.float32)
         self._buf = np.concatenate([self._buf, chunk])[-self._max_len:]
+        self._n_pushed += len(chunk)
 
     def _filter(self, x: np.ndarray) -> np.ndarray:
         """Zero-phase speech band-pass (only when self.bandpass is set)."""
@@ -826,11 +837,77 @@ class _LiveClassifier:
         self._committed = None
         self._streak_label = None
         self._streak_count = 0
+        self._in_word = False
+        self._n_pushed = 0
+
+    # --- end-of-word mode -------------------------------------------------
+    WORD_FRAME_SEC = 0.15     # loudness is measured on the last 0.15 s
+    WORD_END_QUIET_SEC = 0.25 # this long below the gate = the word is over
+    WORD_MIN_SEC = 0.12       # shorter bursts are clicks/taps, ignored
+    WORD_MAX_SEC = 1.1        # classify anyway if "speech" lasts this long
+    WORD_PAD_SEC = 0.25       # context kept before/after the word
+
+    def _stream_time(self) -> float:
+        """Seconds of audio pushed so far (clock follows the audio, not the GUI)."""
+        return self._n_pushed / float(self.rate)
+
+    def _predict_word(self):
+        rate = self.rate
+        now = self._stream_time()
+        ctx = self._buf[-int(0.6 * rate):]
+        if ctx.size < int(0.4 * rate):
+            return self._committed
+        f = self._filter(ctx)
+        # loudness of the most recent frame, skipping the last 30 ms (filter edge)
+        seg = f[-int((self.WORD_FRAME_SEC + 0.03) * rate): -int(0.03 * rate)]
+        level = float(np.sqrt(np.mean(seg ** 2))) if seg.size else 0.0
+        active = level >= self.silence_rms
+        if active:
+            if not self._in_word:
+                self._in_word = True
+                self._word_start = now - self.WORD_FRAME_SEC
+            self._last_active = now
+        if not self._in_word:
+            return self._committed
+        quiet_for = now - self._last_active
+        length = self._last_active - self._word_start
+        if quiet_for < self.WORD_END_QUIET_SEC and length < self.WORD_MAX_SEC:
+            return self._committed                      # word still going
+        self._in_word = False
+        if length < self.WORD_MIN_SEC:
+            return self._committed                      # a click, not a word
+        span = min(now - self._word_start + self.WORD_PAD_SEC, BUFFER_SECONDS)
+        raw = self._buf[-int(max(span, 1.0) * rate):]
+        try:
+            waveform = load_waveform_from_array(self._filter(raw), rate)
+            if self.enhance:
+                waveform = enhance_waveform(waveform)
+            if self.model == "ensemble":
+                result, _ = predict_mod.infer_ensemble(waveform, threshold=self.threshold)
+            else:
+                result, _ = predict_mod.infer(waveform, threshold=self.threshold,
+                                              model_type=self.model)
+        except Exception as e:  # noqa: BLE001
+            print(f"[dashboard] prediction error ({self.source_label}): {type(e).__name__}: {e}")
+            return self._committed
+        if result["status"] == "recognized" and result["confidence"] >= STABLE_CONF:
+            self._committed = (result["prediction"], result["confidence"] * 100.0)
+            if self.autosave:
+                try:
+                    from utils import log_prediction
+                    log_prediction(result, samples=raw, sample_rate=rate, source=self.source_label)
+                except Exception:  # noqa: BLE001
+                    pass
+        else:
+            self._committed = ("Unknown", result["confidence"] * 100.0)
+        return self._committed
 
     def predict(self):
         """Same throttle/silence-gate/debounce contract as SignalBackend.predict()."""
         if not self.model_available:
             return None
+        if self.word_mode:
+            return self._predict_word()
 
         import time
         now = time.monotonic()

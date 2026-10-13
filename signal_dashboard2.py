@@ -593,15 +593,20 @@ class MainWindow(QtWidgets.QMainWindow):
                 from config import model_checkpoint
                 _default_laser = "cnn_laser" if os.path.exists(model_checkpoint("cnn_laser")) else "cnn"
                 laser_model = os.environ.get("LMML_LASER_MODEL", _default_laser).strip().lower()
+                # End-of-word mode (default on for the laser): one answer per spoken word,
+                # made after the word ends, on the whole word. LMML_LASER_WORD_MODE=0 = old
+                # sliding-window behaviour.
+                laser_word = os.environ.get("LMML_LASER_WORD_MODE", "1").strip() not in ("0", "off", "no")
                 self.laser_classifier = _LiveClassifier(
                     model=laser_model, source_label="laser-mic", silence_rms=laser_gate,
-                    bandpass=laser_bp)
+                    bandpass=laser_bp, word_mode=laser_word)
                 if not self.std_classifier.model_available:
                     print(f"[dashboard] model unavailable: {self.std_classifier.model_error}")
                 else:
                     print("[dashboard] live classifiers ready (std + laser, real PCM1808 audio) | "
                           f"silence gates: std {std_gate}, laser {laser_gate}"
-                          f" | laser band-pass: {laser_bp or 'off'} | laser model: {laser_model}")
+                          f" | laser band-pass: {laser_bp or 'off'} | laser model: {laser_model}"
+                          f" | laser end-of-word: {'on' if laser_word else 'off'}")
             except Exception as e:  # noqa: BLE001
                 print(f"[dashboard] live classifier init failed, using demo predictions: {e}")
                 self.std_classifier = None
