@@ -1,0 +1,141 @@
+{
+  "all_pass": true,
+  "checks": [
+    {
+      "check": "fresh process, clean mode, relative paths, cwd outside repo",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /home/claude/lmml/results/sprint8_final/package/predict_package.py clean ../../home/claude/lmml/data/raw/0_george_0.wav ../../home/claude/lmml/data/raw/0_george_1.wav ../../home/claude/lmml/data/raw/0_george_10.wav ../../home/claude/lmml/data/raw/0_george_11.wav ..",
+      "returncode": 0,
+      "expected_rc": 0,
+      "pass": true,
+      "stdout_tail": "../../home/claude/lmml/data/raw/0_george_0.wav\t0\tconf=0.902\tunknown=False\n../../home/claude/lmml/data/raw/0_george_1.wav\t0\tconf=0.999\tunknown=False\n../../home/claude/lmml/data/raw/0_george_10.wav\t0\tconf=0.999\tunknown=False\n../../home/claude/lmml/data/raw/0_george_11.wav\t0\tconf=0.989\tunknown=False\n../../home/claude/lmml/data/raw/0_george_12.wav\t0\tconf=0.996\tunknown=False\n",
+      "stderr_tail": ""
+    },
+    {
+      "check": "fresh process, laser mode, relative paths, cwd outside repo",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /home/claude/lmml/results/sprint8_final/package/predict_package.py laser ../../home/claude/lmml/data/sprint8_sim_v2/val/0/0_george_0__sim0.wav ../../home/claude/lmml/data/sprint8_sim_v2/val/0/0_george_1__sim0.wav ../../home/claude/lmml/data/sprint8_sim_v2/val/0/0_g",
+      "returncode": 0,
+      "expected_rc": 0,
+      "pass": true,
+      "stdout_tail": "wn=False\n../../home/claude/lmml/data/sprint8_sim_v2/val/0/0_george_1__sim0.wav\t0\tconf=0.993\tunknown=False\n../../home/claude/lmml/data/sprint8_sim_v2/val/0/0_george_10__sim0.wav\t0\tconf=0.714\tunknown=False\n../../home/claude/lmml/data/sprint8_sim_v2/val/0/0_george_11__sim0.wav\t0\tconf=0.983\tunknown=False\n../../home/claude/lmml/data/sprint8_sim_v2/val/0/0_george_12__sim0.wav\t0\tconf=0.973\tunknown=False\n",
+      "stderr_tail": ""
+    },
+    {
+      "check": "built-in self-test (labels vs repository pipeline, 12 clean + 12 laser)",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /home/claude/lmml/results/sprint8_final/package/predict_package.py --selftest",
+      "returncode": 0,
+      "expected_rc": 0,
+      "pass": true,
+      "stdout_tail": "{\n  \"selftest\": \"pass\",\n  \"clean_examples\": 12,\n  \"laser_examples\": 12,\n  \"label_mismatches\": []\n}\n",
+      "stderr_tail": ""
+    },
+    {
+      "check": "repository predictor (predict._probs / load_live_path) probabilities written",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /tmp/pkgverify_91ag2in1/repo_probs.py",
+      "returncode": 0,
+      "expected_rc": 0,
+      "pass": true,
+      "stdout_tail": "ok\n",
+      "stderr_tail": ""
+    },
+    {
+      "check": "package probabilities written (same process type as CLI)",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /tmp/pkgverify_91ag2in1/pkg_probs.py",
+      "returncode": 0,
+      "expected_rc": 0,
+      "pass": true,
+      "stdout_tail": "ok\n",
+      "stderr_tail": ""
+    },
+    {
+      "check": "numeric agreement clean (20 validation clips)",
+      "max_abs_prob_diff": 0.0,
+      "argmax_agree": "20/20",
+      "pass": true
+    },
+    {
+      "check": "numeric agreement laser (20 validation clips)",
+      "max_abs_prob_diff": 0.0,
+      "argmax_agree": "20/20",
+      "pass": true
+    },
+    {
+      "check": "env override LMML_CKPT_CNN pointing to another file is ignored",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /home/claude/lmml/results/sprint8_final/package/predict_package.py clean ../../home/claude/lmml/data/raw/0_george_0.wav --json /tmp/pkgverify_91ag2in1/envtest.json",
+      "returncode": 0,
+      "expected_rc": 0,
+      "pass": true,
+      "stdout_tail": "../../home/claude/lmml/data/raw/0_george_0.wav\t0\tconf=0.902\tunknown=False\n",
+      "stderr_tail": ""
+    },
+    {
+      "check": "output reports the pinned checkpoint sha (not deployed models/)",
+      "pass": true
+    },
+    {
+      "check": "missing input file -> exit 4 with message",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /tmp/pkgverify_91ag2in1/bad_pkg/predict_package.py clean /tmp/pkgverify_91ag2in1/nope.wav --repo /home/claude/lmml",
+      "returncode": 4,
+      "expected_rc": 4,
+      "pass": true,
+      "stdout_tail": "",
+      "stderr_tail": "ERROR: input file not found: /tmp/pkgverify_91ag2in1/nope.wav\n"
+    },
+    {
+      "check": "missing checkpoint -> exit 3 with message",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /tmp/pkgverify_91ag2in1/bad_pkg/predict_package.py clean ../../home/claude/lmml/data/raw/0_george_0.wav --repo /home/claude/lmml",
+      "returncode": 3,
+      "expected_rc": 3,
+      "pass": true,
+      "stdout_tail": "",
+      "stderr_tail": "ERROR: checkpoint not found: /tmp/pkgverify_91ag2in1/bad_pkg/model/does_not_exist.pt\n"
+    },
+    {
+      "check": "corrupted checkpoint -> exit 3 checksum message",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /tmp/pkgverify_91ag2in1/bad_pkg/predict_package.py clean ../../home/claude/lmml/data/raw/0_george_0.wav --repo /home/claude/lmml",
+      "returncode": 3,
+      "expected_rc": 3,
+      "pass": true,
+      "stdout_tail": "",
+      "stderr_tail": "ERROR: checkpoint checksum mismatch for /tmp/pkgverify_91ag2in1/bad_pkg/model/finetuned_v2_cnn.pt: got e9764c20c841eb04..., expected 9d8a11081dcfc9e6...\n"
+    },
+    {
+      "check": "invalid config -> exit 2 message",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /tmp/pkgverify_91ag2in1/bad_pkg/predict_package.py clean ../../home/claude/lmml/data/raw/0_george_0.wav",
+      "returncode": 2,
+      "expected_rc": 2,
+      "pass": true,
+      "stdout_tail": "",
+      "stderr_tail": "ERROR: config is not valid JSON (/tmp/pkgverify_91ag2in1/bad_pkg/config/model_config.json): Expecting property name enclosed in double quotes: line 1 column 2 (char 1)\n"
+    },
+    {
+      "check": "missing repository -> exit 2 message",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /home/claude/lmml/results/sprint8_final/package/predict_package.py clean ../../home/claude/lmml/data/raw/0_george_0.wav --repo /tmp/pkgverify_91ag2in1/no_repo",
+      "returncode": 2,
+      "expected_rc": 2,
+      "pass": true,
+      "stdout_tail": "",
+      "stderr_tail": "ERROR: repository src/ not found under /tmp/pkgverify_91ag2in1/no_repo. Pass --repo /path/to/laser_microphone_ml or set LMML_REPO.\n"
+    },
+    {
+      "check": "no mode/file -> usage message",
+      "cwd": "/tmp/pkgverify_91ag2in1",
+      "command": "/home/claude/.venv-lmml/bin/python /home/claude/lmml/results/sprint8_final/package/predict_package.py",
+      "returncode": 2,
+      "expected_rc": 2,
+      "pass": true,
+      "stdout_tail": "",
+      "stderr_tail": "ERROR: usage: predict_package.py {clean|laser} FILE.wav [FILE.wav ...]   (or --selftest)\n"
+    }
+  ]
+}

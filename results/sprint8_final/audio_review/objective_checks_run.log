@@ -1,0 +1,29 @@
+{
+  "n_items": 57,
+  "all_wav_identical_to_source": true,
+  "all_in_saved_validation_set": true,
+  "all_saved_pred_matches_sheet": true,
+  "all_saved_conf_matches_sheet": true,
+  "manifest_label_matches_filename": true,
+  "sample_rates": {
+    "16000": 33,
+    "8000": 24
+  },
+  "items_at_full_scale_peak": 33,
+  "items_with_flat_top_runs": [],
+  "error_items": 45,
+  "control_items": 12,
+  "error_pred_counts": {
+    "0": 1,
+    "3": 2,
+    "7": 7,
+    "8": 29,
+    "unknown": 6
+  },
+  "median_duration_error_s": 1.0,
+  "median_duration_control_s": 0.7375,
+  "median_peak_error": 1.0,
+  "median_peak_control": 0.65745,
+  "median_hf_share_error": 0.0824,
+  "median_hf_share_control": 0.08549999999999999
+}

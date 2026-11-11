@@ -1,0 +1,22 @@
+{
+ "name": "single_digit",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.62,
+   "label": "7",
+   "source": "data/raw/7_sc06f6c194_86.wav",
+   "speaker": "06f6c194"
+  }
+ ],
+ "duration_s": 3.12,
+ "params": {
+  "gap_s": 0.0,
+  "speech_rms": 0.05,
+  "noise_kind": "none",
+  "noise_rms": 0.0,
+  "snr_db": null
+ },
+ "note": "one word, clean",
+ "expect_merge": false
+}

@@ -1,0 +1,43 @@
+{
+ "name": "long_pauses_3s",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.3996,
+   "label": "2",
+   "source": "data/raw/2_george_18.wav",
+   "speaker": "george"
+  },
+  {
+   "t_start": 4.3996,
+   "t_end": 5.3296,
+   "label": "8",
+   "source": "data/raw/8_sc08ab8082_114.wav",
+   "speaker": "08ab8082"
+  },
+  {
+   "t_start": 8.3296,
+   "t_end": 9.3296,
+   "label": "5",
+   "source": "data/raw/5_sc10f2bb12_234.wav",
+   "speaker": "10f2bb12"
+  },
+  {
+   "t_start": 12.3296,
+   "t_end": 12.7296,
+   "label": "1",
+   "source": "data/raw/1_sc1c3f50ad_402.wav",
+   "speaker": "1c3f50ad"
+  }
+ ],
+ "duration_s": 14.23,
+ "params": {
+  "gap_s": 3.0,
+  "speech_rms": 0.05,
+  "noise_kind": "none",
+  "noise_rms": 0.0,
+  "snr_db": null
+ },
+ "note": "",
+ "expect_merge": false
+}

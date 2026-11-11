@@ -1,0 +1,36 @@
+{
+ "name": "back_to_back_gap0.2",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.75,
+   "label": "5",
+   "source": "data/raw/5_sc1706c35f_309.wav",
+   "speaker": "1706c35f"
+  },
+  {
+   "t_start": 1.95,
+   "t_end": 2.49,
+   "label": "9",
+   "source": "data/raw/9_sc195c120a_374.wav",
+   "speaker": "195c120a"
+  },
+  {
+   "t_start": 2.69,
+   "t_end": 3.69,
+   "label": "3",
+   "source": "data/raw/3_sc1dce06e8_403.wav",
+   "speaker": "1dce06e8"
+  }
+ ],
+ "duration_s": 5.19,
+ "params": {
+  "gap_s": 0.2,
+  "speech_rms": 0.05,
+  "noise_kind": "none",
+  "noise_rms": 0.0,
+  "snr_db": null
+ },
+ "note": "gap shorter than WORD_END_QUIET_SEC=0.25: merging is possible",
+ "expect_merge": true
+}

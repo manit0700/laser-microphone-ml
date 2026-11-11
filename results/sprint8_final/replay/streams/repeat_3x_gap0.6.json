@@ -1,0 +1,36 @@
+{
+ "name": "repeat_3x_gap0.6",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.508,
+   "label": "3",
+   "source": "data/raw/3_george_7.wav",
+   "speaker": "george"
+  },
+  {
+   "t_start": 2.108,
+   "t_end": 2.616,
+   "label": "3",
+   "source": "data/raw/3_george_7.wav",
+   "speaker": "george"
+  },
+  {
+   "t_start": 3.216,
+   "t_end": 3.724,
+   "label": "3",
+   "source": "data/raw/3_george_7.wav",
+   "speaker": "george"
+  }
+ ],
+ "duration_s": 5.224,
+ "params": {
+  "gap_s": 0.6,
+  "speech_rms": 0.05,
+  "noise_kind": "none",
+  "noise_rms": 0.0,
+  "snr_db": null
+ },
+ "note": "identical clip repeated; predict() tuples identical",
+ "expect_merge": false
+}

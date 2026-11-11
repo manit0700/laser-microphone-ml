@@ -1,0 +1,14 @@
+{
+ "name": "noise_only_real_noise_clipA_rms0.04",
+ "events": [],
+ "duration_s": 5.0,
+ "params": {
+  "speech_rms": 0,
+  "noise_kind": "real_noise_clipA",
+  "noise_rms": 0.04,
+  "noise_source": "data/raw/unknown/noise_146.wav",
+  "snr_db": null
+ },
+ "note": "no speech; any digit event is a false activation",
+ "expect_merge": false
+}

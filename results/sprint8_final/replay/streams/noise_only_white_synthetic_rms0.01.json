@@ -1,0 +1,14 @@
+{
+ "name": "noise_only_white_synthetic_rms0.01",
+ "events": [],
+ "duration_s": 5.0,
+ "params": {
+  "speech_rms": 0,
+  "noise_kind": "white_synthetic",
+  "noise_rms": 0.01,
+  "noise_source": "numpy standard_normal (synthetic)",
+  "snr_db": null
+ },
+ "note": "no speech; any digit event is a false activation",
+ "expect_merge": false
+}
