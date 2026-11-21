@@ -91,6 +91,11 @@ def plot_confusion_matrix(cm, labels, out_path):
     plt.close(fig)
 
 
+# Files of the last test split scored by _predictions_single (same order as its
+# predictions), so main() can score original and modified clips separately.
+_LAST_TEST_PATHS = None
+
+
 def _predictions_single(model_type):
     """Run one trained model over the test split. Returns (loaded_type, preds, true)."""
     checkpoint = torch.load(model_checkpoint(model_type), map_location=DEVICE)
@@ -105,6 +110,8 @@ def _predictions_single(model_type):
     dataset = SpokenDigitDataset(
         feature=feature, include_unknown="unknown" in checkpoint.get("labels", []))
     test_ds = load_test_subset(dataset)
+    global _LAST_TEST_PATHS
+    _LAST_TEST_PATHS = [dataset.samples[i][0] for i in test_ds.indices]
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False,
                              num_workers=NUM_WORKERS)
 
@@ -195,6 +202,13 @@ def main(model_type: str = MODEL_TYPE):
         row_total = cm[i].sum()
         per_class_acc[label] = float(cm[i, i] / row_total) if row_total > 0 else 0.0
 
+    # Original vs modified clips (google_commands_0_9_mod), when the test split has both.
+    per_source = {}
+    if model_type != "ensemble" and _LAST_TEST_PATHS is not None:
+        from splits import per_source_scores
+        per_source = per_source_scores(_LAST_TEST_PATHS, all_preds.tolist(), all_true.tolist(),
+                                       n_digits=len(DIGIT_LABELS))
+
     report_text = classification_report(
         all_true, all_preds,
         labels=list(range(len(class_labels))),
@@ -214,6 +228,8 @@ def main(model_type: str = MODEL_TYPE):
         "confusion_matrix": cm.tolist(),
         "labels": class_labels,
     }
+    if per_source:
+        report["per_source"] = per_source
     save_json(report, REPORTS_DIR / f"evaluation_report_{loaded_type}.json")
     with open(REPORTS_DIR / f"evaluation_report_{loaded_type}.txt", "w") as f:
         f.write(f"Laser Microphone - Digit Classifier Evaluation\n")
@@ -223,6 +239,10 @@ def main(model_type: str = MODEL_TYPE):
         f.write("Per-class accuracy:\n")
         for label, acc in per_class_acc.items():
             f.write(f"  {label if label == 'unknown' else 'digit ' + label}: {acc:.4f}\n")
+        if per_source:
+            f.write("\nBy source (digit clips only):\n")
+            for name, sc in per_source.items():
+                f.write(f"  {name}: {sc['digit_accuracy']:.4f} on {sc['num_digit_samples']} clips\n")
         f.write("\nFull classification report:\n")
         f.write(report_text)
 
@@ -231,6 +251,10 @@ def main(model_type: str = MODEL_TYPE):
     print("Per-class accuracy:")
     for label, acc in per_class_acc.items():
         print(f"  {label if label == 'unknown' else 'digit ' + label}: {acc:.4f}")
+    if per_source:
+        print("\nBy source (digit clips only, unseen speakers):")
+        for name, sc in per_source.items():
+            print(f"  {name:9}: {sc['digit_accuracy']:.4f} on {sc['num_digit_samples']} clips")
     print(f"\nConfusion matrix plot -> {cm_path}")
     print(f"Reports               -> {REPORTS_DIR}")
 

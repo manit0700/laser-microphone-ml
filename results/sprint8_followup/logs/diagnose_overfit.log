@@ -1,0 +1,10 @@
+finetuned_v2 train clean digit_acc 0.9261 unk_rej 0.8705 nll 0.286
+finetuned_v2 train sim digit_acc 0.8371 unk_rej 0.867 nll 0.4967
+finetuned_v2 val clean digit_acc 0.8984 unk_rej 0.8405 nll 0.3756
+finetuned_v2 val sim digit_acc 0.8142 unk_rej 0.7853 nll 0.6417
+wrote /home/claude/lmml/results/sprint8_followup/diagnostics/overfit_finetuned_v2.json
+reference train clean digit_acc 0.9086 unk_rej 0.8425 nll 0.3291
+reference train sim digit_acc 0.5159 unk_rej 0.7853 nll 1.4349
+reference val clean digit_acc 0.8488 unk_rej 0.7791 nll 0.4683
+reference val sim digit_acc 0.5134 unk_rej 0.7975 nll 1.4695
+wrote /home/claude/lmml/results/sprint8_followup/diagnostics/overfit_reference.json

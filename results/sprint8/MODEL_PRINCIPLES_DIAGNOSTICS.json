@@ -1,0 +1,43 @@
+{
+  "note": "Audit only; frozen checkpoint unchanged; no test evaluation or tuning",
+  "temperature": 0.5721844434738159,
+  "threshold": 0.26,
+  "subsets": {
+    "train_clean": {
+      "balanced_acc": 0.9211754582144998,
+      "overall_acc": 0.9186356067657471,
+      "digit_acc": 0.9260932207107544,
+      "digit_rejected": 0.022587640210986137,
+      "unknown_rejection": 0.8704783916473389,
+      "n": 6391,
+      "nll": 0.42942190170288086
+    },
+    "train_sim": {
+      "balanced_acc": 0.8398396210236982,
+      "overall_acc": 0.8407142758369446,
+      "digit_acc": 0.8370503187179565,
+      "digit_rejected": 0.040533941239118576,
+      "unknown_rejection": 0.8669778108596802,
+      "n": 7000,
+      "nll": 0.6358922123908997
+    },
+    "val_clean": {
+      "balanced_acc": 0.8938937512311068,
+      "overall_acc": 0.8918353319168091,
+      "digit_acc": 0.8984252214431763,
+      "digit_rejected": 0.029133858159184456,
+      "unknown_rejection": 0.8404908180236816,
+      "n": 1433,
+      "nll": 0.5096104741096497
+    },
+    "val_sim": {
+      "balanced_acc": 0.8126969500021501,
+      "overall_acc": 0.8108862638473511,
+      "digit_acc": 0.8141732215881348,
+      "digit_rejected": 0.05511811003088951,
+      "unknown_rejection": 0.7852760553359985,
+      "n": 1433,
+      "nll": 0.7366014122962952
+    }
+  }
+}

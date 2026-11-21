@@ -1,0 +1,5 @@
+model finetuned_cnn: results/sprint8/models/finetuned_cnn.pt thr=0.26 T=0.5807510018348694
+clip pool: 1275 digit clips, manifest_used=True, 800 unknown words, 250 noise clips
+[accuracy finetuned_cnn] clean_test: n=400 replay_acc=0.9078947368421053 direct_acc=0.9315789473684211
+[accuracy finetuned_cnn] sim_test: n=600 replay_acc=0.7386569872958257 direct_acc=0.4863883847549909
+wrote results/sprint8/replay/accuracy_finetuned_cnn.json

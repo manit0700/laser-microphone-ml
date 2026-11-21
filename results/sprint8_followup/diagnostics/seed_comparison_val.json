@@ -1,0 +1,125 @@
+{
+  "protocol": "val only; OOF speaker 2-fold T (P_mix); frozen thr 0.26; bootstrap over speaker groups 1000",
+  "n_val": 2866,
+  "models": {
+    "finetune_s42": {
+      "digit_acc_pooled": 0.8559055118110236,
+      "digit_acc_speaker_equal": 0.755365907727401,
+      "digit_rejected": 0.04251968503937008,
+      "real_nondigit_rejected": 0.7389380530973452,
+      "synthetic_noise_rejected": 0.98,
+      "nll_oof_P_mix": 0.5121683478355408,
+      "ece15_oof_P_mix": 0.03151270430440979,
+      "n_speakers_digit": 58
+    },
+    "finetune_s43": {
+      "digit_acc_pooled": 0.84251968503937,
+      "digit_acc_speaker_equal": 0.7522807694885614,
+      "digit_rejected": 0.04488188976377953,
+      "real_nondigit_rejected": 0.7035398230088495,
+      "synthetic_noise_rejected": 0.97,
+      "nll_oof_P_mix": 0.5442736148834229,
+      "ece15_oof_P_mix": 0.02879242399627805,
+      "n_speakers_digit": 58
+    },
+    "finetune_s44": {
+      "digit_acc_pooled": 0.8421259842519685,
+      "digit_acc_speaker_equal": 0.7317606907000225,
+      "digit_rejected": 0.04212598425196851,
+      "real_nondigit_rejected": 0.672566371681416,
+      "synthetic_noise_rejected": 0.97,
+      "nll_oof_P_mix": 0.5457015037536621,
+      "ece15_oof_P_mix": 0.02757633040019608,
+      "n_speakers_digit": 58
+    },
+    "control_s42": {
+      "digit_acc_pooled": 0.7444881889763779,
+      "digit_acc_speaker_equal": 0.6232835494444334,
+      "digit_rejected": 0.08149606299212599,
+      "real_nondigit_rejected": 0.7566371681415929,
+      "synthetic_noise_rejected": 0.9,
+      "nll_oof_P_mix": 0.7924020886421204,
+      "ece15_oof_P_mix": 0.036955096554539504,
+      "n_speakers_digit": 58
+    },
+    "control_s43": {
+      "digit_acc_pooled": 0.738976377952756,
+      "digit_acc_speaker_equal": 0.6061467534615858,
+      "digit_rejected": 0.09724409448818898,
+      "real_nondigit_rejected": 0.8185840707964602,
+      "synthetic_noise_rejected": 0.91,
+      "nll_oof_P_mix": 0.8107038736343384,
+      "ece15_oof_P_mix": 0.044784088298774144,
+      "n_speakers_digit": 58
+    },
+    "control_s44": {
+      "digit_acc_pooled": 0.747244094488189,
+      "digit_acc_speaker_equal": 0.6242724552094894,
+      "digit_rejected": 0.08543307086614173,
+      "real_nondigit_rejected": 0.7787610619469026,
+      "synthetic_noise_rejected": 0.9,
+      "nll_oof_P_mix": 0.7956323027610779,
+      "ece15_oof_P_mix": 0.04272165752524687,
+      "n_speakers_digit": 58
+    }
+  },
+  "bootstrap_speaker_equal_ci95": {
+    "finetune_s42": [
+      0.6643880208272107,
+      0.8364494314354607
+    ],
+    "finetune_s43": [
+      0.6594907899845256,
+      0.8319741395504954
+    ],
+    "finetune_s44": [
+      0.6402634890669826,
+      0.8131888052383519
+    ],
+    "control_s42": [
+      0.5463118641454223,
+      0.6958139637706359
+    ],
+    "control_s43": [
+      0.5304080623966504,
+      0.6804692258245362
+    ],
+    "control_s44": [
+      0.5482289680979956,
+      0.6974297051033274
+    ]
+  },
+  "paired_diff_finetune_minus_control_speaker_equal": {
+    "seed42": {
+      "point": 0.13208235828296766,
+      "ci95_speaker_bootstrap": [
+        0.09270303117730283,
+        0.16621078875457762
+      ]
+    },
+    "seed43": {
+      "point": 0.14613401602697573,
+      "ci95_speaker_bootstrap": [
+        0.10760964632046233,
+        0.18208102728679754
+      ]
+    },
+    "seed44": {
+      "point": 0.1074882354905331,
+      "ci95_speaker_bootstrap": [
+        0.07334593648097994,
+        0.14331858763575517
+      ]
+    }
+  },
+  "arm_means_speaker_equal": {
+    "finetune": {
+      "mean": 0.7464691226386616,
+      "sd_over_3_seeds": 0.012830939055983875
+    },
+    "control": {
+      "mean": 0.6179009193718362,
+      "sd_over_3_seeds": 0.01019140794185525
+    }
+  }
+}

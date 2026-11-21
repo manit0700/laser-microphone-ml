@@ -1,0 +1,50 @@
+{
+ "name": "unknown_words_gap0.8",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.36,
+   "label": "unknown",
+   "source": "data/raw/unknown/on_0137b3f4_11.wav",
+   "speaker": "0137b3f4"
+  },
+  {
+   "t_start": 2.16,
+   "t_end": 2.54,
+   "label": "unknown",
+   "source": "data/raw/unknown/up_042ea76c_57.wav",
+   "speaker": "042ea76c"
+  },
+  {
+   "t_start": 3.34,
+   "t_end": 3.94,
+   "label": "unknown",
+   "source": "data/raw/unknown/down_01d22d03_31.wav",
+   "speaker": "01d22d03"
+  },
+  {
+   "t_start": 4.74,
+   "t_end": 5.74,
+   "label": "unknown",
+   "source": "data/raw/unknown/on_063d48cf_70.wav",
+   "speaker": "063d48cf"
+  },
+  {
+   "t_start": 6.54,
+   "t_end": 7.54,
+   "label": "unknown",
+   "source": "data/raw/unknown/on_07ad9b59_99.wav",
+   "speaker": "07ad9b59"
+  }
+ ],
+ "duration_s": 9.04,
+ "params": {
+  "gap_s": 0.8,
+  "speech_rms": 0.05,
+  "noise_kind": "none",
+  "noise_rms": 0.0,
+  "snr_db": null
+ },
+ "note": "expected: one Unknown event per word",
+ "expect_merge": false
+}

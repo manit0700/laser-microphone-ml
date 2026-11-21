@@ -1,0 +1,40 @@
+Laser Microphone - Digit Classifier Evaluation
+==============================================
+
+Overall test accuracy: 0.9305 on 8214 samples
+
+Per-class accuracy:
+  digit 0: 0.9579
+  digit 1: 0.9460
+  digit 2: 0.9486
+  digit 3: 0.9409
+  digit 4: 0.9437
+  digit 5: 0.9381
+  digit 6: 0.9305
+  digit 7: 0.9381
+  digit 8: 0.9393
+  digit 9: 0.9440
+  unknown: 0.6867
+
+By source (digit clips only):
+  original: 0.9503 on 3906 clips
+  modified: 0.9355 on 3909 clips
+
+Full classification report:
+              precision    recall  f1-score   support
+
+           0       0.93      0.96      0.95       878
+           1       0.97      0.95      0.96       778
+           2       0.90      0.95      0.93       778
+           3       0.98      0.94      0.96       762
+           4       0.90      0.94      0.92       746
+           5       0.92      0.94      0.93       791
+           6       0.89      0.93      0.91       748
+           7       0.94      0.94      0.94       808
+           8       0.94      0.94      0.94       758
+           9       0.96      0.94      0.95       768
+     unknown       0.90      0.69      0.78       399
+
+    accuracy                           0.93      8214
+   macro avg       0.93      0.92      0.92      8214
+weighted avg       0.93      0.93      0.93      8214

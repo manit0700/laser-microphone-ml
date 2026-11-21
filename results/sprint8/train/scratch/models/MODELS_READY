@@ -1,0 +1,5 @@
+written 2026-11-08T17:39:03+00:00 by scripts/sprint8/evaluate_sprint8.py calibrate
+reference: results/sprint8/train/scratch/models/reference_cnn.pt T=1.0000 thr=0.58 sha256=5d581ee19466a2c88e667ebb3e98090d8c9af13f20ab78fc16171c9fcd5e675c
+finetuned: results/sprint8/train/scratch/models/finetuned_cnn.pt T=1.0000 thr=0.58 sha256=180259b89da13468ef6e271617bc32840846bacee19c86e7d290312cf38fa647
+control: results/sprint8/train/scratch/models/control.pt T=0.5068 thr=0.20 sha256=de2bb04870fa9b0f7374d57d1990d7a44fa22a876f7dd4729715998cd033438b
+ft2 (round v2, 2026-11-08T18:31:10+00:00): results/sprint8/train/scratch/models/finetuned_cnn.pt T=1.0000 thr=0.58 sha256=3863569b9d1409e40fa6730fae8b25aa926365b00879b2e2821dc1b82bac0833

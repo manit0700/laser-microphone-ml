@@ -1,0 +1,303 @@
+{
+  "model": "finetuned_v2",
+  "checkpoint": "results/sprint8/models/finetuned_v2_cnn.pt",
+  "T": 0.5721844434738159,
+  "threshold": 0.26,
+  "protocol": "eval mode, no dropout/augmentation, identical preprocessing, frozen T/threshold; train+val only",
+  "train_clean": {
+    "n": 6391,
+    "n_digit": 5534,
+    "n_unknown": 857,
+    "digit_acc_argmax_no_threshold": 0.9266353249549866,
+    "digit_acc_decision": 0.9260932207107544,
+    "digit_rejected_decision": 0.022587640210986137,
+    "unknown_rejection_decision": 0.8704783916473389,
+    "overall_acc_11_decision": 0.9186356067657471,
+    "nll_calibrated": 0.28602054715156555,
+    "brier_calibrated": 0.12664467096328735,
+    "ece_15bin_calibrated": 0.03251555922576181,
+    "per_class_recall": {
+      "0": {
+        "n": 557,
+        "recall": 0.9551166892051697
+      },
+      "1": {
+        "n": 546,
+        "recall": 0.9816849827766418
+      },
+      "2": {
+        "n": 554,
+        "recall": 0.9314079284667969
+      },
+      "3": {
+        "n": 554,
+        "recall": 0.9440433382987976
+      },
+      "4": {
+        "n": 563,
+        "recall": 0.9200710654258728
+      },
+      "5": {
+        "n": 561,
+        "recall": 0.8698752522468567
+      },
+      "6": {
+        "n": 552,
+        "recall": 0.8333333134651184
+      },
+      "7": {
+        "n": 552,
+        "recall": 0.9474637508392334
+      },
+      "8": {
+        "n": 548,
+        "recall": 0.9379562139511108
+      },
+      "9": {
+        "n": 547,
+        "recall": 0.9414991140365601
+      },
+      "unknown": {
+        "n": 857,
+        "recall": 0.8704783916473389
+      }
+    },
+    "speaker_groups": 271,
+    "speaker_equal_digit_acc": 0.8600569033018515,
+    "speaker_digit_acc_min": 0.0,
+    "speaker_digit_acc_max": 1.0,
+    "top_speaker_share_of_digits": 0.09035056017347308,
+    "digit_acc_by_dataset": {
+      "fsdd": {
+        "n": 2000,
+        "acc": 0.964
+      },
+      "speech_commands": {
+        "n": 3534,
+        "acc": 0.9046406338426712
+      }
+    }
+  },
+  "train_sim": {
+    "n": 7000,
+    "n_digit": 6143,
+    "n_unknown": 857,
+    "digit_acc_argmax_no_threshold": 0.838352620601654,
+    "digit_acc_decision": 0.8370503187179565,
+    "digit_rejected_decision": 0.040533941239118576,
+    "unknown_rejection_decision": 0.8669778108596802,
+    "overall_acc_11_decision": 0.8407142758369446,
+    "nll_calibrated": 0.49666088819503784,
+    "brier_calibrated": 0.22678731381893158,
+    "ece_15bin_calibrated": 0.02437153157716263,
+    "per_class_recall": {
+      "0": {
+        "n": 615,
+        "recall": 0.8861788511276245
+      },
+      "1": {
+        "n": 615,
+        "recall": 0.8959349393844604
+      },
+      "2": {
+        "n": 607,
+        "recall": 0.8813838362693787
+      },
+      "3": {
+        "n": 631,
+        "recall": 0.7860538959503174
+      },
+      "4": {
+        "n": 624,
+        "recall": 0.8669871687889099
+      },
+      "5": {
+        "n": 614,
+        "recall": 0.7785016298294067
+      },
+      "6": {
+        "n": 614,
+        "recall": 0.8338761925697327
+      },
+      "7": {
+        "n": 604,
+        "recall": 0.8410596251487732
+      },
+      "8": {
+        "n": 608,
+        "recall": 0.7944079041481018
+      },
+      "9": {
+        "n": 611,
+        "recall": 0.8068739771842957
+      },
+      "unknown": {
+        "n": 857,
+        "recall": 0.8669778108596802
+      }
+    },
+    "speaker_groups": 271,
+    "speaker_equal_digit_acc": 0.8042116912599012,
+    "speaker_digit_acc_min": 0.0,
+    "speaker_digit_acc_max": 1.0,
+    "top_speaker_share_of_digits": 0.09230017906560313,
+    "digit_acc_by_dataset": {
+      "fsdd": {
+        "n": 2230,
+        "acc": 0.8434977578475337
+      },
+      "speech_commands": {
+        "n": 3913,
+        "acc": 0.8333759263991822
+      }
+    }
+  },
+  "val_clean": {
+    "n": 1433,
+    "n_digit": 1270,
+    "n_unknown": 163,
+    "digit_acc_argmax_no_threshold": 0.8984252214431763,
+    "digit_acc_decision": 0.8984252214431763,
+    "digit_rejected_decision": 0.029133858159184456,
+    "unknown_rejection_decision": 0.8404908180236816,
+    "overall_acc_11_decision": 0.8918353319168091,
+    "nll_calibrated": 0.37562456727027893,
+    "brier_calibrated": 0.16781942546367645,
+    "ece_15bin_calibrated": 0.03487583493886349,
+    "per_class_recall": {
+      "0": {
+        "n": 123,
+        "recall": 0.9268292784690857
+      },
+      "1": {
+        "n": 126,
+        "recall": 0.9126983880996704
+      },
+      "2": {
+        "n": 124,
+        "recall": 0.9354838728904724
+      },
+      "3": {
+        "n": 124,
+        "recall": 0.9112903475761414
+      },
+      "4": {
+        "n": 117,
+        "recall": 0.9230769276618958
+      },
+      "5": {
+        "n": 132,
+        "recall": 0.8939393758773804
+      },
+      "6": {
+        "n": 131,
+        "recall": 0.6564885377883911
+      },
+      "7": {
+        "n": 128,
+        "recall": 0.9609375
+      },
+      "8": {
+        "n": 131,
+        "recall": 0.9312977194786072
+      },
+      "9": {
+        "n": 134,
+        "recall": 0.9402984976768494
+      },
+      "unknown": {
+        "n": 163,
+        "recall": 0.8404908180236816
+      }
+    },
+    "speaker_groups": 58,
+    "speaker_equal_digit_acc": 0.7905033700411543,
+    "speaker_digit_acc_min": 0.0,
+    "speaker_digit_acc_max": 1.0,
+    "top_speaker_share_of_digits": 0.3937007874015748,
+    "digit_acc_by_dataset": {
+      "fsdd": {
+        "n": 500,
+        "acc": 0.94
+      },
+      "speech_commands": {
+        "n": 770,
+        "acc": 0.8714285714285714
+      }
+    }
+  },
+  "val_sim": {
+    "n": 1433,
+    "n_digit": 1270,
+    "n_unknown": 163,
+    "digit_acc_argmax_no_threshold": 0.8141732215881348,
+    "digit_acc_decision": 0.8141732215881348,
+    "digit_rejected_decision": 0.05511811003088951,
+    "unknown_rejection_decision": 0.7852760553359985,
+    "overall_acc_11_decision": 0.8108862638473511,
+    "nll_calibrated": 0.641654372215271,
+    "brier_calibrated": 0.28079304099082947,
+    "ece_15bin_calibrated": 0.028080872554634706,
+    "per_class_recall": {
+      "0": {
+        "n": 123,
+        "recall": 0.869918704032898
+      },
+      "1": {
+        "n": 126,
+        "recall": 0.841269850730896
+      },
+      "2": {
+        "n": 124,
+        "recall": 0.8145161271095276
+      },
+      "3": {
+        "n": 124,
+        "recall": 0.7822580933570862
+      },
+      "4": {
+        "n": 117,
+        "recall": 0.8974359035491943
+      },
+      "5": {
+        "n": 132,
+        "recall": 0.8636363744735718
+      },
+      "6": {
+        "n": 131,
+        "recall": 0.6412213444709778
+      },
+      "7": {
+        "n": 128,
+        "recall": 0.8515625
+      },
+      "8": {
+        "n": 131,
+        "recall": 0.8015267252922058
+      },
+      "9": {
+        "n": 134,
+        "recall": 0.7910447716712952
+      },
+      "unknown": {
+        "n": 163,
+        "recall": 0.7852760553359985
+      }
+    },
+    "speaker_groups": 58,
+    "speaker_equal_digit_acc": 0.7202629281722686,
+    "speaker_digit_acc_min": 0.0,
+    "speaker_digit_acc_max": 1.0,
+    "top_speaker_share_of_digits": 0.3937007874015748,
+    "digit_acc_by_dataset": {
+      "fsdd": {
+        "n": 500,
+        "acc": 0.82
+      },
+      "speech_commands": {
+        "n": 770,
+        "acc": 0.8103896103896104
+      }
+    }
+  }
+}

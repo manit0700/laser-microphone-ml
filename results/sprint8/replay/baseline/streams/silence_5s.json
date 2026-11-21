@@ -1,0 +1,13 @@
+{
+ "name": "silence_5s",
+ "events": [],
+ "duration_s": 5.0,
+ "params": {
+  "speech_rms": 0,
+  "noise_kind": "none",
+  "noise_rms": 0.0,
+  "snr_db": null
+ },
+ "note": "digital zero",
+ "expect_merge": false
+}

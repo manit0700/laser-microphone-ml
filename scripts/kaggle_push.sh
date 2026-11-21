@@ -35,6 +35,8 @@ cp "$PROJECT_ROOT"/scripts/download_speech_commands.py "$STAGE"/
 # Cross-validation driver used by MODE=cv in the notebook.
 cp "$PROJECT_ROOT"/scripts/cross_validate.py "$STAGE"/
 cp "$PROJECT_ROOT"/scripts/compare_cv.py "$STAGE"/
+# Adds the modified Speech Commands digits when the notebook runs with USE_MOD = True.
+cp "$PROJECT_ROOT"/scripts/add_modified_commands.py "$STAGE"/
 
 # Dataset metadata Kaggle requires.
 cat > "$STAGE/dataset-metadata.json" <<JSON

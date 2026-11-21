@@ -1,0 +1,116 @@
+{
+ "clips": [
+  [
+   "1_yweweler_1.wav",
+   0.223
+  ],
+  [
+   "1_yweweler_35.wav",
+   0.252
+  ],
+  [
+   "1_yweweler_8.wav",
+   0.256
+  ],
+  [
+   "2_yweweler_19.wav",
+   0.253
+  ],
+  [
+   "2_yweweler_2.wav",
+   0.238
+  ],
+  [
+   "2_yweweler_25.wav",
+   0.237
+  ]
+ ],
+ "chunks": {
+  "256": {
+   "detected": 81,
+   "total": 96,
+   "missed": [
+    [
+     "1_yweweler_1.wav",
+     1.0,
+     0
+    ],
+    [
+     "1_yweweler_1.wav",
+     1.224,
+     0
+    ],
+    [
+     "1_yweweler_1.wav",
+     1.24,
+     0
+    ],
+    [
+     "1_yweweler_35.wav",
+     1.192,
+     0
+    ],
+    [
+     "1_yweweler_35.wav",
+     1.208,
+     0
+    ],
+    [
+     "2_yweweler_19.wav",
+     1.176,
+     0
+    ],
+    [
+     "2_yweweler_19.wav",
+     1.192,
+     0
+    ],
+    [
+     "2_yweweler_19.wav",
+     1.208,
+     0
+    ],
+    [
+     "2_yweweler_2.wav",
+     1.176,
+     0
+    ],
+    [
+     "2_yweweler_2.wav",
+     1.192,
+     0
+    ],
+    [
+     "2_yweweler_2.wav",
+     1.208,
+     0
+    ],
+    [
+     "2_yweweler_25.wav",
+     1.176,
+     0
+    ],
+    [
+     "2_yweweler_25.wav",
+     1.192,
+     0
+    ],
+    [
+     "2_yweweler_25.wav",
+     1.208,
+     0
+    ],
+    [
+     "2_yweweler_25.wav",
+     1.224,
+     0
+    ]
+   ]
+  },
+  "50": {
+   "detected": 96,
+   "total": 96,
+   "missed": []
+  }
+ }
+}

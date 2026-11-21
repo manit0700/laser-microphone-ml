@@ -1,0 +1,5 @@
+model deployed: /home/claude/lmml/models/best_model_cnn.pt thr=0.26 T=0.4980080723762512
+clip pool: 1275 digit clips, manifest_used=True, 800 unknown words, 250 noise clips
+[accuracy deployed] clean_test: n=400 replay_acc=0.9473684210526315 direct_acc=0.9447368421052632
+[accuracy deployed] sim_test: n=600 replay_acc=0.7658802177858439 direct_acc=0.6733212341197822
+wrote results/sprint8/replay/accuracy_deployed.json

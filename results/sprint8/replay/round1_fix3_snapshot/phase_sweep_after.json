@@ -1,0 +1,40 @@
+{
+ "clips": [
+  [
+   "1_yweweler_1.wav",
+   0.223
+  ],
+  [
+   "1_yweweler_32.wav",
+   0.25
+  ],
+  [
+   "1_yweweler_35.wav",
+   0.252
+  ],
+  [
+   "1_yweweler_8.wav",
+   0.256
+  ],
+  [
+   "2_yweweler_19.wav",
+   0.253
+  ],
+  [
+   "2_yweweler_2.wav",
+   0.238
+  ]
+ ],
+ "chunks": {
+  "256": {
+   "detected": 96,
+   "total": 96,
+   "missed": []
+  },
+  "50": {
+   "detected": 96,
+   "total": 96,
+   "missed": []
+  }
+ }
+}

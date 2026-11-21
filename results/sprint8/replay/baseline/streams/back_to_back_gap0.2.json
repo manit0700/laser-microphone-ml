@@ -1,0 +1,36 @@
+{
+ "name": "back_to_back_gap0.2",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.3031,
+   "label": "5",
+   "source": "data/raw/5_yweweler_0.wav",
+   "speaker": "yweweler"
+  },
+  {
+   "t_start": 1.5031,
+   "t_end": 2.5031,
+   "label": "9",
+   "source": "data/raw/9_sc1816b768_338.wav",
+   "speaker": "1816b768"
+  },
+  {
+   "t_start": 2.7031,
+   "t_end": 3.4631,
+   "label": "3",
+   "source": "data/raw/3_sc1ed0b13d_432.wav",
+   "speaker": "1ed0b13d"
+  }
+ ],
+ "duration_s": 4.963,
+ "params": {
+  "gap_s": 0.2,
+  "speech_rms": 0.05,
+  "noise_kind": "none",
+  "noise_rms": 0.0,
+  "snr_db": null
+ },
+ "note": "gap shorter than WORD_END_QUIET_SEC=0.25: merging is possible",
+ "expect_merge": true
+}

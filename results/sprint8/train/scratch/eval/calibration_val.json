@@ -1,0 +1,257 @@
+{
+  "val_split": "val",
+  "n_val_clean": 157,
+  "n_val_sim": 97,
+  "manifest": "results/sprint8/train/scratch/fake_manifest.csv",
+  "manifest_sha256": "f7d11e6a585f639270be1e6218f0f4d6835c52451e272d2526e0e624d5192676",
+  "threshold_grid": "0.20..0.95 step 0.01; middle of the thresholds within 0.002 of the best balanced accuracy",
+  "temperature_fit": "LBFGS on NLL of validation logits (calibration.fit_temperature); kept only if ECE does not get worse",
+  "models": {
+    "reference": {
+      "checkpoint": "results/sprint8/train/scratch/models/reference_cnn.pt",
+      "checkpoint_sha256_before": "89d441f07c7fdeddf564b7e060bc89864b4b867f571c45ed01a77b307998e097",
+      "epoch": 3,
+      "fit_set": "val clean",
+      "n_fit": 157,
+      "temperature_fitted": 0.8249636888504028,
+      "temperature": 1.0,
+      "ece_before": 0.027640143409371376,
+      "ece_after": 0.027640143409371376,
+      "threshold": 0.58,
+      "val_metrics_at_threshold": {
+        "threshold": 0.58,
+        "balanced_acc": 0.09090909090909091,
+        "overall_acc": 0.23566879332065582,
+        "digit_acc": 0.0,
+        "digit_rejected": 1.0,
+        "unknown_rejection": 1.0
+      },
+      "val_metrics_at_0.60": {
+        "balanced_acc": 0.09090909090909091,
+        "overall_acc": 0.23566879332065582,
+        "digit_acc": 0.0,
+        "digit_rejected": 1.0,
+        "unknown_rejection": 1.0
+      },
+      "val_metrics_argmax_only": {
+        "balanced_acc": 0.1019656007940119,
+        "overall_acc": 0.19745223224163055,
+        "digit_acc": 0.06666667014360428,
+        "digit_rejected": 0.3166666626930237,
+        "unknown_rejection": 0.6216216087341309
+      },
+      "val_clean": {
+        "n": 157,
+        "ece_before": 0.027640143409371376,
+        "ece_after": 0.027640143409371376,
+        "at_chosen_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.23566879332065582,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        },
+        "threshold_this_subset_alone_would_pick": 0.58,
+        "at_own_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.23566879332065582,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        }
+      },
+      "val_sim": {
+        "n": 97,
+        "ece_before": 0.09088388085365295,
+        "ece_after": 0.09088388085365295,
+        "at_chosen_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.3814432919025421,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        },
+        "threshold_this_subset_alone_would_pick": 0.58,
+        "at_own_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.3814432919025421,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        }
+      },
+      "checkpoint_sha256": "5d581ee19466a2c88e667ebb3e98090d8c9af13f20ab78fc16171c9fcd5e675c"
+    },
+    "finetuned": {
+      "checkpoint": "results/sprint8/train/scratch/models/finetuned_cnn.pt",
+      "checkpoint_sha256_before": "6eddd9b5016d09b9bf7fe3dfdb0e10f7eadff4ddac0a8385e178ebfd8a896e06",
+      "epoch": 3,
+      "fit_set": "val clean + val sim",
+      "n_fit": 254,
+      "temperature_fitted": 0.4795745313167572,
+      "temperature": 1.0,
+      "ece_before": 0.08614877611398697,
+      "ece_after": 0.08614877611398697,
+      "threshold": 0.58,
+      "val_metrics_at_threshold": {
+        "threshold": 0.58,
+        "balanced_acc": 0.09090909090909091,
+        "overall_acc": 0.29133859276771545,
+        "digit_acc": 0.0,
+        "digit_rejected": 1.0,
+        "unknown_rejection": 1.0
+      },
+      "val_metrics_at_0.60": {
+        "balanced_acc": 0.09090909090909091,
+        "overall_acc": 0.29133859276771545,
+        "digit_acc": 0.0,
+        "digit_rejected": 1.0,
+        "unknown_rejection": 1.0
+      },
+      "val_metrics_argmax_only": {
+        "balanced_acc": 0.11775451627644626,
+        "overall_acc": 0.27559053897857666,
+        "digit_acc": 0.03333333507180214,
+        "digit_rejected": 0.9277777671813965,
+        "unknown_rejection": 0.8648648858070374
+      },
+      "val_clean": {
+        "n": 157,
+        "ece_before": 0.047160156071186066,
+        "ece_after": 0.047160156071186066,
+        "at_chosen_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.23566879332065582,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        },
+        "threshold_this_subset_alone_would_pick": 0.58,
+        "at_own_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.23566879332065582,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        }
+      },
+      "val_sim": {
+        "n": 97,
+        "ece_before": 0.14925405383110046,
+        "ece_after": 0.14925405383110046,
+        "at_chosen_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.3814432919025421,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        },
+        "threshold_this_subset_alone_would_pick": 0.58,
+        "at_own_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.3814432919025421,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        }
+      },
+      "checkpoint_sha256": "180259b89da13468ef6e271617bc32840846bacee19c86e7d290312cf38fa647"
+    },
+    "deployed": {
+      "info_only": true,
+      "checkpoint": "models/best_model_cnn.pt",
+      "sha256": "da27ca83ab93ff84ddd569a0c50cdb7153a5fb93a71252ae2af86efab282f1bb",
+      "temperature": 0.4980080723762512,
+      "threshold": 0.26,
+      "epoch": 36,
+      "calibrated_on": "its own Kaggle validation fold (stored in checkpoint, not re-fitted)",
+      "note": "deployed checkpoint - training provenance not established as speaker-disjoint from this test set (trained on a Kaggle fold of a superset of these sources), information only",
+      "read_only": true
+    },
+    "control": {
+      "checkpoint": "results/sprint8/train/scratch/models/control.pt",
+      "checkpoint_sha256_before": "bfa83aca6f8aa37ffa5dbcfec7009c32604ff03a1dadc1146e9733d7c79a77a9",
+      "epoch": 2,
+      "fit_set": "val clean + val sim",
+      "n_fit": 254,
+      "temperature_fitted": 0.5067571997642517,
+      "temperature": 0.5067571997642517,
+      "ece_before": 0.11191032081842422,
+      "ece_after": 0.07374704629182816,
+      "threshold": 0.2,
+      "val_metrics_at_threshold": {
+        "threshold": 0.2,
+        "balanced_acc": 0.12235872041095387,
+        "overall_acc": 0.29133859276771545,
+        "digit_acc": 0.02222222276031971,
+        "digit_rejected": 0.9555555582046509,
+        "unknown_rejection": 0.9459459185600281
+      },
+      "val_metrics_at_0.60": {
+        "balanced_acc": 0.09090909090909091,
+        "overall_acc": 0.29133859276771545,
+        "digit_acc": 0.0,
+        "digit_rejected": 1.0,
+        "unknown_rejection": 1.0
+      },
+      "val_metrics_argmax_only": {
+        "balanced_acc": 0.14025016806342386,
+        "overall_acc": 0.26771652698516846,
+        "digit_acc": 0.05000000074505806,
+        "digit_rejected": 0.7388888597488403,
+        "unknown_rejection": 0.7972972989082336
+      },
+      "val_clean": {
+        "n": 157,
+        "ece_before": 0.08093716204166412,
+        "ece_after": 0.05675419047474861,
+        "at_chosen_threshold": {
+          "balanced_acc": 0.12639912421053107,
+          "overall_acc": 0.24840764701366425,
+          "digit_acc": 0.03333333507180214,
+          "digit_rejected": 0.9333333373069763,
+          "unknown_rejection": 0.9459459185600281
+        },
+        "threshold_this_subset_alone_would_pick": 0.2,
+        "at_own_threshold": {
+          "balanced_acc": 0.12639912421053107,
+          "overall_acc": 0.24840764701366425,
+          "digit_acc": 0.03333333507180214,
+          "digit_rejected": 0.9333333373069763,
+          "unknown_rejection": 0.9459459185600281
+        }
+      },
+      "val_sim": {
+        "n": 97,
+        "ece_before": 0.1620420664548874,
+        "ece_after": 0.10125095397233963,
+        "at_chosen_threshold": {
+          "balanced_acc": 0.08599508350545709,
+          "overall_acc": 0.36082473397254944,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 0.9459459185600281
+        },
+        "threshold_this_subset_alone_would_pick": 0.59,
+        "at_own_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.3814432919025421,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        }
+      },
+      "checkpoint_sha256": "de2bb04870fa9b0f7374d57d1990d7a44fa22a876f7dd4729715998cd033438b"
+    }
+  },
+  "wall_seconds": 3.039835214614868,
+  "additions": [
+    {
+      "added_utc": "2026-11-08T18:21:37+00:00",
+      "models": [
+        "control"
+      ],
+      "wall_seconds": 16.068197011947632
+    }
+  ]
+}

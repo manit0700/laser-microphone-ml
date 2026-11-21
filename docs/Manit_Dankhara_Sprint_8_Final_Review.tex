@@ -1,0 +1,260 @@
+\documentclass{article}
+
+\usepackage[letterpaper, portrait, margin=0.65in]{geometry}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\setlength\parindent{0pt}
+\setlength{\parskip}{4pt}
+\renewcommand{\arraystretch}{1.18}
+\definecolor{headerblue}{RGB}{214,235,247}
+
+\title{Sprint 8 Final Review (Revised After Software Verification, Packaging and Audio Review) \\ CSE 4316}
+\author{Manit Dankhara}
+\date{Revised November 8th, 2026}
+
+\begin{document}
+\maketitle
+\begin{center}
+\begin{tabular}{l l}
+\textbf{Sprint start date:} & October 26th, 2026 \\
+\textbf{Sprint end date:} & November 8th, 2026 \\
+\textbf{Project title:} & Laser Microphone \\
+\textbf{Team name:} & Eclipse \\
+\textbf{Partners:} & Michael McKinley; Brooke Sayer; John Garcia; Ali Iqbal \\
+\textbf{Instructor:} & Shawn Gieser, PhD
+\end{tabular}
+\end{center}
+
+\section{Revision Note}
+This final review supersedes the earlier Sprint 8 report and the Sprint 8 follow-up report for the points below. Earlier versions are kept unchanged. Every number here traces to a saved artifact in \texttt{results/sprint8/}, \texttt{results/sprint8\_followup/} or \texttt{results/sprint8\_final/}.
+\begin{itemize}[leftmargin=0.25in]
+\item The historical test data is described as \textbf{40 unseen voice speakers plus five synthetic-noise groups}. The earlier ``45 unseen speakers'' wording is withdrawn.
+\item Validation follow-up figures are presented as \textbf{validation only}. They were used for checkpoint and threshold selection and are not independent test results.
+\item Simulator SNR-parameter bins are \textbf{not} measured rig SNR. No rig accuracy is predicted from them.
+\item New in this review: a software-package verification, an expected-versus-observed replay event table, an objective audio check of the ``six''-to-``eight'' playlist, and the laser class wording recorded as unconfirmed.
+\end{itemize}
+
+\section{Sprint Goal}
+The Sprint 8 focus was the simulation and software-prototype part of the ML backlog: fine-tune the laser CNN on physics-simulated laser audio, evaluate it on speakers the model did not train on, calibrate confidence and the ``unknown'' threshold, verify through software replay that the dashboard laser channel gives one prediction per spoken word and rejects non-speech, and package the frozen model for reproducible use. Everything here was produced with simulated laser audio and software replay. No real laser recordings, Jetson timing, TensorRT testing or hardware validation were performed.
+
+\section{Sprint Backlog (ML items)}
+Work units are the planning estimates in person-hours.
+
+\begin{longtable}{|p{4.5in}|>{\centering\arraybackslash}p{0.8in}|>{\centering\arraybackslash}p{1.0in}|}
+\hline
+\rowcolor{headerblue}\textbf{Task description} & \textbf{Estimated} & \textbf{Status} \\ \hline
+\endfirsthead
+\hline
+\rowcolor{headerblue}\textbf{Task description} & \textbf{Estimated} & \textbf{Status} \\ \hline
+\endhead
+Fine-tune the laser CNN on simulated laser audio & 3 & Complete \\ \hline
+Evaluate on held-out speakers and update the confusion matrix & 3 & Complete \\ \hline
+Calibrate confidence and tune the ``unknown'' threshold & 2 & Complete \\ \hline
+Verify one prediction per spoken word and unknown rejection through software replay & 2 & Complete (software only) \\ \hline
+Document the experiment and Sprint 8 results & 1 & Complete \\ \hline
+Package the frozen model with checksum, configuration and verification & 1 & Complete (software only) \\ \hline
+Review the ``six''-to-``eight'' failures from the audio playlist & 1 & Partial: objective checks complete; human listening pending \\ \hline
+Hardware: rig and Jetson measurements & -- & Blocked (not accessible from the cloud workspace) \\ \hline
+\textbf{TOTAL (estimated)} & \textbf{13} & \textbf{-} \\ \hline
+\end{longtable}
+
+\section{Individual Time Expenditures}\label{sec:time}
+The ``Actual work'' column must be filled from the Sprint 8 actual-hours record. It is intentionally left open. No hours are estimated here.
+
+\begin{longtable}{|p{4.35in}|>{\centering\arraybackslash}p{0.85in}|>{\centering\arraybackslash}p{1.0in}|}
+\hline
+\rowcolor{headerblue}\textbf{Task description} & \textbf{Actual work} & \textbf{Completion} \\ \hline
+\endfirsthead
+\hline
+\rowcolor{headerblue}\textbf{Task description} & \textbf{Actual work} & \textbf{Completion} \\ \hline
+\endhead
+Built a verified dataset: removed 473 duplicate recordings, split the 9,209 unique originals by speaker before simulation, generated 9,818 simulated laser variants with provenance, and checked that no speaker or source recording crosses a split. & \_\_\_ & Complete \\ \hline
+Trained a clean-audio reference CNN and fine-tuned a copy on simulated laser audio from training speakers only; ran an update-matched clean-only control. & \_\_\_ & Complete \\ \hline
+Evaluated the models on held-out test speakers under clean and three simulated SNR-parameter conditions, with per-class confusion matrices. & \_\_\_ & Complete \\ \hline
+Calibrated the temperature and the ``unknown'' threshold on validation data; froze settings before testing. & \_\_\_ & Complete \\ \hline
+Found and fixed a simulator defect (a full-scale start-up click in every simulated clip) and re-ran the experiment. & \_\_\_ & Complete \\ \hline
+Built a replay harness for the dashboard classifier, counted events explicitly, and ran the replay scenarios on validation clips. & \_\_\_ & Complete (software only) \\ \hline
+Packaged the frozen checkpoint with a standalone predictor, checksum and 14 verification checks. & \_\_\_ & Complete (software only) \\ \hline
+Objective audio checks of the six-to-eight playlist (57 clips). & \_\_\_ & Complete; listening pending \\ \hline
+Documented the experiment and this review. & \_\_\_ & Complete \\ \hline
+\textbf{TOTAL} & \textbf{\_\_\_} & \textbf{-} \\ \hline
+\end{longtable}
+
+\section{What I Did This Sprint}
+The deployed CNN was trained on a Kaggle fold of a larger data set, so its training speakers cannot be shown to be disjoint from the local test speakers, and its numbers are reported for information only. Instead I trained a clean-audio reference CNN from scratch on the local 9.2K-clip set with a speaker-grouped split (train 6,391 clips from 271 voice speakers; validation 1,433 from 58; test 1,385 from 40, plus five synthetic-noise groups in the test split). The team recording speaker is entirely in the test split.
+
+A copy of the reference was fine-tuned on simulated laser audio generated from training-split recordings only, mixed with clean replay, and passed through the dashboard laser channel's band-pass (200--3800~Hz) and enhancement. Temperature and the ``unknown'' threshold were fitted on validation data. The test split was scored once for Round 2, so it is no longer a pristine confirmatory set.
+
+An update-matched control (clean-only training for 63 epochs, about 12,600 updates, against 12,570 for the fine-tune) was run with three seeds per arm. The simulator defect (a full-scale click at the start of every clip) was fixed and the experiment re-run; earlier simulated-laser results from Sprints 6--7 were produced with the defective simulator.
+
+For this review, the frozen \texttt{finetuned\_v2} checkpoint was packaged with a standalone predictor, verified, and replayed on validation clips through the live classifier code path. No model was retrained or replaced.
+
+\section{Final Software Verification}
+\subsection{Package verification}
+The package (\texttt{results/sprint8\_final/package/}) contains the frozen checkpoint, its SHA-256 checksum, the label order, sample rate, filter path, temperature 0.5721844 and threshold 0.26. All 14 checks in \texttt{VERIFICATION\_LOG.md} pass. They include fresh-process runs from outside the repository with relative paths, numeric agreement with the repository predictor on 20 validation clips (maximum probability difference 0; argmax 20 of 20), a check that an environment override pointing to another checkpoint is ignored, and clear error messages with exit codes for a missing input, a missing or corrupted checkpoint, a bad configuration, a missing repository and bad usage.
+
+\textbf{Limitation.} The package still imports the repository's \texttt{src/} and \texttt{scripts/sprint8/} modules; it does not bundle them. No \texttt{/home/claude} paths appear in the package's own source.
+
+\subsection{Replay on validation clips}\label{sec:replay}
+The replay was run with \texttt{scripts/sprint8/replay\_harness.py} on \texttt{manifest\_v2.csv} using the validation split only, through a controlled stream at 48~kHz with 256~ms and 50~ms reads. Table~\ref{tab:replay} gives the event counts over the 48 spoken words (42 digits and 6 unknown words) in each word scenario. Silence and noise-only scenarios are reported separately below. The full per-scenario table is in \texttt{replay/expected\_vs\_observed\_events.csv} (240 rows).
+
+\begin{table}[h]
+\centering
+\footnotesize
+\resizebox{\textwidth}{!}{\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|}
+\hline
+\rowcolor{headerblue}\textbf{Config.} & \textbf{Read} & \textbf{Events} & \textbf{Missed} & \textbf{Dup.} & \textbf{Correct /42} & \textbf{Wrong} & \textbf{Rej.} & \textbf{Unk. rej. /6} & \textbf{Unk. false acc.} \\ \hline
+laser\_word & 256 ms & 46 & 2 & 0 & 35 & 5 & 0 & 6 & 0 \\ \hline
+laser\_word & 50 ms & 47 & 2 & 1 & 35 & 5 & 0 & 6 & 0 \\ \hline
+std\_ensemble\_word & 256 ms & 46 & 5 & 1 & 31 & 1 & 5 & 6 & 0 \\ \hline
+std\_ensemble\_word & 50 ms & 46 & 5 & 1 & 31 & 1 & 5 & 6 & 0 \\ \hline
+laser\_sliding & 256 ms & 43 & 17 & 12 & 21 & 6 & 2 & 1 & 1 \\ \hline
+laser\_sliding & 50 ms & 56 & 13 & 21 & 20 & 10 & 0 & 0 & 5 \\ \hline
+std\_ensemble\_sliding & 256 ms & 33 & 19 & 3 & 25 & 1 & 2 & 1 & 0 \\ \hline
+std\_ensemble\_sliding & 50 ms & 32 & 20 & 3 & 23 & 1 & 3 & 1 & 0 \\ \hline
+\end{tabular}}
+\caption{Replay event counts on validation clips, 48 spoken words per configuration. Digit columns are as saved by the harness. In sliding modes they do not sum to 42, because duplicate and unmatched events are counted separately.}
+\label{tab:replay}
+\end{table}
+
+\textbf{Silence and noise.} Five seconds of silence produced no events in any configuration. Noise-only scenarios (synthetic white noise and two real noise clips at RMS 0.005--0.08) produced spurious events. In \texttt{laser\_word}, 12--13 spurious \texttt{unknown} events occurred across 15 rows (one false activation), in \texttt{std\_ensemble\_word} 8, and in the sliding modes 6 each. These are non-digit events. Whether the dashboard should suppress them is an open decision and was not tested with the dashboard UI.
+
+\textbf{Low level.} Speech at RMS 0.01 was missed in word modes (2 of 3 words in \texttt{laser\_word}). This matches the gate's silence threshold of 0.02, but a gate sweep was not run.
+
+\textbf{Timing.} Decision-latency values in the sliding rows are negative in several scenarios. The reference point of that field has not been checked against the code, so latency is not reported.
+
+\textbf{Regression.} The 17 replay regression checks pass (\texttt{replay/pytest\_regression\_final.log}).
+
+\textbf{Controlled-replay assumptions.} The stream is generated and simulated in software; it is not a physical recording. It uses validation clips only. Its numbers say nothing about the laser, the detector, or the room.
+
+\section{Audio Review of the ``Six''-to-``Eight'' Failures}\label{sec:audio}
+The playlist contains 57 clips: 45 development errors (29 ``six'' predicted as ``eight'', and 16 with other predictions) and 12 correctly recognised control clips. All 57 match their source files by SHA-256, their saved predictions and their filenames. None is clipped at the sample level: 0 clips show flat-top runs, and 33 peak at full scale. Sample rates are 33 at 16 kHz and 24 at 8 kHz. The error group and the control group do not differ in onset time or burst count.
+
+\textbf{Listening status: not done.} Every clip is marked \texttt{PENDING\_HUMAN\_LISTEN}. No label has been changed or confirmed. The objective checks do not establish what was said. The label-review sheet records the perceived word, ambiguity and audible problems for a human reviewer to fill in.
+
+\section{Results}
+\subsection{Held-out test split (Round 2, scored once; 40 voice speakers plus five synthetic-noise groups)}
+\begin{center}
+\footnotesize
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\rowcolor{headerblue}\textbf{Digit accuracy (\%), pooled clips} & \textbf{clean} & \textbf{sim $\geq$20 dB} & \textbf{sim 10--20 dB} & \textbf{sim $<$10 dB} & \textbf{all sim} \\ \hline
+Reference CNN (clean audio, from scratch) & 89.1 & 55.9 & 56.5 & 48.5 & 53.7 \\ \hline
+Control: reference + clean-only training & 90.9 & 58.3 & 56.0 & 48.0 & 54.3 \\ \hline
+\textbf{Reference fine-tuned on simulated laser (finetuned\_v2)} & \textbf{91.5} & \textbf{80.7} & \textbf{84.4} & \textbf{76.5} & \textbf{80.5} \\ \hline
+Deployed checkpoint (information only$^{*}$) & 94.1 & 83.8 & 87.7 & 81.6 & 84.4 \\ \hline
+\end{tabular}
+
+\vspace{3pt}
+\resizebox{\textwidth}{!}{\begin{tabular}{|l|c|}
+\hline
+\rowcolor{headerblue}\textbf{Other measured results (test)} & \textbf{Value} \\ \hline
+Digits wrongly rejected as unknown, simulated audio (reference $\rightarrow$ fine-tuned) & 19.1\% $\rightarrow$ 4.2\% \\ \hline
+Unknown rejected, simulated audio (synthetic noise / real non-digit speech), fine-tuned & 100\% / 60\% (36 of 60 real non-digit clips; 24 false accepts) \\ \hline
+Simulator click fix: clips peaking in first 30 ms; median speech RMS & 88\% $\rightarrow$ 0\%; 0.056 $\rightarrow$ 0.162 \\ \hline
+\end{tabular}}
+\end{center}
+{\footnotesize $^{*}$The deployed model's training speakers cannot be shown to be disjoint from this test set. It scores higher on clean audio (94.1\% vs 91.5\%); its numbers are not comparable with the fine-tuned model's.}
+
+\subsection{Validation follow-up (validation only; not test evidence)}
+\begin{center}
+\footnotesize
+\resizebox{\textwidth}{!}{\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\rowcolor{headerblue}\textbf{Clean + sim validation, out-of-fold} & \textbf{Digit acc. pooled (\%)} & \textbf{Digit acc. speaker-equal (\%)} & \textbf{Real non-digit rejected (\%)} & \textbf{Digits rejected (\%)} & \textbf{OOF ECE} \\ \hline
+Fine-tune, 3 seeds (mean) & 84.7 & 74.6 & 70.5 (67--74) & 4.3 & 0.029 \\ \hline
+Update-matched control, 3 seeds (mean) & 74.4 & 61.8 & 78.5 (76--82) & 8.8 & 0.042 \\ \hline
+\end{tabular}}
+\end{center}
+Seed-level values (\texttt{sprint8\_followup/SEED\_AND\_CONTROL\_RESULTS.md}): fine-tune speaker-equal 75.5, 75.2, 73.2; control 62.3, 60.6, 62.4. Paired speaker-equal differences (fine-tune minus control): +13.2 [9.3, 16.6], +14.6 [10.8, 18.2], +10.7 [7.3, 14.3] points, speaker-clustered 95\% intervals. Speaker-equal values cover 58 validation speakers. The validation real non-digit set has 226 clips from 8 speakers, so its rate is imprecise.
+
+\begin{center}
+\includegraphics[width=0.48\textwidth]{sprint8_figures/confusion_reference_sim_poor.png}
+\includegraphics[width=0.48\textwidth]{sprint8_figures/confusion_finetuned_v2_sim_poor.png}\\
+{\footnotesize Confusion matrices on the lowest-SNR simulated test condition (438 clips): reference CNN (left) and fine-tuned copy (right).}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{sprint8_figures/reliability_oof_val.png}\\
+{\footnotesize Reliability diagrams from out-of-fold validation predictions (speaker-group two-fold cross-fit, 15 bins).}
+\end{center}
+
+\subsection{Speaker concentration}
+On validation, one speaker supplies 39\% of digit clips. The ``six'' errors concentrate in a few speakers and mostly go to ``eight''. Short, quiet clips explain these errors only partly. Listening labels are pending (Section~\ref{sec:audio}).
+
+\section{Hardware Specifications: Missing (Recorded, Not Confirmed)}\label{sec:hw}
+The hardware teammate describes the lasers as ``grade level 1'' and ``grade level 3''. These are \textbf{unconfirmed classifications}, potentially corresponding to IEC/ANSI Class 1 and Class 3. They are not measured signal-strength settings and do not define the signal reaching the detector. No recognition accuracy, SNR, or simulator parameter is inferred from them.
+
+Requested, not yet received: laser model numbers or labels; datasheets; wavelength, output power, and beam divergence for each laser; and whether the second laser is Class 3R or Class 3B. Physical operating conditions were not changed, and no hardware was operated for this review.
+
+\section{Physics Re-check (Primary Sources; from the Follow-Up Review)}
+\begin{itemize}[leftmargin=0.25in]
+\item PCM1808 datasheet (Texas Instruments, SLES177B): 3~Vp-p full scale, 99~dB A-weighted dynamic range at 48~kHz, and a recommended 1~$\mu$F AC coupling capacitor with a 2.7~Hz corner. The simulator does not model the ADC's fixed full scale or the rig's clipping.
+\item Walker and Saxena, ``Laser Meager Listener'' (EuroS\&P 2022): laser-vibrometer speech recovery at 1.2--10~dB SNR. This supports treating the simulator's 0--30~dB prior as optimistic. The paper uses vibrometers on cups and windows, not a photodiode knife-edge detector, so it is not a direct substitute.
+\item The power-line interference study reports odd harmonics dominating the interference spectrum. The simulator adds all harmonics, which may be too strong at even orders. This is unverified for a photodiode detector.
+\end{itemize}
+
+\section{Limitations and Remaining Work}
+\begin{itemize}[leftmargin=0.25in]
+\item All laser audio in this sprint is simulated. SNR bins are simulator parameter bins, not measured in-band SNR.
+\item Equal-weight speaker accuracy is lower than pooled accuracy, so speaker generalization is uneven. Grouped speaker retraining was not done.
+\item Non-digit rejection on the test split is 60\%, and 67--74\% on validation depending on seed. It is not established that this generalizes to real speech.
+\item The fine-tunes stopped at their 30-epoch cap while validation loss was still falling. Longer training was not tested.
+\item The replay limitations in Section~\ref{sec:replay} apply: word modes miss low-level speech and emit noise-only \texttt{unknown} events; sliding modes repeat decisions.
+\item Real laser recordings, Jetson and TensorRT latency, and live dashboard validation are not done. The hardware is blocked, and the laser class and specification details are missing (Section~\ref{sec:hw}).
+\item The test split has now been used in two rounds. A confirmatory claim needs new speakers or a new recording session.
+\item Level 1 and Level 3 are not defined in the project files, the sources, or the hardware teammate's description. No Level 1 or Level 3 claim is made.
+\end{itemize}
+
+\section{Required Fields Left Open}
+The following items are left for the author to confirm. None has been estimated.
+\begin{itemize}[leftmargin=0.25in]
+\item Actual hours for each task (Section~\ref{sec:time}) and the total: no Sprint 8 hours spreadsheet was available to the author; the only hours record provided covers Sprint 1.
+\item Submission due time and timezone.
+\item Peer-review scores (Section~\ref{sec:peer}).
+\item Laser model numbers, datasheets, wavelength, output power, and Class 3R/3B status (Section~\ref{sec:hw}).
+\item The meaning of Level 1 and Level 3.
+\end{itemize}
+
+\section{Individual Retrospective}
+\textbf{Start:}
+\begin{itemize}[leftmargin=0.25in]
+\item Start replaying recorded audio through the live classifier as a standard check before any dashboard change. It found four segmentation bugs that live testing had not.
+\item Start measuring the rig's SNR distribution and hum spectrum so the simulator's priors are measured, not guessed.
+\end{itemize}
+\textbf{Stop:}
+\begin{itemize}[leftmargin=0.25in]
+\item Stop quoting simulated-laser accuracy without stating the SNR condition. Only the low-SNR bin resembles the rig.
+\item Stop comparing against the deployed checkpoint as a fair baseline when its training speakers are unknown.
+\end{itemize}
+\textbf{Continue:}
+\begin{itemize}[leftmargin=0.25in]
+\item Continue speaker-grouped splits, duplicate removal, validation-only tuning and a single test run.
+\item Continue logging every experiment, including negative results and defects found.
+\end{itemize}
+
+\section{Peer Review}\label{sec:peer}
+Each item is graded 1--5, where 1 is the lowest and 5 the highest. \textit{(To be filled in by the author.)}
+
+\begin{center}
+\scriptsize
+\begin{tabular}{|p{1.35in}|>{\centering\arraybackslash}p{0.82in}|>{\centering\arraybackslash}p{0.9in}|>{\centering\arraybackslash}p{1.0in}|>{\centering\arraybackslash}p{0.78in}|>{\centering\arraybackslash}p{0.62in}|}
+\hline
+\rowcolor{headerblue}\textbf{Team member} & \textbf{Participation} & \textbf{Communication} & \textbf{Professionalism} & \textbf{Work quality} & \textbf{Overall} \\ \hline
+Michael McKinley & & & & & \\ \hline
+Manit Dankhara & & & & & \\ \hline
+Brooke Sayer & & & & & \\ \hline
+John Garcia & & & & & \\ \hline
+Ali Iqbal & & & & & \\ \hline
+\end{tabular}
+\end{center}
+
+\end{document}

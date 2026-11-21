@@ -1,0 +1,32 @@
+Base: /home/claude/lmml/results/sprint8/models/reference_cnn.pt (epoch 38, val acc 0.8416, sha256 14051f0fd2cc...)
+train: 7000 sim {'0': 615, '1': 615, '2': 607, '3': 631, '4': 624, '5': 614, '6': 614, '7': 604, '8': 608, '9': 611, 'unknown': 857}
+       + 6391 clean replay (ratio 1.0) {'0': 557, '1': 546, '2': 554, '3': 554, '4': 563, '5': 561, '6': 552, '7': 552, '8': 548, '9': 547, 'unknown': 857}
+val  : 1433 sim + 1433 clean; speakers shared train/val: 0
+Laser path on sim clips: True (band-pass (200.0, 3800.0) order 4 + enhance); clean clips: plain path
+Preloading waveforms ...
+    [train] preloaded 2000/13391 clips (7s)
+    [train] preloaded 4000/13391 clips (28s)
+    [train] preloaded 6000/13391 clips (36s)
+    [train] preloaded 8000/13391 clips (41s)
+    [train] preloaded 10000/13391 clips (42s)
+    [train] preloaded 12000/13391 clips (44s)
+  preload done in 52s
+BEFORE fine-tune (reference): val sim loss 1.7039 acc 0.4962 | val clean loss 0.9696 acc 0.8416 | clean floor 0.8116
+Epoch  1/15 | train loss 1.3611 acc 0.668 | val loss 1.2139 acc 0.727 | sim acc 0.610 | clean acc 0.845 | 17s  <- best
+Epoch  2/15 | train loss 1.3022 acc 0.701 | val loss 1.1737 acc 0.755 | sim acc 0.661 | clean acc 0.849 | 18s  <- best
+Epoch  3/15 | train loss 1.2776 acc 0.710 | val loss 1.1473 acc 0.776 | sim acc 0.683 | clean acc 0.868 | 100s  <- best
+Epoch  4/15 | train loss 1.2498 acc 0.725 | val loss 1.1337 acc 0.778 | sim acc 0.691 | clean acc 0.865 | 108s  <- best
+Epoch  5/15 | train loss 1.2381 acc 0.732 | val loss 1.1204 acc 0.783 | sim acc 0.710 | clean acc 0.856 | 18s  <- best
+Epoch  6/15 | train loss 1.2224 acc 0.738 | val loss 1.1232 acc 0.785 | sim acc 0.703 | clean acc 0.866 | 22s  (no improvement 1/4)
+Epoch  7/15 | train loss 1.2076 acc 0.747 | val loss 1.1009 acc 0.795 | sim acc 0.724 | clean acc 0.866 | 17s  <- best
+Epoch  8/15 | train loss 1.2001 acc 0.749 | val loss 1.1011 acc 0.793 | sim acc 0.721 | clean acc 0.865 | 16s  (no improvement 1/4)
+Epoch  9/15 | train loss 1.1892 acc 0.760 | val loss 1.0962 acc 0.801 | sim acc 0.727 | clean acc 0.875 | 88s  <- best
+Epoch 10/15 | train loss 1.1874 acc 0.756 | val loss 1.0864 acc 0.800 | sim acc 0.733 | clean acc 0.867 | 18s  <- best
+Epoch 11/15 | train loss 1.1820 acc 0.761 | val loss 1.0744 acc 0.805 | sim acc 0.741 | clean acc 0.869 | 111s  <- best
+Epoch 12/15 | train loss 1.1747 acc 0.758 | val loss 1.0798 acc 0.806 | sim acc 0.744 | clean acc 0.867 | 17s  (no improvement 1/4)
+Epoch 13/15 | train loss 1.1665 acc 0.767 | val loss 1.0701 acc 0.810 | sim acc 0.745 | clean acc 0.875 | 63s  <- best
+Epoch 14/15 | train loss 1.1590 acc 0.764 | val loss 1.0742 acc 0.803 | sim acc 0.738 | clean acc 0.868 | 33s  (no improvement 1/4)
+Epoch 15/15 | train loss 1.1571 acc 0.771 | val loss 1.0658 acc 0.810 | sim acc 0.738 | clean acc 0.883 | 34s  <- best
+
+Selected epoch 15: val sim acc 0.4962 -> 0.7376, val clean acc 0.8416 -> 0.8828
+Saved -> /home/claude/lmml/results/sprint8/models/finetuned_cnn.pt  (sha256 2c7d87fc99fc...)  total 736s

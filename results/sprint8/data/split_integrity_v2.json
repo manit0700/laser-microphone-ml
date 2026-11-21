@@ -1,0 +1,76 @@
+{
+ "manifest": "results/sprint8/data/manifest_v2.csv",
+ "rows": 19027,
+ "clean_rows": 9209,
+ "sim_rows": 9818,
+ "checked_at": "2026-11-08T12:33:16",
+ "speakers_shared_between_splits": {
+  "count": 0,
+  "items": []
+ },
+ "source_sha256_shared_between_splits": {
+  "count": 0,
+  "items": []
+ },
+ "sim_source_in_other_split": {
+  "count": 0,
+  "items": []
+ },
+ "duplicate_sha256_among_clean": {
+  "count": 0,
+  "items": []
+ },
+ "duplicate_sha256_in_manifest": {
+  "count": 0,
+  "items": []
+ },
+ "label_inconsistent": {
+  "count": 0,
+  "items": []
+ },
+ "sim_folder_split_mismatch": {
+  "count": 0,
+  "items": []
+ },
+ "team_clips_outside_test": {
+  "count": 0
+ },
+ "schema_ok": true,
+ "missing_files": {
+  "count": 0,
+  "items": []
+ },
+ "condition_bin_errors": {
+  "count": 0
+ },
+ "clean_condition_errors": {
+  "count": 0
+ },
+ "sc_hashes_in_digits_and_unknown": 75,
+ "speakers_per_split": {
+  "train": 276,
+  "val": 63,
+  "test": 45
+ },
+ "clean_clips_per_split": {
+  "train": 6391,
+  "val": 1433,
+  "test": 1385
+ },
+ "sim_clips_per_split": {
+  "train": 7000,
+  "val": 1433,
+  "test": 1385
+ },
+ "sanity_listen": {
+  "n": 20,
+  "degenerate_count": 0,
+  "degenerate": [],
+  "rms_min": 0.0817,
+  "rms_max": 0.2759,
+  "clipped_frac_max": 0.0026,
+  "n_with_any_clipping": 13
+ },
+ "failures": [],
+ "verified": true
+}

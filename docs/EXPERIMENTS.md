@@ -18,6 +18,136 @@ all test numbers are on **speakers never seen in training**.
 | Report-grade result (5-fold CV, CNN, 8 kHz) | **92.4 % ± 0.5 overall · 93.6 % ± 0.4 digits · 76.2 % ± 3.2 unknown rejected** (Exp 5) |
 | Laser hardware | Laser **does** pick up loud speech, but only ~2× above its noise after a 200–4000 Hz band-pass (raw signal is ~96 % 60 Hz hum). Live laser recognition works on some loud digits, not reliably (Exp 6). |
 | Training data | Public microphone datasets (Speech Commands, FSDD) + team PCM1808 recordings + 3,500 **simulated** laser clips. **No real laser recordings yet.** |
+| Sprint 8 simulation experiment (Exp 7, local 9.2 K-clip set, 45 unseen test speakers) | Clean reference CNN **53.7 %** digits on simulated laser audio → **80.5 %** after fine-tuning on simulated laser (train speakers only); clean **89.1 → 91.5 %**; clean-only control stays at 54.3 % on sim. Simulator start-up-click bug found and fixed; four laser-channel segmentation bugs fixed in software replay. |
+
+---
+
+## Exp 7 — Sprint 8: simulated-laser fine-tune with a verified speaker split + software replay of the prototype (Nov 8)
+
+**Question.** With everything held honest — duplicates removed, originals split by speaker
+*before* simulation, settings frozen on validation, test scored once — how much does
+fine-tuning on `physics_laser_sim.py` audio help on unseen speakers, and does the
+dashboard's laser channel really give one prediction per spoken word?
+
+**Why a new reference model.** The deployed `models/best_model_cnn.pt` was trained on a
+Kaggle fold (`kfold:0/5`) of a 44.8 K-clip superset of the local data and then fine-tuned,
+so its training speakers cannot be shown to be disjoint from any local test set. Sprint 8
+therefore trains a **clean-audio reference CNN from scratch** on the local set and
+fine-tunes a copy; the deployed model is scored on the same test speakers **for
+information only** (not comparable; it may have trained on them). All code, commands and
+outputs: `scripts/sprint8/`, `results/sprint8/` (see `results/sprint8/HANDOFF.md`).
+
+**Data** (`results/sprint8/data/manifest_v2.csv`, `split_integrity_v2.json`). 9,682 local
+originals → 9,209 unique (473 duplicates dropped: 460 `_dupN` copies of the 92 manit
+recordings + 13 byte-identical Speech Commands files). Speaker-grouped split, seed 42,
+**before** simulation: train 6,391 clips / 276 speakers; val 1,433 / 63; test 1,385 / 45
+(FSDD: jackson, lucas, nicolas, theo | george | yweweler; Speech Commands hashes shared
+between digit and non-digit words kept in one split; `manit` entirely in test). Every clip
+carries sha256, speaker, split, label, and for simulated clips the source file/hash, a
+per-clip seed and all simulator parameters. Simulated variants: 7,000 train / 1,433 val /
+1,385 test, each inheriting its source's split (0 speakers, 0 source hashes, 0 sources
+shared across splits). SNR bins: good ≥ 20 dB, medium 10–20, poor < 10. The `noise_*` /
+`silence_*` "unknown" clips were found to be **generated** (white/brown/hum/band-limited
+noise, 1.000 s, peak-normalised) and are reported separately as synthetic.
+
+**Simulator bug found and fixed (Round 1 → Round 2).** The software replay harness showed
+that *every* simulated clip began with a full-scale ~20 ms transient: `electronics()`
+applied the AC-coupling high-pass from zero state to the ≈0.5 DC level of the photodiode
+intensity, and `adc()` then normalised the clip to that click, leaving speech at
+0.005–0.1 of full scale (88 % of clips peaked in their first 30 ms). Fixed by starting the
+filters in steady state (`sosfilt_zi`). Regenerating with identical seeds/parameters: 0 %
+of clips now peak in the first 30 ms, median speech RMS 0.056 → 0.162
+(`sim_fix_before_after.png`, `sim_v1_vs_v2.json`). The artifact alone cost the reference
+model **5.3 points** on simulated digits (48.4 → 53.7 %). **Exp 2 and Exp 6 simulated-laser
+numbers were produced with the clicky simulator and should be read with that caveat.**
+
+**Models** (CNN, mel, 8 kHz, dropout 0.4, label smoothing 0.1, SpecAugment, seed 42; cloud
+dev container, 2 vCPU, CPU-only PyTorch 2.15 — not the Jetson):
+
+| model | trained on | selected epoch (val) | T / threshold (val) |
+|---|---|---|---|
+| reference_cnn | train clean only, from scratch, ≤40 ep | 38 (good fit) | 0.581 / 0.26 |
+| continued_clean_cnn (control) | reference → clean replay only, lr 1e-4, ≤15 ep | 6 (early stop) | 0.771 / 0.22 |
+| finetuned_v2_cnn | reference → train-split sim (click-free) + clean replay, lr 1e-4, ≤30 ep | 30 (still improving) | 0.572 / 0.26 |
+
+Simulated clips are fed through the dashboard's laser path (Butterworth-4 band-pass
+200–3800 Hz → `enhance_waveform` → `preprocess_waveform`) in training and testing; clean
+clips use the plain file path (the std channel applies `enhance_waveform` live; near no-op
+on clean audio). Temperature (LBFGS on NLL) and the "unknown" threshold (max balanced
+accuracy over 11 classes, grid 0.20–0.95) were fitted on validation only; acceptance
+criteria were written to `FROZEN_SETTINGS.json` before the single test run.
+
+**Test results, Round 2** (1,385 clean + 1,385 simulated clips; digits correct / digits
+wrongly rejected / unknown rejected (synthetic / real speech) / balanced accuracy, %):
+
+| condition | reference | control (clean only) | **fine-tuned on sim** | deployed (info only) |
+|---|---|---|---|---|
+| clean | 89.1 / 2.1 / 82.7 (100 / 68) / 88.4 | 90.9 / 2.4 / 83.6 (98 / 72) / 90.1 | **91.5 / 1.3 / 81.8 (98 / 68) / 90.4** | 94.1 / 0.6 / 45.5 (14 / 72) / 89.7 |
+| sim_good | 55.9 / 15.5 / 69.0 / 57.1 | 58.3 / 15.5 / 69.0 / 59.1 | **80.7 / 4.4 / 81.0 / 80.8** | 83.8 / 1.1 / 28.6 / 78.6 |
+| sim_medium | 56.5 / 17.5 / 78.9 / 58.5 | 56.0 / 18.8 / 81.6 / 58.1 | **84.4 / 2.4 / 73.7 / 83.4** | 87.7 / 1.9 / 26.3 / 82.2 |
+| sim_poor | 48.5 / 24.8 / 83.3 / 51.1 | 48.0 / 27.9 / 90.0 / 51.3 | **76.5 / 5.6 / 80.0 / 76.7** | 81.6 / 1.5 / 20.0 / 76.1 |
+| sim_all | 53.7 / 19.1 / 76.4 / 55.6 | 54.3 / 20.5 / 79.1 / 56.3 | **80.5 / 4.2 / 78.2 (100 / 60) / 80.3** | 84.4 / 1.5 / 25.5 (0 / 47) / 79.1 |
+| manit, clean (92 clips) | 87.0 | 88.0 | 85.9 | 90.2 |
+
+Acceptance criteria (pre-registered): AC1 sim_all digits ≥ reference + 5 pts → **+26.8, pass**;
+AC2 clean digits ≥ reference − 3 → **+2.4, pass**; AC3 sim balanced accuracy ≥ reference →
+**pass**; AC4 clean digit rejection ≤ 5 % → **pass** (2.1 / 1.3 %). Round 1 (clicky sims)
+gave the same picture (reference 48.4 → fine-tuned 77.4 % sim_all; 15-epoch and 30-epoch
+variants 77.4 / 79.3 %), all in `test_metrics.md`.
+
+**Conclusions.**
+- The gain comes from simulated-laser **exposure**, not from extra training: the control
+  that continued on clean audio alone moved 0.6 pts on sim (53.7 → 54.3) while the sim
+  fine-tune moved +26.8. Clean accuracy did not degrade (+2.4).
+- The research review (`results/sprint8/research/`) shows the simulator's SNR prior
+  (uniform 0–30 dB, broadband) is far more optimistic than the rig (in-band ≈ 3–7.5 dB), so
+  **only the `sim_poor` column (76.5 % digits) should be quoted as indicative of the rig**, and
+  even it is optimistic. Hum harmonics are modelled with the wrong decay (too much in-band
+  leak), the surface model fits membranes rather than glass, and 27 % of sim clips clip
+  while the rig has not been seen to clip.
+- "Unknown" rejection: synthetic noise/silence is rejected ~98–100 % by the Sprint 8 models,
+  real non-digit speech only 55–68 %. The deployed model rejects the synthetic noise at
+  0–14 % (never saw that generator), which dominates its low rejection figures.
+- Digit "6" remains the weak class (reference 59.7 % clean; 0/9 on manit), consistent with
+  earlier experiments and amplified by the small (6.4 K clip) reference training set.
+- Fine-tunes ended at the epoch cap while still improving; the reference set is 5× smaller
+  than the Kaggle set, so these numbers are a controlled comparison, not the best achievable
+  accuracy.
+
+**Prototype software replay** (`results/sprint8/replay/replay_results.md`; real test-split
+clips streamed into `_LiveClassifier` in 256 ms pushes — one PCM1808 read, as
+`signal_dashboard2.update_frame()` does — and 50 ms pushes; no microphone/ADC/GUI).
+Deterministic event-handling checks (one decision per spoken word): single digit; same digit
+3× → 3 events; 5 digits; 3 s pauses; 5 s silence; noise below the gate; 5 non-digit words →
+5 "Unknown" events; back-to-back 0.2 s gaps → 3/3; digits in noise at 20/10/5 dB SNR —
+**all pass with the final code at both push sizes**. Four confirmed bugs in the end-of-word
+logic were fixed in `signal_backend.py` (`_LiveClassifier`), each with before/after evidence
+and a regression test (`scripts/sprint8/test_replay_events.py`, 17 pass):
+1. gate dead zone — only the last 0.15 s of each 256 ms push was inspected (short-digit
+   placement sweep 81/96 → 96/96);
+2. the window handed to the model depended on the GUI tick, not the word (val replay accuracy
+   0.895 → 0.930; identical labels at 256 and 50 ms pushes);
+3. `WORD_MIN_SEC` click rejection could never fire (bogus second events on sim clips
+   202/600 → 62/600);
+4. after a `WORD_MAX_SEC` cut-off the same activity restarted a word (noise-only streams
+   above the gate 4–5 events → 1; remaining multi-event sim clips 62 → 1 on click-free sims).
+On click-free test sims the one-event rate is 0.998 and replay accuracy matches direct file
+inference (fine-tuned: 0.777 replay vs 0.690 direct on 551 sim digits; 0.892 vs 0.905 on 380
+clean). By design, not changed: words at half the gate level are not detected; continuous
+noise *above* the gate yields one forced classification per 1.1 s (the deployed CNN calls it
+a digit — a false activation; the Sprint 8 models say Unknown); sliding-window mode (std
+channel) cannot give one event per word (3 repeats → 1 event) — an end-of-word config for the
+std channel is recommended. Pipeline timings on the dev container (not Jetson latency): band-pass
+6.9 ms, enhance 2.3, preprocess + mel 0.7, CNN forward 0.9; whole decision tick 19 ms median.
+
+**Elapsed compute (wall clock, dev container).** Dataset build 75 s + v2 105 s; reference
+23.6 min; fine-tune 12.3 (15 ep) / 25.9 (30 ep) / 12.3 (v2, 30 ep); control 5.4; calibration
+3.4; tests 3.0; replay suites ≈ 1 h including re-runs. Several epochs were slowed 3–10× by
+agents sharing the two cores.
+
+**Not done (hardware).** No real laser audio was recorded or scored; no Jetson, FP16 or
+TensorRT measurement was made; the dashboard GUI was not run. The simulated conditions are
+simulated conditions, not recording sessions.
 
 ---
 
@@ -278,10 +408,17 @@ Jetson FP16/TensorRT numbers: `python3 scripts/export_jetson.py` on the Nano.
 | `37870f6` | "Unknown" threshold tuned on **validation**; ensemble keeps the unknown class; CV comparison that tests once |
 | `8b0b266` | Sample rate configurable (8/16 kHz); recordings saved at 16 kHz |
 | `de2d551` | Fix summary-CSV crash (Exp 4) |
+| Sprint 8 (uncommitted) | `physics_laser_sim.electronics()` steady-state filter init (start-up click removed); `_LiveClassifier` end-of-word fixes 1–4 + `on_decision` instrumentation; `predict.set_checkpoint_path()` / `LMML_CKPT_<TYPE>` |
 
 ---
 
 ## Open items
+
+0. Sprint 8 follow-ups: measure the rig's in-band SNR distribution, quiet-spectrum hum harmonics
+   and the target surface's response (see `results/sprint8/research/simulator_vs_rig.md` §C) and
+   replace the simulator's guessed priors; expose end-of-word mode for the std channel; add more
+   real non-digit speech to the `unknown` class (rejected only 55–68 %); re-run Exp 6's fine-tune
+   with the click-free simulator; score the Sprint 8 fine-tuned model on real laser clips.
 
 1. Laser: raise the speech-band SNR from ~2 to ≥ 5 (battery power, shared ground,
    lower receiver gain, beam on the photodiode edge). Measure with the band-limited

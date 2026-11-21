@@ -1,0 +1,34 @@
+{
+ "machine": "cloud dev container, 2 vCPU, CPU-only PyTorch 2.15.0",
+ "note": "software replay on the dev container; not Jetson/hardware latency",
+ "python": "3.13.16",
+ "torch": "2.15.0+cu132",
+ "torch_threads": 1,
+ "cpu_count": 2,
+ "loadavg_1m_before": 2.44677734375,
+ "loadavg_1m_after": 2.33056640625,
+ "contended": true,
+ "model": "cnn",
+ "chunk_ms": 256.0,
+ "stream_rate": 48000,
+ "n_words": 40,
+ "autosave": false,
+ "wall_s": 2.4132285118103027,
+ "first_call_warmup_ms": {
+  "gate_filter_ms": 3.647380000074918,
+  "word_filter_ms": 9.540660999846295,
+  "enhance_ms": 3.060211999581952,
+  "preprocess_ms": 0.2778789994408726,
+  "features_ms": 0.8363639999515726,
+  "forward_ms": 1.4089730002524448,
+  "predict_call_ms": 26.336946999435895
+ },
+ "idle_tick_gate_filter_ms_mean": 3.604416738641813
+}
+enhance_ms         median     2.27 ms   p95     3.14 ms   min     1.87
+features_ms        median     0.50 ms   p95     0.83 ms   min     0.40
+forward_ms         median     0.92 ms   p95     1.30 ms   min     0.74
+gate_filter_ms     median     4.32 ms   p95     8.18 ms   min     1.37
+predict_call_ms    median    19.33 ms   p95    29.08 ms   min    12.00
+preprocess_ms      median     0.19 ms   p95     0.31 ms   min     0.13
+word_filter_ms     median     6.89 ms   p95    12.35 ms   min     2.46
