@@ -1,0 +1,5 @@
+model reference_cnn: results/sprint8/models/reference_cnn.pt thr=0.26 T=0.5811861753463745
+clip pool: 1275 digit clips, manifest_used=True, 800 unknown words, 250 noise clips
+[accuracy reference_cnn] clean_test: n=400 replay_acc=0.8289473684210527 direct_acc=0.8736842105263158
+[accuracy reference_cnn] sim_test: n=600 replay_acc=0.5662431941923775 direct_acc=0.5390199637023594
+wrote results/sprint8/replay/accuracy_v2_reference_cnn.json

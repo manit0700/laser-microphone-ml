@@ -1,0 +1,38 @@
+{
+  "package_id": "lmml-sprint8-finetuned_v2",
+  "status": "historical Sprint 8 frozen candidate; EXPERIMENTAL, not validated on hardware",
+  "checkpoint": {
+    "path": "model/finetuned_v2_cnn.pt",
+    "sha256": "9d8a11081dcfc9e6d97d9afc84717f405623fd602117248390687e28458d1598",
+    "source": "results/sprint8/models/finetuned_v2_cnn.pt (frozen Round 2, epoch 30)"
+  },
+  "labels": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "unknown"
+  ],
+  "unknown_index": 10,
+  "sample_rate": 8000,
+  "max_audio_seconds": 1.0,
+  "feature": "mel",
+  "decision": {
+    "temperature": 0.5721844434738159,
+    "threshold": 0.26,
+    "rule": "probs = softmax(logits / temperature); pred = argmax over 11 classes; reject (unknown) if max(probs) < threshold"
+  },
+  "modes": {
+    "clean": "load_audio -> preprocess_waveform (no band-pass, no enhancement). Matches training clean path and predict.predict_file.",
+    "laser": "load_audio -> Butterworth order-4 zero-phase band-pass 200-3800 Hz -> enhance_waveform -> preprocess_waveform. Matches the training 'sim' path and the dashboard laser channel default (LMML_LASER_BANDPASS=200,3800). predict.predict_file does NOT do this for laser recordings."
+  },
+  "filter_setting": "ENABLE_FILTER=False (reduce_noise off) for Sprint 8 training and replay; the predictor pins this.",
+  "dependencies": "Python 3.10+, torch, torchaudio, numpy, scipy, soundfile. Uses the repository's src/ and scripts/sprint8/ modules (repo-relative; no /home/claude paths).",
+  "intended_use": "Development demo and offline scoring of development WAVs. Not for deployment decisions; no real-rig accuracy is claimed."
+}

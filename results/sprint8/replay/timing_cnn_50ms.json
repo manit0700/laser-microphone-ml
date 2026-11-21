@@ -1,0 +1,78 @@
+{
+ "machine": "cloud dev container, 2 vCPU, CPU-only PyTorch 2.15.0",
+ "note": "software replay on the dev container; not Jetson/hardware latency",
+ "python": "3.13.16",
+ "torch": "2.15.0+cu132",
+ "torch_threads": 1,
+ "cpu_count": 2,
+ "loadavg_1m_before": 2.33056640625,
+ "loadavg_1m_after": 2.38427734375,
+ "contended": true,
+ "model": "cnn",
+ "chunk_ms": 50.0,
+ "stream_rate": 48000,
+ "n_words": 40,
+ "autosave": false,
+ "wall_s": 5.764830112457275,
+ "first_call_warmup_ms": {
+  "gate_filter_ms": 2.3828470002627,
+  "word_filter_ms": 6.806055000197375,
+  "enhance_ms": 2.7853250003317953,
+  "preprocess_ms": 0.2885069998228573,
+  "features_ms": 1.1277559997324715,
+  "forward_ms": 1.170569999885629,
+  "predict_call_ms": 20.637956999962626
+ },
+ "per_word_stage_ms": {
+  "enhance_ms": {
+   "n": 41,
+   "min_ms": 1.7532980000396492,
+   "median_ms": 2.2017519995642942,
+   "p95_ms": 3.528964999532036,
+   "max_ms": 6.557478999638988
+  },
+  "features_ms": {
+   "n": 41,
+   "min_ms": 0.4114160001336131,
+   "median_ms": 0.48659200001566205,
+   "p95_ms": 0.6432090003727353,
+   "max_ms": 0.6735529996149126
+  },
+  "forward_ms": {
+   "n": 41,
+   "min_ms": 0.6720640003550216,
+   "median_ms": 0.8848390007187845,
+   "p95_ms": 1.2261230003787205,
+   "max_ms": 1.2909970000691828
+  },
+  "gate_filter_ms": {
+   "n": 41,
+   "min_ms": 0.8956060000855359,
+   "median_ms": 2.6563119999991613,
+   "p95_ms": 6.711977000122715,
+   "max_ms": 9.33518500005448
+  },
+  "predict_call_ms": {
+   "n": 41,
+   "min_ms": 11.260011000558734,
+   "median_ms": 16.46808500026964,
+   "p95_ms": 27.931606000493048,
+   "max_ms": 30.580858000575972
+  },
+  "preprocess_ms": {
+   "n": 41,
+   "min_ms": 0.1155380005002371,
+   "median_ms": 0.14983500022935914,
+   "p95_ms": 0.3008269995916635,
+   "max_ms": 0.3766780000660219
+  },
+  "word_filter_ms": {
+   "n": 41,
+   "min_ms": 2.339785000003758,
+   "median_ms": 6.4717899995230255,
+   "p95_ms": 13.883810000152152,
+   "max_ms": 15.394201999697543
+  }
+ },
+ "idle_tick_gate_filter_ms_mean": 2.2315347445217
+}

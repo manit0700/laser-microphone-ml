@@ -1,0 +1,4221 @@
+{
+  "checkpoint": "best_model_cnn_laser_team_e45.pt",
+  "checkpoint_sha256": "e839ba4e2304d7b79d1ca889e6e24cc3a8667731b58476fc250ec126ed78cfe6",
+  "finetuned_on": [
+    "ali",
+    "brooke",
+    "brooke2",
+    "john",
+    "laserali",
+    "laserjohn",
+    "lasermichaeltrim",
+    "michael"
+  ],
+  "finetune_epoch": 14,
+  "split": "all",
+  "seed": 42,
+  "speakers": [
+    "ali",
+    "brooke",
+    "brooke2",
+    "john",
+    "laserali",
+    "laserjohn",
+    "lasermichaeltrim",
+    "michael"
+  ],
+  "only_tag": "laser",
+  "audio_path": {
+    "bandpass": [
+      200.0,
+      3800.0
+    ],
+    "enhance": true
+  },
+  "decision": "argmax over model classes, no confidence threshold (same as finetune.py 'your clips')",
+  "device": "eclipse-orin-super (cpu)",
+  "date": "2026-11-18 19:56:32",
+  "n_laser_total": 801,
+  "n_train": 641,
+  "n_heldout": 160,
+  "n_scored": 801,
+  "accuracy": 0.7116104868913857,
+  "per_class_accuracy": {
+    "0": 0.8395061728395061,
+    "1": 0.6625,
+    "2": 0.6125,
+    "3": 0.45,
+    "4": 0.7875,
+    "5": 0.85,
+    "6": 0.7625,
+    "7": 0.75,
+    "8": 0.65,
+    "9": 0.75,
+    "unknown": null
+  },
+  "labels": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "unknown"
+  ],
+  "confusion_matrix_rows_true_cols_pred": [
+    [
+      68,
+      3,
+      0,
+      1,
+      0,
+      0,
+      5,
+      2,
+      2,
+      0,
+      0
+    ],
+    [
+      10,
+      53,
+      2,
+      1,
+      0,
+      5,
+      1,
+      1,
+      1,
+      6,
+      0
+    ],
+    [
+      8,
+      1,
+      49,
+      5,
+      5,
+      1,
+      6,
+      2,
+      2,
+      1,
+      0
+    ],
+    [
+      12,
+      5,
+      19,
+      36,
+      3,
+      0,
+      1,
+      0,
+      2,
+      2,
+      0
+    ],
+    [
+      1,
+      1,
+      4,
+      1,
+      63,
+      1,
+      7,
+      1,
+      1,
+      0,
+      0
+    ],
+    [
+      2,
+      4,
+      1,
+      1,
+      2,
+      68,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      4,
+      1,
+      2,
+      1,
+      2,
+      0,
+      61,
+      3,
+      5,
+      1,
+      0
+    ],
+    [
+      2,
+      3,
+      2,
+      1,
+      0,
+      2,
+      6,
+      60,
+      0,
+      4,
+      0
+    ],
+    [
+      3,
+      0,
+      4,
+      6,
+      0,
+      0,
+      13,
+      2,
+      52,
+      0,
+      0
+    ],
+    [
+      5,
+      7,
+      0,
+      0,
+      0,
+      3,
+      3,
+      1,
+      1,
+      60,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clips": [
+    {
+      "file": "0_ali_laser_0.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_ali_laser_1.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_ali_laser_2.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_ali_laser_3.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_ali_laser_4.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_ali_laser_5.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_ali_laser_6.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_ali_laser_7.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_ali_laser_8.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_ali_laser_9.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke2_laser_0.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke2_laser_1.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke2_laser_2.wav",
+      "true": "0",
+      "pred": "1"
+    },
+    {
+      "file": "0_brooke2_laser_3.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke2_laser_4.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke2_laser_5.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke2_laser_6.wav",
+      "true": "0",
+      "pred": "7"
+    },
+    {
+      "file": "0_brooke2_laser_7.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke2_laser_8.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke2_laser_9.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke_laser_0.wav",
+      "true": "0",
+      "pred": "6"
+    },
+    {
+      "file": "0_brooke_laser_1.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke_laser_2.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke_laser_3.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke_laser_4.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke_laser_5.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke_laser_6.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke_laser_7.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_brooke_laser_8.wav",
+      "true": "0",
+      "pred": "6"
+    },
+    {
+      "file": "0_brooke_laser_9.wav",
+      "true": "0",
+      "pred": "6"
+    },
+    {
+      "file": "0_john_laser_0.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_john_laser_1.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_john_laser_2.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_john_laser_3.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_john_laser_4.wav",
+      "true": "0",
+      "pred": "1"
+    },
+    {
+      "file": "0_john_laser_5.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_john_laser_6.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_john_laser_7.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_john_laser_8.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_john_laser_9.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserali_laser_0.wav",
+      "true": "0",
+      "pred": "6"
+    },
+    {
+      "file": "0_laserali_laser_14.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserali_laser_15.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserali_laser_16.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserali_laser_17.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserali_laser_18.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserali_laser_19.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserali_laser_20.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserali_laser_21.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserali_laser_22.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserali_laser_23.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserjohn_laser_0.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserjohn_laser_1.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserjohn_laser_2.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserjohn_laser_3.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserjohn_laser_4.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserjohn_laser_5.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserjohn_laser_6.wav",
+      "true": "0",
+      "pred": "3"
+    },
+    {
+      "file": "0_laserjohn_laser_7.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserjohn_laser_8.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_laserjohn_laser_9.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_lasermichaeltrim_laser_0.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_lasermichaeltrim_laser_1.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_lasermichaeltrim_laser_2.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_lasermichaeltrim_laser_3.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_lasermichaeltrim_laser_4.wav",
+      "true": "0",
+      "pred": "8"
+    },
+    {
+      "file": "0_lasermichaeltrim_laser_5.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_lasermichaeltrim_laser_6.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_lasermichaeltrim_laser_7.wav",
+      "true": "0",
+      "pred": "8"
+    },
+    {
+      "file": "0_lasermichaeltrim_laser_8.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_lasermichaeltrim_laser_9.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_michael_laser_0.wav",
+      "true": "0",
+      "pred": "6"
+    },
+    {
+      "file": "0_michael_laser_1.wav",
+      "true": "0",
+      "pred": "7"
+    },
+    {
+      "file": "0_michael_laser_2.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_michael_laser_3.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_michael_laser_4.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_michael_laser_5.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_michael_laser_6.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_michael_laser_7.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_michael_laser_8.wav",
+      "true": "0",
+      "pred": "0"
+    },
+    {
+      "file": "0_michael_laser_9.wav",
+      "true": "0",
+      "pred": "1"
+    },
+    {
+      "file": "1_ali_laser_0.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_ali_laser_1.wav",
+      "true": "1",
+      "pred": "0"
+    },
+    {
+      "file": "1_ali_laser_2.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_ali_laser_3.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_ali_laser_4.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_ali_laser_5.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_ali_laser_6.wav",
+      "true": "1",
+      "pred": "3"
+    },
+    {
+      "file": "1_ali_laser_7.wav",
+      "true": "1",
+      "pred": "6"
+    },
+    {
+      "file": "1_ali_laser_8.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_ali_laser_9.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke2_laser_0.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke2_laser_1.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke2_laser_2.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke2_laser_3.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke2_laser_4.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke2_laser_5.wav",
+      "true": "1",
+      "pred": "0"
+    },
+    {
+      "file": "1_brooke2_laser_6.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke2_laser_7.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke2_laser_8.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke2_laser_9.wav",
+      "true": "1",
+      "pred": "9"
+    },
+    {
+      "file": "1_brooke_laser_0.wav",
+      "true": "1",
+      "pred": "9"
+    },
+    {
+      "file": "1_brooke_laser_1.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke_laser_2.wav",
+      "true": "1",
+      "pred": "9"
+    },
+    {
+      "file": "1_brooke_laser_3.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke_laser_4.wav",
+      "true": "1",
+      "pred": "9"
+    },
+    {
+      "file": "1_brooke_laser_5.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke_laser_6.wav",
+      "true": "1",
+      "pred": "5"
+    },
+    {
+      "file": "1_brooke_laser_7.wav",
+      "true": "1",
+      "pred": "9"
+    },
+    {
+      "file": "1_brooke_laser_8.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_brooke_laser_9.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_john_laser_0.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_john_laser_1.wav",
+      "true": "1",
+      "pred": "0"
+    },
+    {
+      "file": "1_john_laser_2.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_john_laser_3.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_john_laser_4.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_john_laser_5.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_john_laser_6.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_john_laser_7.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_john_laser_8.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_john_laser_9.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserali_laser_0.wav",
+      "true": "1",
+      "pred": "8"
+    },
+    {
+      "file": "1_laserali_laser_1.wav",
+      "true": "1",
+      "pred": "0"
+    },
+    {
+      "file": "1_laserali_laser_2.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserali_laser_3.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserali_laser_4.wav",
+      "true": "1",
+      "pred": "0"
+    },
+    {
+      "file": "1_laserali_laser_5.wav",
+      "true": "1",
+      "pred": "0"
+    },
+    {
+      "file": "1_laserali_laser_6.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserali_laser_7.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserali_laser_8.wav",
+      "true": "1",
+      "pred": "0"
+    },
+    {
+      "file": "1_laserali_laser_9.wav",
+      "true": "1",
+      "pred": "0"
+    },
+    {
+      "file": "1_laserjohn_laser_0.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserjohn_laser_1.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserjohn_laser_2.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserjohn_laser_3.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserjohn_laser_4.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserjohn_laser_5.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserjohn_laser_6.wav",
+      "true": "1",
+      "pred": "5"
+    },
+    {
+      "file": "1_laserjohn_laser_7.wav",
+      "true": "1",
+      "pred": "0"
+    },
+    {
+      "file": "1_laserjohn_laser_8.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_laserjohn_laser_9.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_lasermichaeltrim_laser_0.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_lasermichaeltrim_laser_1.wav",
+      "true": "1",
+      "pred": "5"
+    },
+    {
+      "file": "1_lasermichaeltrim_laser_2.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_lasermichaeltrim_laser_3.wav",
+      "true": "1",
+      "pred": "0"
+    },
+    {
+      "file": "1_lasermichaeltrim_laser_4.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_lasermichaeltrim_laser_5.wav",
+      "true": "1",
+      "pred": "9"
+    },
+    {
+      "file": "1_lasermichaeltrim_laser_6.wav",
+      "true": "1",
+      "pred": "5"
+    },
+    {
+      "file": "1_lasermichaeltrim_laser_7.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_lasermichaeltrim_laser_8.wav",
+      "true": "1",
+      "pred": "5"
+    },
+    {
+      "file": "1_lasermichaeltrim_laser_9.wav",
+      "true": "1",
+      "pred": "2"
+    },
+    {
+      "file": "1_michael_laser_0.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_michael_laser_1.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_michael_laser_2.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_michael_laser_3.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_michael_laser_4.wav",
+      "true": "1",
+      "pred": "7"
+    },
+    {
+      "file": "1_michael_laser_5.wav",
+      "true": "1",
+      "pred": "2"
+    },
+    {
+      "file": "1_michael_laser_6.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_michael_laser_7.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_michael_laser_8.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "1_michael_laser_9.wav",
+      "true": "1",
+      "pred": "1"
+    },
+    {
+      "file": "2_ali_laser_0.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_ali_laser_1.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_ali_laser_2.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_ali_laser_3.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_ali_laser_4.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_ali_laser_5.wav",
+      "true": "2",
+      "pred": "6"
+    },
+    {
+      "file": "2_ali_laser_6.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_ali_laser_7.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_ali_laser_8.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_ali_laser_9.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke2_laser_0.wav",
+      "true": "2",
+      "pred": "6"
+    },
+    {
+      "file": "2_brooke2_laser_1.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke2_laser_2.wav",
+      "true": "2",
+      "pred": "0"
+    },
+    {
+      "file": "2_brooke2_laser_3.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke2_laser_4.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke2_laser_5.wav",
+      "true": "2",
+      "pred": "7"
+    },
+    {
+      "file": "2_brooke2_laser_6.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke2_laser_7.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke2_laser_8.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke2_laser_9.wav",
+      "true": "2",
+      "pred": "7"
+    },
+    {
+      "file": "2_brooke_laser_0.wav",
+      "true": "2",
+      "pred": "6"
+    },
+    {
+      "file": "2_brooke_laser_1.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke_laser_2.wav",
+      "true": "2",
+      "pred": "0"
+    },
+    {
+      "file": "2_brooke_laser_3.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke_laser_4.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke_laser_5.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke_laser_6.wav",
+      "true": "2",
+      "pred": "8"
+    },
+    {
+      "file": "2_brooke_laser_7.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke_laser_8.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_brooke_laser_9.wav",
+      "true": "2",
+      "pred": "0"
+    },
+    {
+      "file": "2_john_laser_0.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_john_laser_1.wav",
+      "true": "2",
+      "pred": "0"
+    },
+    {
+      "file": "2_john_laser_2.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_john_laser_3.wav",
+      "true": "2",
+      "pred": "0"
+    },
+    {
+      "file": "2_john_laser_4.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_john_laser_5.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_john_laser_6.wav",
+      "true": "2",
+      "pred": "0"
+    },
+    {
+      "file": "2_john_laser_7.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_john_laser_8.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_john_laser_9.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_laserali_laser_0.wav",
+      "true": "2",
+      "pred": "5"
+    },
+    {
+      "file": "2_laserali_laser_1.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_laserali_laser_2.wav",
+      "true": "2",
+      "pred": "6"
+    },
+    {
+      "file": "2_laserali_laser_3.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_laserali_laser_4.wav",
+      "true": "2",
+      "pred": "3"
+    },
+    {
+      "file": "2_laserali_laser_5.wav",
+      "true": "2",
+      "pred": "9"
+    },
+    {
+      "file": "2_laserali_laser_6.wav",
+      "true": "2",
+      "pred": "6"
+    },
+    {
+      "file": "2_laserali_laser_7.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_laserali_laser_8.wav",
+      "true": "2",
+      "pred": "1"
+    },
+    {
+      "file": "2_laserali_laser_9.wav",
+      "true": "2",
+      "pred": "3"
+    },
+    {
+      "file": "2_laserjohn_laser_0.wav",
+      "true": "2",
+      "pred": "4"
+    },
+    {
+      "file": "2_laserjohn_laser_1.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_laserjohn_laser_2.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_laserjohn_laser_3.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_laserjohn_laser_4.wav",
+      "true": "2",
+      "pred": "4"
+    },
+    {
+      "file": "2_laserjohn_laser_5.wav",
+      "true": "2",
+      "pred": "4"
+    },
+    {
+      "file": "2_laserjohn_laser_6.wav",
+      "true": "2",
+      "pred": "8"
+    },
+    {
+      "file": "2_laserjohn_laser_7.wav",
+      "true": "2",
+      "pred": "4"
+    },
+    {
+      "file": "2_laserjohn_laser_8.wav",
+      "true": "2",
+      "pred": "4"
+    },
+    {
+      "file": "2_laserjohn_laser_9.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_lasermichaeltrim_laser_0.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_lasermichaeltrim_laser_1.wav",
+      "true": "2",
+      "pred": "0"
+    },
+    {
+      "file": "2_lasermichaeltrim_laser_2.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_lasermichaeltrim_laser_3.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_lasermichaeltrim_laser_4.wav",
+      "true": "2",
+      "pred": "0"
+    },
+    {
+      "file": "2_lasermichaeltrim_laser_5.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_lasermichaeltrim_laser_6.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_lasermichaeltrim_laser_7.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_lasermichaeltrim_laser_8.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_lasermichaeltrim_laser_9.wav",
+      "true": "2",
+      "pred": "3"
+    },
+    {
+      "file": "2_michael_laser_0.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_michael_laser_1.wav",
+      "true": "2",
+      "pred": "6"
+    },
+    {
+      "file": "2_michael_laser_2.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_michael_laser_3.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_michael_laser_4.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_michael_laser_5.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_michael_laser_6.wav",
+      "true": "2",
+      "pred": "3"
+    },
+    {
+      "file": "2_michael_laser_7.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "2_michael_laser_8.wav",
+      "true": "2",
+      "pred": "3"
+    },
+    {
+      "file": "2_michael_laser_9.wav",
+      "true": "2",
+      "pred": "2"
+    },
+    {
+      "file": "3_ali_laser_0.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_ali_laser_1.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_ali_laser_2.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_ali_laser_3.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_ali_laser_4.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_ali_laser_5.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_ali_laser_6.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_ali_laser_7.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_ali_laser_8.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_ali_laser_9.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_brooke2_laser_0.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_brooke2_laser_1.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_brooke2_laser_2.wav",
+      "true": "3",
+      "pred": "1"
+    },
+    {
+      "file": "3_brooke2_laser_3.wav",
+      "true": "3",
+      "pred": "1"
+    },
+    {
+      "file": "3_brooke2_laser_4.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_brooke2_laser_5.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_brooke2_laser_6.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_brooke2_laser_7.wav",
+      "true": "3",
+      "pred": "9"
+    },
+    {
+      "file": "3_brooke2_laser_8.wav",
+      "true": "3",
+      "pred": "1"
+    },
+    {
+      "file": "3_brooke2_laser_9.wav",
+      "true": "3",
+      "pred": "4"
+    },
+    {
+      "file": "3_brooke_laser_0.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_brooke_laser_1.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_brooke_laser_2.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_brooke_laser_3.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_brooke_laser_4.wav",
+      "true": "3",
+      "pred": "6"
+    },
+    {
+      "file": "3_brooke_laser_5.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_brooke_laser_6.wav",
+      "true": "3",
+      "pred": "1"
+    },
+    {
+      "file": "3_brooke_laser_7.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_brooke_laser_8.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_brooke_laser_9.wav",
+      "true": "3",
+      "pred": "1"
+    },
+    {
+      "file": "3_john_laser_0.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_john_laser_1.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_john_laser_2.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_john_laser_3.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_john_laser_4.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_john_laser_5.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_john_laser_6.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_john_laser_7.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_john_laser_8.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_john_laser_9.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_laserali_laser_0.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_laserali_laser_1.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_laserali_laser_2.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_laserali_laser_3.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_laserali_laser_4.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_laserali_laser_5.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_laserali_laser_6.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_laserali_laser_7.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_laserali_laser_8.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_laserali_laser_9.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_laserjohn_laser_0.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_laserjohn_laser_1.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_laserjohn_laser_2.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_laserjohn_laser_3.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_laserjohn_laser_4.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_laserjohn_laser_5.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_laserjohn_laser_6.wav",
+      "true": "3",
+      "pred": "9"
+    },
+    {
+      "file": "3_laserjohn_laser_7.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_laserjohn_laser_8.wav",
+      "true": "3",
+      "pred": "8"
+    },
+    {
+      "file": "3_laserjohn_laser_9.wav",
+      "true": "3",
+      "pred": "8"
+    },
+    {
+      "file": "3_lasermichaeltrim_laser_0.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_lasermichaeltrim_laser_1.wav",
+      "true": "3",
+      "pred": "4"
+    },
+    {
+      "file": "3_lasermichaeltrim_laser_2.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_lasermichaeltrim_laser_3.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_lasermichaeltrim_laser_4.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_lasermichaeltrim_laser_5.wav",
+      "true": "3",
+      "pred": "4"
+    },
+    {
+      "file": "3_lasermichaeltrim_laser_6.wav",
+      "true": "3",
+      "pred": "0"
+    },
+    {
+      "file": "3_lasermichaeltrim_laser_7.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_lasermichaeltrim_laser_8.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_lasermichaeltrim_laser_9.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_michael_laser_0.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_michael_laser_1.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_michael_laser_2.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_michael_laser_3.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_michael_laser_4.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_michael_laser_5.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_michael_laser_6.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_michael_laser_7.wav",
+      "true": "3",
+      "pred": "3"
+    },
+    {
+      "file": "3_michael_laser_8.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "3_michael_laser_9.wav",
+      "true": "3",
+      "pred": "2"
+    },
+    {
+      "file": "4_ali_laser_0.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_ali_laser_1.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_ali_laser_2.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_ali_laser_3.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_ali_laser_4.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_ali_laser_5.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_ali_laser_6.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_ali_laser_7.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_ali_laser_8.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_ali_laser_9.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke2_laser_0.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke2_laser_1.wav",
+      "true": "4",
+      "pred": "6"
+    },
+    {
+      "file": "4_brooke2_laser_2.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke2_laser_3.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke2_laser_4.wav",
+      "true": "4",
+      "pred": "7"
+    },
+    {
+      "file": "4_brooke2_laser_5.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke2_laser_6.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke2_laser_7.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke2_laser_8.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke2_laser_9.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke_laser_0.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke_laser_1.wav",
+      "true": "4",
+      "pred": "1"
+    },
+    {
+      "file": "4_brooke_laser_2.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke_laser_3.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke_laser_4.wav",
+      "true": "4",
+      "pred": "5"
+    },
+    {
+      "file": "4_brooke_laser_5.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke_laser_6.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke_laser_7.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke_laser_8.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_brooke_laser_9.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_john_laser_0.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_john_laser_1.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_john_laser_2.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_john_laser_3.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_john_laser_4.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_john_laser_5.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_john_laser_6.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_john_laser_7.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_john_laser_8.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_john_laser_9.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserali_laser_0.wav",
+      "true": "4",
+      "pred": "6"
+    },
+    {
+      "file": "4_laserali_laser_1.wav",
+      "true": "4",
+      "pred": "0"
+    },
+    {
+      "file": "4_laserali_laser_2.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserali_laser_3.wav",
+      "true": "4",
+      "pred": "2"
+    },
+    {
+      "file": "4_laserali_laser_4.wav",
+      "true": "4",
+      "pred": "2"
+    },
+    {
+      "file": "4_laserali_laser_5.wav",
+      "true": "4",
+      "pred": "2"
+    },
+    {
+      "file": "4_laserali_laser_6.wav",
+      "true": "4",
+      "pred": "3"
+    },
+    {
+      "file": "4_laserali_laser_7.wav",
+      "true": "4",
+      "pred": "8"
+    },
+    {
+      "file": "4_laserali_laser_8.wav",
+      "true": "4",
+      "pred": "6"
+    },
+    {
+      "file": "4_laserali_laser_9.wav",
+      "true": "4",
+      "pred": "6"
+    },
+    {
+      "file": "4_laserjohn_laser_0.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserjohn_laser_1.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserjohn_laser_2.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserjohn_laser_3.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserjohn_laser_4.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserjohn_laser_5.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserjohn_laser_6.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserjohn_laser_7.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserjohn_laser_8.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_laserjohn_laser_9.wav",
+      "true": "4",
+      "pred": "2"
+    },
+    {
+      "file": "4_lasermichaeltrim_laser_0.wav",
+      "true": "4",
+      "pred": "6"
+    },
+    {
+      "file": "4_lasermichaeltrim_laser_1.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_lasermichaeltrim_laser_2.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_lasermichaeltrim_laser_3.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_lasermichaeltrim_laser_4.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_lasermichaeltrim_laser_5.wav",
+      "true": "4",
+      "pred": "6"
+    },
+    {
+      "file": "4_lasermichaeltrim_laser_6.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_lasermichaeltrim_laser_7.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_lasermichaeltrim_laser_8.wav",
+      "true": "4",
+      "pred": "6"
+    },
+    {
+      "file": "4_lasermichaeltrim_laser_9.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_michael_laser_0.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_michael_laser_1.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_michael_laser_2.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_michael_laser_3.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_michael_laser_4.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_michael_laser_5.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_michael_laser_6.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_michael_laser_7.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_michael_laser_8.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "4_michael_laser_9.wav",
+      "true": "4",
+      "pred": "4"
+    },
+    {
+      "file": "5_ali_laser_0.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_ali_laser_1.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_ali_laser_2.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_ali_laser_3.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_ali_laser_4.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_ali_laser_5.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_ali_laser_6.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_ali_laser_7.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_ali_laser_8.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_ali_laser_9.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke2_laser_0.wav",
+      "true": "5",
+      "pred": "7"
+    },
+    {
+      "file": "5_brooke2_laser_1.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke2_laser_2.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke2_laser_3.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke2_laser_4.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke2_laser_5.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke2_laser_6.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke2_laser_7.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke2_laser_8.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke2_laser_9.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke_laser_0.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke_laser_1.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke_laser_2.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke_laser_3.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke_laser_4.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke_laser_5.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke_laser_6.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke_laser_7.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke_laser_8.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_brooke_laser_9.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_john_laser_0.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_john_laser_1.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_john_laser_2.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_john_laser_3.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_john_laser_4.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_john_laser_5.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_john_laser_6.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_john_laser_7.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_john_laser_8.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_john_laser_9.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserali_laser_0.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserali_laser_1.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserali_laser_2.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserali_laser_3.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserali_laser_4.wav",
+      "true": "5",
+      "pred": "0"
+    },
+    {
+      "file": "5_laserali_laser_5.wav",
+      "true": "5",
+      "pred": "1"
+    },
+    {
+      "file": "5_laserali_laser_6.wav",
+      "true": "5",
+      "pred": "1"
+    },
+    {
+      "file": "5_laserali_laser_7.wav",
+      "true": "5",
+      "pred": "1"
+    },
+    {
+      "file": "5_laserali_laser_8.wav",
+      "true": "5",
+      "pred": "1"
+    },
+    {
+      "file": "5_laserali_laser_9.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserjohn_laser_0.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserjohn_laser_1.wav",
+      "true": "5",
+      "pred": "0"
+    },
+    {
+      "file": "5_laserjohn_laser_2.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserjohn_laser_3.wav",
+      "true": "5",
+      "pred": "9"
+    },
+    {
+      "file": "5_laserjohn_laser_4.wav",
+      "true": "5",
+      "pred": "4"
+    },
+    {
+      "file": "5_laserjohn_laser_5.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserjohn_laser_6.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserjohn_laser_7.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserjohn_laser_8.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_laserjohn_laser_9.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_lasermichaeltrim_laser_0.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_lasermichaeltrim_laser_1.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_lasermichaeltrim_laser_2.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_lasermichaeltrim_laser_3.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_lasermichaeltrim_laser_4.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_lasermichaeltrim_laser_5.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_lasermichaeltrim_laser_6.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_lasermichaeltrim_laser_7.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_lasermichaeltrim_laser_8.wav",
+      "true": "5",
+      "pred": "3"
+    },
+    {
+      "file": "5_lasermichaeltrim_laser_9.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_michael_laser_0.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_michael_laser_1.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_michael_laser_2.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_michael_laser_3.wav",
+      "true": "5",
+      "pred": "2"
+    },
+    {
+      "file": "5_michael_laser_4.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_michael_laser_5.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_michael_laser_6.wav",
+      "true": "5",
+      "pred": "4"
+    },
+    {
+      "file": "5_michael_laser_7.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_michael_laser_8.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "5_michael_laser_9.wav",
+      "true": "5",
+      "pred": "5"
+    },
+    {
+      "file": "6_ali_laser_0.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_ali_laser_1.wav",
+      "true": "6",
+      "pred": "0"
+    },
+    {
+      "file": "6_ali_laser_2.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_ali_laser_3.wav",
+      "true": "6",
+      "pred": "0"
+    },
+    {
+      "file": "6_ali_laser_4.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_ali_laser_5.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_ali_laser_6.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_ali_laser_7.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_ali_laser_8.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_ali_laser_9.wav",
+      "true": "6",
+      "pred": "8"
+    },
+    {
+      "file": "6_brooke2_laser_0.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke2_laser_1.wav",
+      "true": "6",
+      "pred": "7"
+    },
+    {
+      "file": "6_brooke2_laser_2.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke2_laser_3.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke2_laser_4.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke2_laser_5.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke2_laser_6.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke2_laser_7.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke2_laser_8.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke2_laser_9.wav",
+      "true": "6",
+      "pred": "7"
+    },
+    {
+      "file": "6_brooke_laser_0.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke_laser_1.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke_laser_2.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke_laser_3.wav",
+      "true": "6",
+      "pred": "8"
+    },
+    {
+      "file": "6_brooke_laser_4.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke_laser_5.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke_laser_6.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke_laser_7.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke_laser_8.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_brooke_laser_9.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_john_laser_0.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_john_laser_1.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_john_laser_2.wav",
+      "true": "6",
+      "pred": "0"
+    },
+    {
+      "file": "6_john_laser_3.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_john_laser_4.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_john_laser_5.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_john_laser_6.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_john_laser_7.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_john_laser_8.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_john_laser_9.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserali_laser_0.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserali_laser_1.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserali_laser_2.wav",
+      "true": "6",
+      "pred": "9"
+    },
+    {
+      "file": "6_laserali_laser_3.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserali_laser_4.wav",
+      "true": "6",
+      "pred": "8"
+    },
+    {
+      "file": "6_laserali_laser_5.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserali_laser_6.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserali_laser_7.wav",
+      "true": "6",
+      "pred": "0"
+    },
+    {
+      "file": "6_laserali_laser_8.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserali_laser_9.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserjohn_laser_0.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserjohn_laser_1.wav",
+      "true": "6",
+      "pred": "1"
+    },
+    {
+      "file": "6_laserjohn_laser_2.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserjohn_laser_3.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserjohn_laser_4.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserjohn_laser_5.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserjohn_laser_6.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserjohn_laser_7.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserjohn_laser_8.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_laserjohn_laser_9.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_lasermichaeltrim_laser_0.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_lasermichaeltrim_laser_1.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_lasermichaeltrim_laser_2.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_lasermichaeltrim_laser_3.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_lasermichaeltrim_laser_4.wav",
+      "true": "6",
+      "pred": "3"
+    },
+    {
+      "file": "6_lasermichaeltrim_laser_5.wav",
+      "true": "6",
+      "pred": "4"
+    },
+    {
+      "file": "6_lasermichaeltrim_laser_6.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_lasermichaeltrim_laser_7.wav",
+      "true": "6",
+      "pred": "4"
+    },
+    {
+      "file": "6_lasermichaeltrim_laser_8.wav",
+      "true": "6",
+      "pred": "8"
+    },
+    {
+      "file": "6_lasermichaeltrim_laser_9.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_michael_laser_0.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_michael_laser_1.wav",
+      "true": "6",
+      "pred": "7"
+    },
+    {
+      "file": "6_michael_laser_2.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_michael_laser_3.wav",
+      "true": "6",
+      "pred": "2"
+    },
+    {
+      "file": "6_michael_laser_4.wav",
+      "true": "6",
+      "pred": "2"
+    },
+    {
+      "file": "6_michael_laser_5.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_michael_laser_6.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_michael_laser_7.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "6_michael_laser_8.wav",
+      "true": "6",
+      "pred": "8"
+    },
+    {
+      "file": "6_michael_laser_9.wav",
+      "true": "6",
+      "pred": "6"
+    },
+    {
+      "file": "7_ali_laser_0.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_ali_laser_1.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_ali_laser_2.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_ali_laser_3.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_ali_laser_4.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_ali_laser_5.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_ali_laser_6.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_ali_laser_7.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_ali_laser_8.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_ali_laser_9.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke2_laser_0.wav",
+      "true": "7",
+      "pred": "6"
+    },
+    {
+      "file": "7_brooke2_laser_1.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke2_laser_2.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke2_laser_3.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke2_laser_4.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke2_laser_5.wav",
+      "true": "7",
+      "pred": "9"
+    },
+    {
+      "file": "7_brooke2_laser_6.wav",
+      "true": "7",
+      "pred": "9"
+    },
+    {
+      "file": "7_brooke2_laser_7.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke2_laser_8.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke2_laser_9.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke_laser_0.wav",
+      "true": "7",
+      "pred": "5"
+    },
+    {
+      "file": "7_brooke_laser_1.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke_laser_2.wav",
+      "true": "7",
+      "pred": "2"
+    },
+    {
+      "file": "7_brooke_laser_3.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke_laser_4.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke_laser_5.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke_laser_6.wav",
+      "true": "7",
+      "pred": "6"
+    },
+    {
+      "file": "7_brooke_laser_7.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_brooke_laser_8.wav",
+      "true": "7",
+      "pred": "6"
+    },
+    {
+      "file": "7_brooke_laser_9.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_john_laser_0.wav",
+      "true": "7",
+      "pred": "5"
+    },
+    {
+      "file": "7_john_laser_1.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_john_laser_2.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_john_laser_3.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_john_laser_4.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_john_laser_5.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_john_laser_6.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_john_laser_7.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_john_laser_8.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_john_laser_9.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_laserali_laser_0.wav",
+      "true": "7",
+      "pred": "0"
+    },
+    {
+      "file": "7_laserali_laser_1.wav",
+      "true": "7",
+      "pred": "6"
+    },
+    {
+      "file": "7_laserali_laser_2.wav",
+      "true": "7",
+      "pred": "2"
+    },
+    {
+      "file": "7_laserali_laser_3.wav",
+      "true": "7",
+      "pred": "0"
+    },
+    {
+      "file": "7_laserali_laser_4.wav",
+      "true": "7",
+      "pred": "1"
+    },
+    {
+      "file": "7_laserali_laser_5.wav",
+      "true": "7",
+      "pred": "9"
+    },
+    {
+      "file": "7_laserali_laser_6.wav",
+      "true": "7",
+      "pred": "9"
+    },
+    {
+      "file": "7_laserali_laser_7.wav",
+      "true": "7",
+      "pred": "1"
+    },
+    {
+      "file": "7_laserali_laser_8.wav",
+      "true": "7",
+      "pred": "1"
+    },
+    {
+      "file": "7_laserali_laser_9.wav",
+      "true": "7",
+      "pred": "3"
+    },
+    {
+      "file": "7_laserjohn_laser_0.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_laserjohn_laser_1.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_laserjohn_laser_2.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_laserjohn_laser_3.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_laserjohn_laser_4.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_laserjohn_laser_5.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_laserjohn_laser_6.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_laserjohn_laser_7.wav",
+      "true": "7",
+      "pred": "6"
+    },
+    {
+      "file": "7_laserjohn_laser_8.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_laserjohn_laser_9.wav",
+      "true": "7",
+      "pred": "6"
+    },
+    {
+      "file": "7_lasermichaeltrim_laser_0.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_lasermichaeltrim_laser_1.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_lasermichaeltrim_laser_2.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_lasermichaeltrim_laser_3.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_lasermichaeltrim_laser_4.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_lasermichaeltrim_laser_5.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_lasermichaeltrim_laser_6.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_lasermichaeltrim_laser_7.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_lasermichaeltrim_laser_8.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_lasermichaeltrim_laser_9.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_michael_laser_0.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_michael_laser_1.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_michael_laser_2.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_michael_laser_3.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_michael_laser_4.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_michael_laser_5.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_michael_laser_6.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_michael_laser_7.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_michael_laser_8.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "7_michael_laser_9.wav",
+      "true": "7",
+      "pred": "7"
+    },
+    {
+      "file": "8_ali_laser_0.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_ali_laser_1.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_ali_laser_2.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_ali_laser_3.wav",
+      "true": "8",
+      "pred": "2"
+    },
+    {
+      "file": "8_ali_laser_4.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_ali_laser_5.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_ali_laser_6.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_ali_laser_7.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_ali_laser_8.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_ali_laser_9.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_brooke2_laser_0.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_brooke2_laser_1.wav",
+      "true": "8",
+      "pred": "0"
+    },
+    {
+      "file": "8_brooke2_laser_2.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_brooke2_laser_3.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_brooke2_laser_4.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_brooke2_laser_5.wav",
+      "true": "8",
+      "pred": "0"
+    },
+    {
+      "file": "8_brooke2_laser_6.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_brooke2_laser_7.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_brooke2_laser_8.wav",
+      "true": "8",
+      "pred": "0"
+    },
+    {
+      "file": "8_brooke2_laser_9.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_brooke_laser_0.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_brooke_laser_1.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_brooke_laser_2.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_brooke_laser_3.wav",
+      "true": "8",
+      "pred": "7"
+    },
+    {
+      "file": "8_brooke_laser_4.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_brooke_laser_5.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_brooke_laser_6.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_brooke_laser_7.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_brooke_laser_8.wav",
+      "true": "8",
+      "pred": "7"
+    },
+    {
+      "file": "8_brooke_laser_9.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_john_laser_0.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_john_laser_1.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_john_laser_2.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_john_laser_3.wav",
+      "true": "8",
+      "pred": "2"
+    },
+    {
+      "file": "8_john_laser_4.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_john_laser_5.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_john_laser_6.wav",
+      "true": "8",
+      "pred": "3"
+    },
+    {
+      "file": "8_john_laser_7.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_john_laser_8.wav",
+      "true": "8",
+      "pred": "3"
+    },
+    {
+      "file": "8_john_laser_9.wav",
+      "true": "8",
+      "pred": "3"
+    },
+    {
+      "file": "8_laserali_laser_0.wav",
+      "true": "8",
+      "pred": "3"
+    },
+    {
+      "file": "8_laserali_laser_1.wav",
+      "true": "8",
+      "pred": "2"
+    },
+    {
+      "file": "8_laserali_laser_2.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserali_laser_3.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserali_laser_4.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserali_laser_5.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserali_laser_6.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_laserali_laser_7.wav",
+      "true": "8",
+      "pred": "3"
+    },
+    {
+      "file": "8_laserali_laser_8.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserali_laser_9.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserjohn_laser_0.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserjohn_laser_1.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserjohn_laser_2.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserjohn_laser_3.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserjohn_laser_4.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserjohn_laser_5.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserjohn_laser_6.wav",
+      "true": "8",
+      "pred": "3"
+    },
+    {
+      "file": "8_laserjohn_laser_7.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserjohn_laser_8.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_laserjohn_laser_9.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_lasermichaeltrim_laser_0.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_lasermichaeltrim_laser_1.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_lasermichaeltrim_laser_2.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_lasermichaeltrim_laser_3.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_lasermichaeltrim_laser_4.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_lasermichaeltrim_laser_5.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_lasermichaeltrim_laser_6.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_lasermichaeltrim_laser_7.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_lasermichaeltrim_laser_8.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_lasermichaeltrim_laser_9.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_michael_laser_0.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_michael_laser_1.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_michael_laser_2.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_michael_laser_3.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_michael_laser_4.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_michael_laser_5.wav",
+      "true": "8",
+      "pred": "2"
+    },
+    {
+      "file": "8_michael_laser_6.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_michael_laser_7.wav",
+      "true": "8",
+      "pred": "6"
+    },
+    {
+      "file": "8_michael_laser_8.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "8_michael_laser_9.wav",
+      "true": "8",
+      "pred": "8"
+    },
+    {
+      "file": "9_ali_laser_0.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_ali_laser_1.wav",
+      "true": "9",
+      "pred": "5"
+    },
+    {
+      "file": "9_ali_laser_2.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_ali_laser_3.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_ali_laser_4.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_ali_laser_5.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_ali_laser_6.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_ali_laser_7.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_ali_laser_8.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_ali_laser_9.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke2_laser_0.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke2_laser_1.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke2_laser_2.wav",
+      "true": "9",
+      "pred": "1"
+    },
+    {
+      "file": "9_brooke2_laser_3.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke2_laser_4.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke2_laser_5.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke2_laser_6.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke2_laser_7.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke2_laser_8.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke2_laser_9.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke_laser_0.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke_laser_1.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke_laser_2.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke_laser_3.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke_laser_4.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke_laser_5.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke_laser_6.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke_laser_7.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke_laser_8.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_brooke_laser_9.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_john_laser_0.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_john_laser_1.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_john_laser_2.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_john_laser_3.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_john_laser_4.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_john_laser_5.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_john_laser_6.wav",
+      "true": "9",
+      "pred": "1"
+    },
+    {
+      "file": "9_john_laser_7.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_john_laser_8.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_john_laser_9.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserali_laser_0.wav",
+      "true": "9",
+      "pred": "0"
+    },
+    {
+      "file": "9_laserali_laser_1.wav",
+      "true": "9",
+      "pred": "1"
+    },
+    {
+      "file": "9_laserali_laser_2.wav",
+      "true": "9",
+      "pred": "1"
+    },
+    {
+      "file": "9_laserali_laser_3.wav",
+      "true": "9",
+      "pred": "0"
+    },
+    {
+      "file": "9_laserali_laser_4.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserali_laser_5.wav",
+      "true": "9",
+      "pred": "0"
+    },
+    {
+      "file": "9_laserali_laser_6.wav",
+      "true": "9",
+      "pred": "6"
+    },
+    {
+      "file": "9_laserali_laser_7.wav",
+      "true": "9",
+      "pred": "6"
+    },
+    {
+      "file": "9_laserali_laser_8.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserali_laser_9.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserjohn_laser_0.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserjohn_laser_1.wav",
+      "true": "9",
+      "pred": "0"
+    },
+    {
+      "file": "9_laserjohn_laser_2.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserjohn_laser_3.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserjohn_laser_4.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserjohn_laser_5.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserjohn_laser_6.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserjohn_laser_7.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserjohn_laser_8.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_laserjohn_laser_9.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_lasermichaeltrim_laser_0.wav",
+      "true": "9",
+      "pred": "6"
+    },
+    {
+      "file": "9_lasermichaeltrim_laser_1.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_lasermichaeltrim_laser_2.wav",
+      "true": "9",
+      "pred": "1"
+    },
+    {
+      "file": "9_lasermichaeltrim_laser_3.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_lasermichaeltrim_laser_4.wav",
+      "true": "9",
+      "pred": "5"
+    },
+    {
+      "file": "9_lasermichaeltrim_laser_5.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_lasermichaeltrim_laser_6.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_lasermichaeltrim_laser_7.wav",
+      "true": "9",
+      "pred": "1"
+    },
+    {
+      "file": "9_lasermichaeltrim_laser_8.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_lasermichaeltrim_laser_9.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_michael_laser_0.wav",
+      "true": "9",
+      "pred": "7"
+    },
+    {
+      "file": "9_michael_laser_1.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_michael_laser_2.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_michael_laser_3.wav",
+      "true": "9",
+      "pred": "8"
+    },
+    {
+      "file": "9_michael_laser_4.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_michael_laser_5.wav",
+      "true": "9",
+      "pred": "0"
+    },
+    {
+      "file": "9_michael_laser_6.wav",
+      "true": "9",
+      "pred": "9"
+    },
+    {
+      "file": "9_michael_laser_7.wav",
+      "true": "9",
+      "pred": "1"
+    },
+    {
+      "file": "9_michael_laser_8.wav",
+      "true": "9",
+      "pred": "5"
+    },
+    {
+      "file": "9_michael_laser_9.wav",
+      "true": "9",
+      "pred": "9"
+    }
+  ]
+}

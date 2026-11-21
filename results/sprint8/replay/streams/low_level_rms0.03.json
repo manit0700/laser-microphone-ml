@@ -1,0 +1,37 @@
+{
+ "name": "low_level_rms0.03",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.36,
+   "label": "4",
+   "source": "data/raw/4_yweweler_27.wav",
+   "speaker": "yweweler"
+  },
+  {
+   "t_start": 2.16,
+   "t_end": 2.78,
+   "label": "7",
+   "source": "data/raw/7_sc1d1fe0a0_415.wav",
+   "speaker": "1d1fe0a0"
+  },
+  {
+   "t_start": 3.58,
+   "t_end": 4.0,
+   "label": "2",
+   "source": "data/raw/2_sc1ed0b13d_461.wav",
+   "speaker": "1ed0b13d"
+  }
+ ],
+ "duration_s": 5.5,
+ "params": {
+  "gap_s": 0.8,
+  "speech_rms": 0.03,
+  "noise_kind": "none",
+  "noise_rms": 0.0,
+  "snr_db": null,
+  "level_override": 0.03
+ },
+ "note": "word RMS vs silence gate",
+ "expect_merge": false
+}

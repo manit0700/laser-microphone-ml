@@ -1,0 +1,87 @@
+{
+  "val_split": "val",
+  "n_val_clean": 1433,
+  "n_val_sim": 1433,
+  "manifest": "results/sprint8/data/manifest_v2.csv",
+  "manifest_sha256": "4095986e12c17de759281a1f1ce1a329363f9f7cae833c0c525df662ca909ea5",
+  "threshold_grid": "0.20..0.95 step 0.01; middle of the thresholds within 0.002 of the best balanced accuracy",
+  "temperature_fit": "LBFGS on NLL of validation logits (calibration.fit_temperature); kept only if ECE does not get worse",
+  "models": {
+    "finetuned_v2": {
+      "checkpoint": "results/sprint8/models/finetuned_v2_cnn.pt",
+      "checkpoint_sha256_before": "094b0663f342a2988c77ad77bb964b8f97374555dc6cb804e48443b69e07622f",
+      "epoch": 30,
+      "fit_set": "val clean + val sim",
+      "n_fit": 2866,
+      "temperature_fitted": 0.5721844434738159,
+      "temperature": 0.5721844434738159,
+      "ece_before": 0.1765904277563095,
+      "ece_after": 0.021778849884867668,
+      "threshold": 0.26,
+      "val_metrics_at_threshold": {
+        "threshold": 0.26,
+        "balanced_acc": 0.8532953479073264,
+        "overall_acc": 0.8513607978820801,
+        "digit_acc": 0.8562992215156555,
+        "digit_rejected": 0.04212598502635956,
+        "unknown_rejection": 0.8128834366798401
+      },
+      "val_metrics_at_0.60": {
+        "balanced_acc": 0.7866098772395741,
+        "overall_acc": 0.7885555028915405,
+        "digit_acc": 0.7736220359802246,
+        "digit_rejected": 0.18818897008895874,
+        "unknown_rejection": 0.9049080014228821
+      },
+      "val_metrics_argmax_only": {
+        "balanced_acc": 0.8532953479073264,
+        "overall_acc": 0.8513607978820801,
+        "digit_acc": 0.8562992215156555,
+        "digit_rejected": 0.03937007859349251,
+        "unknown_rejection": 0.8128834366798401
+      },
+      "val_clean": {
+        "n": 1433,
+        "ece_before": 0.18268083035945892,
+        "ece_after": 0.034875836223363876,
+        "at_chosen_threshold": {
+          "balanced_acc": 0.8938937512311068,
+          "overall_acc": 0.8918353319168091,
+          "digit_acc": 0.8984252214431763,
+          "digit_rejected": 0.029133858159184456,
+          "unknown_rejection": 0.8404908180236816
+        },
+        "threshold_this_subset_alone_would_pick": 0.27,
+        "at_own_threshold": {
+          "balanced_acc": 0.8938937512311068,
+          "overall_acc": 0.8918353319168091,
+          "digit_acc": 0.8984252214431763,
+          "digit_rejected": 0.029133858159184456,
+          "unknown_rejection": 0.8404908180236816
+        }
+      },
+      "val_sim": {
+        "n": 1433,
+        "ece_before": 0.17049996554851532,
+        "ece_after": 0.028080875054001808,
+        "at_chosen_threshold": {
+          "balanced_acc": 0.8126969500021501,
+          "overall_acc": 0.8108862638473511,
+          "digit_acc": 0.8141732215881348,
+          "digit_rejected": 0.05511811003088951,
+          "unknown_rejection": 0.7852760553359985
+        },
+        "threshold_this_subset_alone_would_pick": 0.25,
+        "at_own_threshold": {
+          "balanced_acc": 0.8126969500021501,
+          "overall_acc": 0.8108862638473511,
+          "digit_acc": 0.8141732215881348,
+          "digit_rejected": 0.05354330688714981,
+          "unknown_rejection": 0.7852760553359985
+        }
+      },
+      "checkpoint_sha256": "9d8a11081dcfc9e6d97d9afc84717f405623fd602117248390687e28458d1598"
+    }
+  },
+  "wall_seconds": 10.225916147232056
+}

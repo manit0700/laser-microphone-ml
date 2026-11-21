@@ -1,0 +1,5657 @@
+{
+  "frozen_settings": {
+    "frozen_at_utc": "2026-11-08T17:39:03+00:00",
+    "rule": "Test split is read once, after this file is written. No setting below may change afterwards.",
+    "manifest": "results/sprint8/train/scratch/fake_manifest.csv",
+    "manifest_sha256": "f7d11e6a585f639270be1e6218f0f4d6835c52451e272d2526e0e624d5192676",
+    "test_split": "test",
+    "val_split": "val",
+    "decision_rule": "probs = softmax(logits / T); pred = argmax; if max(probs) < threshold -> 'unknown' (calibration.apply_threshold)",
+    "labels": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "unknown"
+    ],
+    "unknown_index": 10,
+    "audio_paths": {
+      "clean": "preprocess_file (dataset.py path, no band-pass, no enhance)",
+      "sim": "load_audio -> Butterworth-4 band-pass [200.0, 3800.0] Hz (sosfiltfilt) -> enhance_waveform -> preprocess_waveform (dashboard laser channel)"
+    },
+    "conditions": {
+      "clean": "kind == clean",
+      "sim_good": "condition == sim_good (snr >= 20 dB)",
+      "sim_medium": "condition == sim_medium (10 <= snr < 20 dB)",
+      "sim_poor": "condition == sim_poor (snr < 10 dB)",
+      "sim_all": "kind == sim",
+      "manit_clean": "kind == clean and speaker == manit"
+    },
+    "metrics": [
+      "n_digit",
+      "n_unknown (synthetic noise / real non-digit speech)",
+      "digit_acc",
+      "digit_rejection_rate",
+      "unknown_rejection_rate",
+      "overall_acc_11",
+      "balanced_acc (mean recall over classes present)",
+      "per_class_acc",
+      "confusion_matrix 11x11 (0-9, unknown)"
+    ],
+    "models": {
+      "reference": {
+        "checkpoint": "results/sprint8/train/scratch/models/reference_cnn.pt",
+        "sha256": "5d581ee19466a2c88e667ebb3e98090d8c9af13f20ab78fc16171c9fcd5e675c",
+        "temperature": 1.0,
+        "threshold": 0.58,
+        "epoch": 3,
+        "calibrated_on": "val clean",
+        "settings_from": "round 1 freeze (not re-fitted)"
+      },
+      "deployed": {
+        "checkpoint": "models/best_model_cnn.pt",
+        "sha256": "da27ca83ab93ff84ddd569a0c50cdb7153a5fb93a71252ae2af86efab282f1bb",
+        "temperature": 0.4980080723762512,
+        "threshold": 0.26,
+        "epoch": 36,
+        "calibrated_on": "its own Kaggle validation fold (stored in checkpoint, not re-fitted)",
+        "note": "deployed checkpoint - training provenance not established as speaker-disjoint from this test set (trained on a Kaggle fold of a superset of these sources), information only",
+        "read_only": true,
+        "settings_from": "round 1 freeze (not re-fitted)"
+      },
+      "control": {
+        "checkpoint": "results/sprint8/train/scratch/models/control.pt",
+        "sha256": "de2bb04870fa9b0f7374d57d1990d7a44fa22a876f7dd4729715998cd033438b",
+        "temperature": 0.5067571997642517,
+        "threshold": 0.2,
+        "epoch": 2,
+        "calibrated_on": "val clean + val sim",
+        "settings_from": "round 1 freeze (not re-fitted)"
+      },
+      "ft2": {
+        "checkpoint": "results/sprint8/train/scratch/models/finetuned_cnn.pt",
+        "sha256": "3863569b9d1409e40fa6730fae8b25aa926365b00879b2e2821dc1b82bac0833",
+        "temperature": 1.0,
+        "threshold": 0.58,
+        "epoch": 3,
+        "calibrated_on": "val clean + val sim"
+      }
+    },
+    "seeds": {
+      "seed": 42,
+      "note": "evaluation is deterministic; seed only fixes torch/numpy/random state"
+    },
+    "feature": "mel (40 log-mel bands, standardised), 8 kHz, 1.0 s clips",
+    "batch_size_eval": 64,
+    "torch_threads": 2,
+    "acceptance_criteria": [
+      {
+        "id": "AC1",
+        "statement": "fine-tuned test sim_all digit_acc >= reference test sim_all digit_acc + 0.05",
+        "rationale": "the fine-tune must buy a clear gain on simulated laser audio (Exp 6 saw +12 pts)"
+      },
+      {
+        "id": "AC2",
+        "statement": "fine-tuned test clean digit_acc >= reference test clean digit_acc - 0.03",
+        "rationale": "clean-audio accuracy may not be sacrificed by more than 3 points"
+      },
+      {
+        "id": "AC3",
+        "statement": "fine-tuned test sim_all balanced_acc >= reference test sim_all balanced_acc",
+        "rationale": "unknown rejection on sim must not collapse while digits improve"
+      },
+      {
+        "id": "AC4",
+        "statement": "both models: test clean digit_rejection_rate <= 0.05",
+        "rationale": "the tuned threshold must not reject real digits"
+      }
+    ],
+    "val_preview_for_criteria": {
+      "reference_val_clean_digit_acc": 0.0,
+      "reference_val_sim_digit_acc": 0.0,
+      "finetuned_val_clean_digit_acc": 0.0,
+      "finetuned_val_sim_digit_acc": 0.0
+    },
+    "additions": [
+      {
+        "frozen_at_utc": "2026-11-08T18:21:37+00:00",
+        "models": {
+          "control": {
+            "checkpoint": "results/sprint8/train/scratch/models/control.pt",
+            "sha256": "de2bb04870fa9b0f7374d57d1990d7a44fa22a876f7dd4729715998cd033438b",
+            "temperature": 0.5067571997642517,
+            "threshold": 0.2,
+            "epoch": 2,
+            "calibrated_on": "val clean + val sim"
+          }
+        },
+        "note": "added after the first test run; settings fixed on validation before these models' test scores were seen",
+        "criteria": "scored under the same conditions and metrics; original models' test rows are not recomputed"
+      }
+    ],
+    "rounds": {
+      "v2": {
+        "frozen_at_utc": "2026-11-08T18:31:10+00:00",
+        "manifest": "results/sprint8/train/scratch/fake_manifest.csv",
+        "manifest_sha256": "f7d11e6a585f639270be1e6218f0f4d6835c52451e272d2526e0e624d5192676",
+        "test_split": "test",
+        "models": {
+          "reference": {
+            "checkpoint": "results/sprint8/train/scratch/models/reference_cnn.pt",
+            "sha256": "5d581ee19466a2c88e667ebb3e98090d8c9af13f20ab78fc16171c9fcd5e675c",
+            "temperature": 1.0,
+            "threshold": 0.58,
+            "epoch": 3,
+            "calibrated_on": "val clean",
+            "settings_from": "round 1 freeze (not re-fitted)"
+          },
+          "deployed": {
+            "checkpoint": "models/best_model_cnn.pt",
+            "sha256": "da27ca83ab93ff84ddd569a0c50cdb7153a5fb93a71252ae2af86efab282f1bb",
+            "temperature": 0.4980080723762512,
+            "threshold": 0.26,
+            "epoch": 36,
+            "calibrated_on": "its own Kaggle validation fold (stored in checkpoint, not re-fitted)",
+            "note": "deployed checkpoint - training provenance not established as speaker-disjoint from this test set (trained on a Kaggle fold of a superset of these sources), information only",
+            "read_only": true,
+            "settings_from": "round 1 freeze (not re-fitted)"
+          },
+          "control": {
+            "checkpoint": "results/sprint8/train/scratch/models/control.pt",
+            "sha256": "de2bb04870fa9b0f7374d57d1990d7a44fa22a876f7dd4729715998cd033438b",
+            "temperature": 0.5067571997642517,
+            "threshold": 0.2,
+            "epoch": 2,
+            "calibrated_on": "val clean + val sim",
+            "settings_from": "round 1 freeze (not re-fitted)"
+          },
+          "ft2": {
+            "checkpoint": "results/sprint8/train/scratch/models/finetuned_cnn.pt",
+            "sha256": "3863569b9d1409e40fa6730fae8b25aa926365b00879b2e2821dc1b82bac0833",
+            "temperature": 1.0,
+            "threshold": 0.58,
+            "epoch": 3,
+            "calibrated_on": "val clean + val sim"
+          }
+        },
+        "note": "scratch round test",
+        "outputs": "calibration_val_v2.json, test_metrics_v2.json/.md, plots_v2/",
+        "acceptance_criteria": [
+          {
+            "id": "AC1",
+            "statement": "fine-tuned test sim_all digit_acc >= reference test sim_all digit_acc + 0.05",
+            "rationale": "the fine-tune must buy a clear gain on simulated laser audio (Exp 6 saw +12 pts)"
+          },
+          {
+            "id": "AC2",
+            "statement": "fine-tuned test clean digit_acc >= reference test clean digit_acc - 0.03",
+            "rationale": "clean-audio accuracy may not be sacrificed by more than 3 points"
+          },
+          {
+            "id": "AC3",
+            "statement": "fine-tuned test sim_all balanced_acc >= reference test sim_all balanced_acc",
+            "rationale": "unknown rejection on sim must not collapse while digits improve"
+          },
+          {
+            "id": "AC4",
+            "statement": "both models: test clean digit_rejection_rate <= 0.05",
+            "rationale": "the tuned threshold must not reject real digits"
+          }
+        ],
+        "criteria_note": "same metrics/conditions/decision rule as round 1; AC1-AC4 evaluated with the round's fine-tuned model vs reference"
+      }
+    },
+    "round": "v2"
+  },
+  "manifest_sha256": "f7d11e6a585f639270be1e6218f0f4d6835c52451e272d2526e0e624d5192676",
+  "n_test_clean": 249,
+  "n_test_sim": 60,
+  "test_speakers": [
+    "012187a4",
+    "0137b3f4",
+    "016e2c6d",
+    "017c4098",
+    "019fa366",
+    "026290a7",
+    "02ade946",
+    "030ec18b",
+    "03401e93",
+    "03431e13",
+    "0362539c",
+    "042a8dde",
+    "050170cb",
+    "05b2db80",
+    "05cf43ef",
+    "067f61e2",
+    "07089da9",
+    "070b49af",
+    "0717b9f6",
+    "07ad9b59",
+    "129",
+    "16",
+    "17",
+    "170",
+    "175",
+    "222",
+    "227",
+    "235",
+    "32",
+    "42",
+    "52",
+    "78",
+    "96",
+    "manit",
+    "theo"
+  ],
+  "conditions": {
+    "clean": 249,
+    "sim_all": 60,
+    "sim_good": 20,
+    "sim_medium": 20,
+    "sim_poor": 20,
+    "manit_clean": 92
+  },
+  "models": {
+    "reference": {
+      "checkpoint": "results/sprint8/train/scratch/models/reference_cnn.pt",
+      "sha256": "5d581ee19466a2c88e667ebb3e98090d8c9af13f20ab78fc16171c9fcd5e675c",
+      "temperature": 1.0,
+      "threshold": 0.58,
+      "epoch": 3,
+      "note": null,
+      "conditions": {
+        "clean": {
+          "n_clips": 249,
+          "n_digit": 212,
+          "n_unknown": 37,
+          "n_unknown_synthetic_noise": 13,
+          "n_unknown_real_speech": 24,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": 1.0,
+          "unknown_rejection_rate_synthetic_noise": 1.0,
+          "unknown_rejection_rate_real_speech": 1.0,
+          "overall_acc_11": 0.14859437751004015,
+          "balanced_acc": 0.09090909090909091,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 13,
+              "acc": 0.0
+            },
+            "1": {
+              "n": 22,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 25,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 22,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 18,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 19,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 20,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 22,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 26,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 25,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 37,
+              "acc": 1.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              13
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              22
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              25
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              22
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              18
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              19
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              20
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              22
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              26
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              25
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              37
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_all": {
+          "n_clips": 60,
+          "n_digit": 60,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "1": {
+              "n": 5,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 11,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 5,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 9,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 6,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 7,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 5,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 6,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_good": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 8,
+          "per_class_acc": {
+            "0": {
+              "n": 0,
+              "acc": null
+            },
+            "1": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 4,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 0,
+              "acc": null
+            },
+            "8": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_medium": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 9,
+          "per_class_acc": {
+            "0": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "1": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 4,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 0,
+              "acc": null
+            },
+            "9": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_poor": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 8,
+          "per_class_acc": {
+            "0": {
+              "n": 0,
+              "acc": null
+            },
+            "1": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 7,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 0,
+              "acc": null
+            },
+            "7": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "manit_clean": {
+          "n_clips": 92,
+          "n_digit": 92,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 6,
+              "acc": 0.0
+            },
+            "1": {
+              "n": 8,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 8,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 7,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 11,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 9,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 10,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 11,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 12,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 10,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "deployed": {
+      "checkpoint": "models/best_model_cnn.pt",
+      "sha256": "da27ca83ab93ff84ddd569a0c50cdb7153a5fb93a71252ae2af86efab282f1bb",
+      "temperature": 0.4980080723762512,
+      "threshold": 0.26,
+      "epoch": 36,
+      "note": "deployed checkpoint - training provenance not established as speaker-disjoint from this test set (trained on a Kaggle fold of a superset of these sources), information only",
+      "conditions": {
+        "clean": {
+          "n_clips": 249,
+          "n_digit": 212,
+          "n_unknown": 37,
+          "n_unknown_synthetic_noise": 13,
+          "n_unknown_real_speech": 24,
+          "digit_acc": 0.9433962264150944,
+          "digit_rejection_rate": 0.0047169811320754715,
+          "digit_wrong_digit_rate": 0.05188679245283019,
+          "unknown_rejection_rate": 0.7027027027027027,
+          "unknown_rejection_rate_synthetic_noise": 0.38461538461538464,
+          "unknown_rejection_rate_real_speech": 0.875,
+          "overall_acc_11": 0.9076305220883534,
+          "balanced_acc": 0.9211952769847508,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 13,
+              "acc": 1.0
+            },
+            "1": {
+              "n": 22,
+              "acc": 1.0
+            },
+            "2": {
+              "n": 25,
+              "acc": 1.0
+            },
+            "3": {
+              "n": 22,
+              "acc": 1.0
+            },
+            "4": {
+              "n": 18,
+              "acc": 1.0
+            },
+            "5": {
+              "n": 19,
+              "acc": 0.9473684210526315
+            },
+            "6": {
+              "n": 20,
+              "acc": 0.6
+            },
+            "7": {
+              "n": 22,
+              "acc": 1.0
+            },
+            "8": {
+              "n": 26,
+              "acc": 0.9230769230769231
+            },
+            "9": {
+              "n": 25,
+              "acc": 0.96
+            },
+            "unknown": {
+              "n": 37,
+              "acc": 0.7027027027027027
+            }
+          },
+          "confusion_matrix": [
+            [
+              13,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              22,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              25,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              22,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              18,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              18,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              6,
+              0,
+              0,
+              12,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              22,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              24,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              24,
+              1
+            ],
+            [
+              0,
+              1,
+              1,
+              0,
+              3,
+              1,
+              3,
+              2,
+              0,
+              0,
+              26
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_all": {
+          "n_clips": 60,
+          "n_digit": 60,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.95,
+          "digit_rejection_rate": 0.016666666666666666,
+          "digit_wrong_digit_rate": 0.03333333333333333,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.95,
+          "balanced_acc": 0.9466666666666667,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 3,
+              "acc": 1.0
+            },
+            "1": {
+              "n": 5,
+              "acc": 1.0
+            },
+            "2": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "3": {
+              "n": 5,
+              "acc": 1.0
+            },
+            "4": {
+              "n": 9,
+              "acc": 1.0
+            },
+            "5": {
+              "n": 6,
+              "acc": 1.0
+            },
+            "6": {
+              "n": 7,
+              "acc": 1.0
+            },
+            "7": {
+              "n": 3,
+              "acc": 1.0
+            },
+            "8": {
+              "n": 5,
+              "acc": 0.8
+            },
+            "9": {
+              "n": 6,
+              "acc": 0.6666666666666666
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              3,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              9,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              6,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              4,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_good": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.9,
+          "digit_rejection_rate": 0.0,
+          "digit_wrong_digit_rate": 0.1,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.9,
+          "balanced_acc": 0.8958333333333333,
+          "n_classes_present": 8,
+          "per_class_acc": {
+            "0": {
+              "n": 0,
+              "acc": null
+            },
+            "1": {
+              "n": 1,
+              "acc": 1.0
+            },
+            "2": {
+              "n": 3,
+              "acc": 1.0
+            },
+            "3": {
+              "n": 2,
+              "acc": 1.0
+            },
+            "4": {
+              "n": 4,
+              "acc": 1.0
+            },
+            "5": {
+              "n": 2,
+              "acc": 1.0
+            },
+            "6": {
+              "n": 3,
+              "acc": 1.0
+            },
+            "7": {
+              "n": 0,
+              "acc": null
+            },
+            "8": {
+              "n": 3,
+              "acc": 0.6666666666666666
+            },
+            "9": {
+              "n": 2,
+              "acc": 0.5
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              3,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              4,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_medium": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 1.0,
+          "digit_rejection_rate": 0.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 1.0,
+          "balanced_acc": 1.0,
+          "n_classes_present": 9,
+          "per_class_acc": {
+            "0": {
+              "n": 3,
+              "acc": 1.0
+            },
+            "1": {
+              "n": 2,
+              "acc": 1.0
+            },
+            "2": {
+              "n": 1,
+              "acc": 1.0
+            },
+            "3": {
+              "n": 1,
+              "acc": 1.0
+            },
+            "4": {
+              "n": 3,
+              "acc": 1.0
+            },
+            "5": {
+              "n": 1,
+              "acc": 1.0
+            },
+            "6": {
+              "n": 4,
+              "acc": 1.0
+            },
+            "7": {
+              "n": 2,
+              "acc": 1.0
+            },
+            "8": {
+              "n": 0,
+              "acc": null
+            },
+            "9": {
+              "n": 3,
+              "acc": 1.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              3,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_poor": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.95,
+          "digit_rejection_rate": 0.05,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.95,
+          "balanced_acc": 0.875,
+          "n_classes_present": 8,
+          "per_class_acc": {
+            "0": {
+              "n": 0,
+              "acc": null
+            },
+            "1": {
+              "n": 2,
+              "acc": 1.0
+            },
+            "2": {
+              "n": 7,
+              "acc": 1.0
+            },
+            "3": {
+              "n": 2,
+              "acc": 1.0
+            },
+            "4": {
+              "n": 2,
+              "acc": 1.0
+            },
+            "5": {
+              "n": 3,
+              "acc": 1.0
+            },
+            "6": {
+              "n": 0,
+              "acc": null
+            },
+            "7": {
+              "n": 1,
+              "acc": 1.0
+            },
+            "8": {
+              "n": 2,
+              "acc": 1.0
+            },
+            "9": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              7,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "manit_clean": {
+          "n_clips": 92,
+          "n_digit": 92,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.9021739130434783,
+          "digit_rejection_rate": 0.0,
+          "digit_wrong_digit_rate": 0.09782608695652174,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.9021739130434783,
+          "balanced_acc": 0.9088888888888889,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 6,
+              "acc": 1.0
+            },
+            "1": {
+              "n": 8,
+              "acc": 1.0
+            },
+            "2": {
+              "n": 8,
+              "acc": 1.0
+            },
+            "3": {
+              "n": 7,
+              "acc": 1.0
+            },
+            "4": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "5": {
+              "n": 9,
+              "acc": 0.8888888888888888
+            },
+            "6": {
+              "n": 10,
+              "acc": 0.2
+            },
+            "7": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "8": {
+              "n": 12,
+              "acc": 1.0
+            },
+            "9": {
+              "n": 10,
+              "acc": 1.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              6,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              7,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              6,
+              0,
+              0,
+              2,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "control": {
+      "checkpoint": "results/sprint8/train/scratch/models/control.pt",
+      "sha256": "de2bb04870fa9b0f7374d57d1990d7a44fa22a876f7dd4729715998cd033438b",
+      "temperature": 0.5067571997642517,
+      "threshold": 0.2,
+      "epoch": 2,
+      "note": null,
+      "conditions": {
+        "clean": {
+          "n_clips": 249,
+          "n_digit": 212,
+          "n_unknown": 37,
+          "n_unknown_synthetic_noise": 13,
+          "n_unknown_real_speech": 24,
+          "digit_acc": 0.05660377358490566,
+          "digit_rejection_rate": 0.8726415094339622,
+          "digit_wrong_digit_rate": 0.07075471698113207,
+          "unknown_rejection_rate": 0.972972972972973,
+          "unknown_rejection_rate_synthetic_noise": 1.0,
+          "unknown_rejection_rate_real_speech": 0.9583333333333334,
+          "overall_acc_11": 0.1927710843373494,
+          "balanced_acc": 0.14551502551502551,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 13,
+              "acc": 0.3076923076923077
+            },
+            "1": {
+              "n": 22,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 25,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 22,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 18,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 19,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 20,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 22,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 26,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 25,
+              "acc": 0.32
+            },
+            "unknown": {
+              "n": 37,
+              "acc": 0.972972972972973
+            }
+          },
+          "confusion_matrix": [
+            [
+              4,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              9
+            ],
+            [
+              4,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              18
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              23
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              21
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              18
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              19
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              19
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              22
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              25
+            ],
+            [
+              6,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8,
+              11
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              36
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_all": {
+          "n_clips": 60,
+          "n_digit": 60,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 0.95,
+          "digit_wrong_digit_rate": 0.05,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "1": {
+              "n": 5,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 11,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 5,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 9,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 6,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 7,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 5,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 6,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              4
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_good": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 0.9,
+          "digit_wrong_digit_rate": 0.1,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 8,
+          "per_class_acc": {
+            "0": {
+              "n": 0,
+              "acc": null
+            },
+            "1": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 4,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 0,
+              "acc": null
+            },
+            "8": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_medium": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 0.95,
+          "digit_wrong_digit_rate": 0.05,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 9,
+          "per_class_acc": {
+            "0": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "1": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 4,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 0,
+              "acc": null
+            },
+            "9": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_poor": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 8,
+          "per_class_acc": {
+            "0": {
+              "n": 0,
+              "acc": null
+            },
+            "1": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 7,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 0,
+              "acc": null
+            },
+            "7": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "manit_clean": {
+          "n_clips": 92,
+          "n_digit": 92,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.11956521739130435,
+          "digit_rejection_rate": 0.8478260869565217,
+          "digit_wrong_digit_rate": 0.03260869565217391,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.11956521739130435,
+          "balanced_acc": 0.13,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 6,
+              "acc": 0.5
+            },
+            "1": {
+              "n": 8,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 8,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 7,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 11,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 9,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 10,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 11,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 12,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 10,
+              "acc": 0.8
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              3,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "ft2": {
+      "checkpoint": "results/sprint8/train/scratch/models/finetuned_cnn.pt",
+      "sha256": "3863569b9d1409e40fa6730fae8b25aa926365b00879b2e2821dc1b82bac0833",
+      "temperature": 1.0,
+      "threshold": 0.58,
+      "epoch": 3,
+      "note": null,
+      "conditions": {
+        "clean": {
+          "n_clips": 249,
+          "n_digit": 212,
+          "n_unknown": 37,
+          "n_unknown_synthetic_noise": 13,
+          "n_unknown_real_speech": 24,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": 1.0,
+          "unknown_rejection_rate_synthetic_noise": 1.0,
+          "unknown_rejection_rate_real_speech": 1.0,
+          "overall_acc_11": 0.14859437751004015,
+          "balanced_acc": 0.09090909090909091,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 13,
+              "acc": 0.0
+            },
+            "1": {
+              "n": 22,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 25,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 22,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 18,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 19,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 20,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 22,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 26,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 25,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 37,
+              "acc": 1.0
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              13
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              22
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              25
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              22
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              18
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              19
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              20
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              22
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              26
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              25
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              37
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_all": {
+          "n_clips": 60,
+          "n_digit": 60,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "1": {
+              "n": 5,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 11,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 5,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 9,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 6,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 7,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 5,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 6,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_good": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 8,
+          "per_class_acc": {
+            "0": {
+              "n": 0,
+              "acc": null
+            },
+            "1": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 4,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 0,
+              "acc": null
+            },
+            "8": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_medium": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 9,
+          "per_class_acc": {
+            "0": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "1": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 4,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 0,
+              "acc": null
+            },
+            "9": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_poor": {
+          "n_clips": 20,
+          "n_digit": 20,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 8,
+          "per_class_acc": {
+            "0": {
+              "n": 0,
+              "acc": null
+            },
+            "1": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 7,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 3,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 0,
+              "acc": null
+            },
+            "7": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 2,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 1,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "manit_clean": {
+          "n_clips": 92,
+          "n_digit": 92,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.0,
+          "digit_rejection_rate": 1.0,
+          "digit_wrong_digit_rate": 0.0,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.0,
+          "balanced_acc": 0.0,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 6,
+              "acc": 0.0
+            },
+            "1": {
+              "n": 8,
+              "acc": 0.0
+            },
+            "2": {
+              "n": 8,
+              "acc": 0.0
+            },
+            "3": {
+              "n": 7,
+              "acc": 0.0
+            },
+            "4": {
+              "n": 11,
+              "acc": 0.0
+            },
+            "5": {
+              "n": 9,
+              "acc": 0.0
+            },
+            "6": {
+              "n": 10,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 11,
+              "acc": 0.0
+            },
+            "8": {
+              "n": 12,
+              "acc": 0.0
+            },
+            "9": {
+              "n": 10,
+              "acc": 0.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        }
+      }
+    }
+  },
+  "acceptance_finetuned_model": "ft2",
+  "acceptance": {
+    "criteria": [
+      {
+        "id": "AC1",
+        "statement": "fine-tuned test sim_all digit_acc >= reference test sim_all digit_acc + 0.05",
+        "rationale": "the fine-tune must buy a clear gain on simulated laser audio (Exp 6 saw +12 pts)"
+      },
+      {
+        "id": "AC2",
+        "statement": "fine-tuned test clean digit_acc >= reference test clean digit_acc - 0.03",
+        "rationale": "clean-audio accuracy may not be sacrificed by more than 3 points"
+      },
+      {
+        "id": "AC3",
+        "statement": "fine-tuned test sim_all balanced_acc >= reference test sim_all balanced_acc",
+        "rationale": "unknown rejection on sim must not collapse while digits improve"
+      },
+      {
+        "id": "AC4",
+        "statement": "both models: test clean digit_rejection_rate <= 0.05",
+        "rationale": "the tuned threshold must not reject real digits"
+      }
+    ],
+    "results": [
+      {
+        "id": "AC1",
+        "pass": false,
+        "values": {
+          "reference_sim_all_digit_acc": 0.0,
+          "finetuned_sim_all_digit_acc": 0.0,
+          "delta": 0.0
+        }
+      },
+      {
+        "id": "AC2",
+        "pass": true,
+        "values": {
+          "reference_clean_digit_acc": 0.0,
+          "finetuned_clean_digit_acc": 0.0,
+          "delta": 0.0
+        }
+      },
+      {
+        "id": "AC3",
+        "pass": true,
+        "values": {
+          "reference_sim_all_balanced_acc": 0.0,
+          "finetuned_sim_all_balanced_acc": 0.0
+        }
+      },
+      {
+        "id": "AC4",
+        "pass": false,
+        "values": {
+          "reference_clean_digit_rejection": 1.0,
+          "finetuned_clean_digit_rejection": 1.0
+        }
+      }
+    ],
+    "all_pass": false
+  },
+  "wall_seconds": 19.90392017364502,
+  "wall_seconds_preload": 2.0989418029785156,
+  "environment": {
+    "python": "3.13.16",
+    "torch": "2.15.0+cu132",
+    "platform": "Linux-6.18.44-fc-v310-x86_64-with-glibc2.39",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "cpu_count": 2,
+    "torch_threads": 2,
+    "device": "cpu",
+    "sample_rate": 8000,
+    "output_dir_env": "/home/claude/lmml/results/sprint8/train"
+  }
+}

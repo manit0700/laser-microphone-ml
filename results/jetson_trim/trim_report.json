@@ -1,0 +1,86 @@
+{
+  "host": "eclipse-orin-super",
+  "date": "2026-11-18 18:07:48",
+  "source": "/home/eclipse/laser_microphone_ml/data/raw",
+  "out_dir": "/home/eclipse/lmml_sprint8_final/data/raw_trimmed",
+  "seconds": 1.25,
+  "speakers": [
+    "ali",
+    "brooke",
+    "brooke2",
+    "john",
+    "laserali",
+    "laserjohn",
+    "lasermichaeltrim",
+    "michael"
+  ],
+  "only_tag": "laser",
+  "written": 814,
+  "linked": 78522,
+  "sessions": {
+    "ali": {
+      "clips": 100,
+      "median_length_s": 2.0,
+      "median_rms": 0.31935060287404776,
+      "trimmed": 100,
+      "median_peak_shift_s": 0.04775,
+      "loudest_point_outside_word_window": 0
+    },
+    "brooke": {
+      "clips": 100,
+      "median_length_s": 2.0,
+      "median_rms": 0.3907718235932851,
+      "trimmed": 100,
+      "median_peak_shift_s": 0.1135625,
+      "loudest_point_outside_word_window": 0
+    },
+    "brooke2": {
+      "clips": 100,
+      "median_length_s": 2.0,
+      "median_rms": 0.34228580816389975,
+      "trimmed": 100,
+      "median_peak_shift_s": 0.154125,
+      "loudest_point_outside_word_window": 0
+    },
+    "john": {
+      "clips": 100,
+      "median_length_s": 2.0,
+      "median_rms": 0.32353150173227396,
+      "trimmed": 100,
+      "median_peak_shift_s": 0.06225,
+      "loudest_point_outside_word_window": 0
+    },
+    "laserali": {
+      "clips": 114,
+      "median_length_s": 2.0,
+      "median_rms": 0.27375767322586997,
+      "trimmed": 114,
+      "median_peak_shift_s": 0.09553125,
+      "loudest_point_outside_word_window": 0
+    },
+    "laserjohn": {
+      "clips": 100,
+      "median_length_s": 2.0,
+      "median_rms": 0.3089208870496786,
+      "trimmed": 100,
+      "median_peak_shift_s": 0.0540625,
+      "loudest_point_outside_word_window": 0
+    },
+    "lasermichaeltrim": {
+      "clips": 100,
+      "median_length_s": 1.2,
+      "median_rms": 0.3158506431354413,
+      "trimmed": 0,
+      "median_peak_shift_s": 0.0,
+      "loudest_point_outside_word_window": 0
+    },
+    "michael": {
+      "clips": 100,
+      "median_length_s": 2.0,
+      "median_rms": 0.33931876938749617,
+      "trimmed": 100,
+      "median_peak_shift_s": 0.149375,
+      "loudest_point_outside_word_window": 0
+    }
+  }
+}

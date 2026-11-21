@@ -1,0 +1,122 @@
+{
+  "best_epoch": 30,
+  "epochs_run": 30,
+  "saved": true,
+  "best": {
+    "val_sim_loss": 1.130843430819914,
+    "val_sim_acc": 0.7843684577808793,
+    "val_clean_loss": 0.9022545451811785,
+    "val_clean_acc": 0.8918353105373342,
+    "val_loss": 1.0165489880005463,
+    "val_acc": 0.8381018841591068
+  },
+  "before": {
+    "val_sim_loss": 1.7038722098164847,
+    "val_sim_acc": 0.4961618981158409,
+    "val_clean_loss": 0.9696196184570941,
+    "val_clean_acc": 0.8415910676901605,
+    "val_loss": 1.3367459141367894,
+    "val_acc": 0.6688764829030007
+  },
+  "delta_val_sim_acc": 0.2882065596650384,
+  "delta_val_clean_acc": 0.05024424284717377,
+  "wall_seconds_total": 1555.8529365062714,
+  "wall_seconds_preload": 55.761512756347656,
+  "mean_epoch_seconds": 49.874390212694806,
+  "checkpoint": "results/sprint8/models/finetuned_cnn_long.pt",
+  "checkpoint_sha256": "d145dc60414bc367d575259271db0018e3e3619ee525bbd04dff9188c59374df",
+  "config": {
+    "stage": "finetune",
+    "base_checkpoint": "results/sprint8/models/reference_cnn.pt",
+    "base_sha256": "5479bf501513047c33fe985c487b9052f16c367a3d2f24f316f3136d0aa921d6",
+    "manifest": "results/sprint8/data/manifest.csv",
+    "train_split": "train",
+    "val_split": "val",
+    "n_train_sim": 7000,
+    "control_no_sim": false,
+    "n_train_clean_replay": 6391,
+    "replay_ratio": 1.0,
+    "train_sim_label_counts": {
+      "0": 615,
+      "1": 615,
+      "2": 607,
+      "3": 631,
+      "4": 624,
+      "5": 614,
+      "6": 614,
+      "7": 604,
+      "8": 608,
+      "9": 611,
+      "unknown": 857
+    },
+    "replay_label_counts": {
+      "0": 557,
+      "1": 546,
+      "2": 554,
+      "3": 554,
+      "4": 563,
+      "5": 561,
+      "6": 552,
+      "7": 552,
+      "8": 548,
+      "9": 547,
+      "unknown": 857
+    },
+    "n_val_sim": 1433,
+    "n_val_clean": 1433,
+    "optimizer": "Adam",
+    "lr": 0.0001,
+    "weight_decay": 1e-05,
+    "scheduler": "none",
+    "batch_size": 32,
+    "label_smoothing": 0.1,
+    "waveform_augment": true,
+    "noise_min_snr_db": 8.0,
+    "noise_max_snr_db": 30.0,
+    "specaugment": false,
+    "max_epochs": 30,
+    "early_stop_patience": 4,
+    "early_stop_min_delta": 0.001,
+    "early_stop_metric": "combined val loss (val sim + val clean), clip-weighted",
+    "selection_rule": "lowest combined val loss among epochs with clean val acc >= reference clean val acc - 0.03",
+    "clean_acc_floor": 0.8115910676901604,
+    "live_path": {
+      "applied_to": "sim clips (train and eval)",
+      "bandpass_hz": [
+        200.0,
+        3800.0
+      ],
+      "bandpass_order": 4,
+      "enhance": true,
+      "clean_clips": "plain preprocess_file path (no band-pass, no enhance)",
+      "known_mismatch": "dashboard std channel applies enhance_waveform live; clean training clips do not (near no-op on clean audio)"
+    },
+    "seeds": {
+      "seed": 42,
+      "python_random": 42,
+      "numpy": 42,
+      "torch": 42
+    },
+    "num_workers": 0,
+    "sample_rate": 8000,
+    "environment": {
+      "python": "3.13.16",
+      "torch": "2.15.0+cu132",
+      "platform": "Linux-6.18.44-fc-v310-x86_64-with-glibc2.39",
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "cpu_count": 2,
+      "torch_threads": 2,
+      "device": "cpu",
+      "sample_rate": 8000,
+      "output_dir_env": "/home/claude/lmml/results/sprint8/train"
+    },
+    "before_finetune": {
+      "val_sim_loss": 1.7038722098164847,
+      "val_sim_acc": 0.4961618981158409,
+      "val_clean_loss": 0.9696196184570941,
+      "val_clean_acc": 0.8415910676901605,
+      "val_loss": 1.3367459141367894,
+      "val_acc": 0.6688764829030007
+    }
+  }
+}

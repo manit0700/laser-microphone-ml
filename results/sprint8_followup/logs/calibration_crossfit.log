@@ -1,0 +1,7 @@
+reference P_clean OOF nll 0.4749 brier 0.2278 ece15 0.0228
+reference P_mix OOF nll 0.9398 brier 0.4242 ece15 0.0308
+continued_clean P_clean OOF nll 0.4384 brier 0.2021 ece15 0.0353
+continued_clean P_mix OOF nll 0.8993 brier 0.4056 ece15 0.04
+finetuned_v2 P_clean OOF nll 0.3834 brier 0.1695 ece15 0.0316
+finetuned_v2 P_mix OOF nll 0.5122 brier 0.2262 ece15 0.0315
+wrote /home/claude/lmml/results/sprint8_followup/calibration/calibration_crossfit_val.json

@@ -1,0 +1,4 @@
+v1 fixed_code {'0': 7, '1': 581, '2+': 12} head-click multis: 9
+v1 prefix_code_emulated {'0': 22, '1': 576, '2+': 2} head-click multis: 2
+v2 fixed_code {'0': 0, '1': 599, '2+': 1} head-click multis: 0
+v2 prefix_code_emulated {'0': 3, '1': 594, '2+': 3} head-click multis: 2

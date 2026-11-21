@@ -1,0 +1,6 @@
+written 2026-11-08T18:18:11+00:00 by scripts/sprint8/evaluate_sprint8.py calibrate
+reference: results/sprint8/models/reference_cnn.pt T=0.5812 thr=0.26 sha256=5479bf501513047c33fe985c487b9052f16c367a3d2f24f316f3136d0aa921d6
+finetuned: results/sprint8/models/finetuned_cnn.pt T=0.5808 thr=0.26 sha256=a93f5b3f2bddb6a64219081b7594838d47f7452accef97218dfa9c56f5ba6750
+continued_clean: results/sprint8/models/continued_clean_cnn.pt T=0.7711 thr=0.22 sha256=6b69193f828be2f6d8063baa99cbecec07e55c4524898cc358249da52963ff44
+finetuned_long: results/sprint8/models/finetuned_cnn_long.pt T=0.5762 thr=0.24 sha256=467422eb499a4eecf2b6f9d2e52a3311657d801c4595eb46af7e2b2de79c501a
+finetuned_v2 (round v2, 2026-11-08T19:06:42+00:00): results/sprint8/models/finetuned_v2_cnn.pt T=0.5722 thr=0.26 sha256=9d8a11081dcfc9e6d97d9afc84717f405623fd602117248390687e28458d1598

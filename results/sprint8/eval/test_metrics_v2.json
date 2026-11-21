@@ -1,0 +1,5675 @@
+{
+  "frozen_settings": {
+    "frozen_at_utc": "2026-11-08T18:18:11+00:00",
+    "rule": "Test split is read once, after this file is written. No setting below may change afterwards.",
+    "manifest": "results/sprint8/data/manifest_v2.csv",
+    "manifest_sha256": "4095986e12c17de759281a1f1ce1a329363f9f7cae833c0c525df662ca909ea5",
+    "test_split": "test",
+    "val_split": "val",
+    "decision_rule": "probs = softmax(logits / T); pred = argmax; if max(probs) < threshold -> 'unknown' (calibration.apply_threshold)",
+    "labels": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "unknown"
+    ],
+    "unknown_index": 10,
+    "audio_paths": {
+      "clean": "preprocess_file (dataset.py path, no band-pass, no enhance)",
+      "sim": "load_audio -> Butterworth-4 band-pass [200.0, 3800.0] Hz (sosfiltfilt) -> enhance_waveform -> preprocess_waveform (dashboard laser channel)"
+    },
+    "conditions": {
+      "clean": "kind == clean",
+      "sim_good": "condition == sim_good (snr >= 20 dB)",
+      "sim_medium": "condition == sim_medium (10 <= snr < 20 dB)",
+      "sim_poor": "condition == sim_poor (snr < 10 dB)",
+      "sim_all": "kind == sim",
+      "manit_clean": "kind == clean and speaker == manit"
+    },
+    "metrics": [
+      "n_digit",
+      "n_unknown (synthetic noise / real non-digit speech)",
+      "digit_acc",
+      "digit_rejection_rate",
+      "unknown_rejection_rate",
+      "overall_acc_11",
+      "balanced_acc (mean recall over classes present)",
+      "per_class_acc",
+      "confusion_matrix 11x11 (0-9, unknown)"
+    ],
+    "models": {
+      "reference": {
+        "checkpoint": "results/sprint8/models/reference_cnn.pt",
+        "sha256": "5479bf501513047c33fe985c487b9052f16c367a3d2f24f316f3136d0aa921d6",
+        "temperature": 0.5811861753463745,
+        "threshold": 0.26,
+        "epoch": 38,
+        "calibrated_on": "val clean",
+        "settings_from": "round 1 freeze (not re-fitted)"
+      },
+      "continued_clean": {
+        "checkpoint": "results/sprint8/models/continued_clean_cnn.pt",
+        "sha256": "6b69193f828be2f6d8063baa99cbecec07e55c4524898cc358249da52963ff44",
+        "temperature": 0.7711358666419983,
+        "threshold": 0.22,
+        "epoch": 6,
+        "calibrated_on": "val clean + val sim",
+        "settings_from": "round 1 freeze (not re-fitted)"
+      },
+      "deployed": {
+        "checkpoint": "models/best_model_cnn.pt",
+        "sha256": "da27ca83ab93ff84ddd569a0c50cdb7153a5fb93a71252ae2af86efab282f1bb",
+        "temperature": 0.4980080723762512,
+        "threshold": 0.26,
+        "epoch": 36,
+        "calibrated_on": "its own Kaggle validation fold (stored in checkpoint, not re-fitted)",
+        "note": "deployed checkpoint - training provenance not established as speaker-disjoint from this test set (trained on a Kaggle fold of a superset of these sources), information only",
+        "read_only": true,
+        "settings_from": "round 1 freeze (not re-fitted)"
+      },
+      "finetuned_v2": {
+        "checkpoint": "results/sprint8/models/finetuned_v2_cnn.pt",
+        "sha256": "9d8a11081dcfc9e6d97d9afc84717f405623fd602117248390687e28458d1598",
+        "temperature": 0.5721844434738159,
+        "threshold": 0.26,
+        "epoch": 30,
+        "calibrated_on": "val clean + val sim"
+      }
+    },
+    "seeds": {
+      "seed": 42,
+      "note": "evaluation is deterministic; seed only fixes torch/numpy/random state"
+    },
+    "feature": "mel (40 log-mel bands, standardised), 8 kHz, 1.0 s clips",
+    "batch_size_eval": 64,
+    "torch_threads": 2,
+    "acceptance_criteria": [
+      {
+        "id": "AC1",
+        "statement": "fine-tuned test sim_all digit_acc >= reference test sim_all digit_acc + 0.05",
+        "rationale": "the fine-tune must buy a clear gain on simulated laser audio (Exp 6 saw +12 pts)"
+      },
+      {
+        "id": "AC2",
+        "statement": "fine-tuned test clean digit_acc >= reference test clean digit_acc - 0.03",
+        "rationale": "clean-audio accuracy may not be sacrificed by more than 3 points"
+      },
+      {
+        "id": "AC3",
+        "statement": "fine-tuned test sim_all balanced_acc >= reference test sim_all balanced_acc",
+        "rationale": "unknown rejection on sim must not collapse while digits improve"
+      },
+      {
+        "id": "AC4",
+        "statement": "both models: test clean digit_rejection_rate <= 0.05",
+        "rationale": "the tuned threshold must not reject real digits"
+      }
+    ],
+    "val_preview_for_criteria": {
+      "reference_val_clean_digit_acc": 0.8488188982009888,
+      "reference_val_sim_digit_acc": 0.4677165448665619,
+      "finetuned_val_clean_digit_acc": 0.8968504071235657,
+      "finetuned_val_sim_digit_acc": 0.7440944910049438
+    },
+    "additions": [
+      {
+        "frozen_at_utc": "2026-11-08T18:56:09+00:00",
+        "models": {
+          "continued_clean": {
+            "checkpoint": "results/sprint8/models/continued_clean_cnn.pt",
+            "sha256": "6b69193f828be2f6d8063baa99cbecec07e55c4524898cc358249da52963ff44",
+            "temperature": 0.7711358666419983,
+            "threshold": 0.22,
+            "epoch": 6,
+            "calibrated_on": "val clean + val sim"
+          },
+          "finetuned_long": {
+            "checkpoint": "results/sprint8/models/finetuned_cnn_long.pt",
+            "sha256": "467422eb499a4eecf2b6f9d2e52a3311657d801c4595eb46af7e2b2de79c501a",
+            "temperature": 0.5762220621109009,
+            "threshold": 0.24,
+            "epoch": 30,
+            "calibrated_on": "val clean + val sim"
+          }
+        },
+        "note": "Pre-registered follow-ups (coordinator request): continued_clean = reference + fine-tune recipe with NO sim clips (control for 'more training'); finetuned_long = same fine-tune recipe, max 30 epochs. Both val-selected and calibrated on val before any test score was seen.",
+        "criteria": "scored under the same conditions and metrics; original models' test rows are not recomputed"
+      }
+    ],
+    "rounds": {
+      "v2": {
+        "frozen_at_utc": "2026-11-08T19:06:42+00:00",
+        "manifest": "results/sprint8/data/manifest_v2.csv",
+        "manifest_sha256": "4095986e12c17de759281a1f1ce1a329363f9f7cae833c0c525df662ca909ea5",
+        "test_split": "test",
+        "models": {
+          "reference": {
+            "checkpoint": "results/sprint8/models/reference_cnn.pt",
+            "sha256": "5479bf501513047c33fe985c487b9052f16c367a3d2f24f316f3136d0aa921d6",
+            "temperature": 0.5811861753463745,
+            "threshold": 0.26,
+            "epoch": 38,
+            "calibrated_on": "val clean",
+            "settings_from": "round 1 freeze (not re-fitted)"
+          },
+          "continued_clean": {
+            "checkpoint": "results/sprint8/models/continued_clean_cnn.pt",
+            "sha256": "6b69193f828be2f6d8063baa99cbecec07e55c4524898cc358249da52963ff44",
+            "temperature": 0.7711358666419983,
+            "threshold": 0.22,
+            "epoch": 6,
+            "calibrated_on": "val clean + val sim",
+            "settings_from": "round 1 freeze (not re-fitted)"
+          },
+          "deployed": {
+            "checkpoint": "models/best_model_cnn.pt",
+            "sha256": "da27ca83ab93ff84ddd569a0c50cdb7153a5fb93a71252ae2af86efab282f1bb",
+            "temperature": 0.4980080723762512,
+            "threshold": 0.26,
+            "epoch": 36,
+            "calibrated_on": "its own Kaggle validation fold (stored in checkpoint, not re-fitted)",
+            "note": "deployed checkpoint - training provenance not established as speaker-disjoint from this test set (trained on a Kaggle fold of a superset of these sources), information only",
+            "read_only": true,
+            "settings_from": "round 1 freeze (not re-fitted)"
+          },
+          "finetuned_v2": {
+            "checkpoint": "results/sprint8/models/finetuned_v2_cnn.pt",
+            "sha256": "9d8a11081dcfc9e6d97d9afc84717f405623fd602117248390687e28458d1598",
+            "temperature": 0.5721844434738159,
+            "threshold": 0.26,
+            "epoch": 30,
+            "calibrated_on": "val clean + val sim"
+          }
+        },
+        "note": "Round 2: sim clips regenerated without the 20 ms start-up click (data/sprint8_sim_v2, identical split and seeds). finetuned_v2 = reference fine-tuned on manifest_v2 train sim + clean replay, max 30 epochs, patience 4, val-selected; T/threshold fitted on v2 val. reference/continued_clean/deployed carried with Round-1 settings unchanged. Frozen before any v2 test score was seen.",
+        "outputs": "calibration_val_v2.json, test_metrics_v2.json/.md, plots_v2/",
+        "acceptance_criteria": [
+          {
+            "id": "AC1",
+            "statement": "fine-tuned test sim_all digit_acc >= reference test sim_all digit_acc + 0.05",
+            "rationale": "the fine-tune must buy a clear gain on simulated laser audio (Exp 6 saw +12 pts)"
+          },
+          {
+            "id": "AC2",
+            "statement": "fine-tuned test clean digit_acc >= reference test clean digit_acc - 0.03",
+            "rationale": "clean-audio accuracy may not be sacrificed by more than 3 points"
+          },
+          {
+            "id": "AC3",
+            "statement": "fine-tuned test sim_all balanced_acc >= reference test sim_all balanced_acc",
+            "rationale": "unknown rejection on sim must not collapse while digits improve"
+          },
+          {
+            "id": "AC4",
+            "statement": "both models: test clean digit_rejection_rate <= 0.05",
+            "rationale": "the tuned threshold must not reject real digits"
+          }
+        ],
+        "criteria_note": "same metrics/conditions/decision rule as round 1; AC1-AC4 evaluated with the round's fine-tuned model vs reference"
+      }
+    },
+    "round": "v2"
+  },
+  "manifest_sha256": "4095986e12c17de759281a1f1ce1a329363f9f7cae833c0c525df662ca909ea5",
+  "n_test_clean": 1385,
+  "n_test_sim": 1385,
+  "test_speakers": [
+    "0137b3f4",
+    "03431e13",
+    "05cf43ef",
+    "06dacdb9",
+    "079d1020",
+    "07ad9b59",
+    "099d52ad",
+    "0a2b400e",
+    "0b139000",
+    "0b57a6ed",
+    "0ba018fc",
+    "0d53e045",
+    "0ff728b5",
+    "105e72bb",
+    "126a31d2",
+    "13d7b8c9",
+    "13dce503",
+    "151bfb79",
+    "16d41d07",
+    "171edea9",
+    "1816b768",
+    "197f4153",
+    "1993db46",
+    "1a994c9f",
+    "1acc97de",
+    "1b0ba6f1",
+    "1b835b87",
+    "1cc80e39",
+    "1d1fe0a0",
+    "1ed0b13d",
+    "1f3e4139",
+    "1fe4c891",
+    "214ccb20",
+    "2151b09a",
+    "22296dbe",
+    "2250f5f2",
+    "2296b1af",
+    "234d6a48",
+    "gen_noise_bandlimited_test",
+    "gen_noise_brown_test",
+    "gen_noise_hum_click_test",
+    "gen_noise_white_test",
+    "gen_silence_white_test",
+    "manit",
+    "yweweler"
+  ],
+  "conditions": {
+    "clean": 1385,
+    "sim_all": 1385,
+    "sim_good": 493,
+    "sim_medium": 454,
+    "sim_poor": 438,
+    "manit_clean": 92
+  },
+  "models": {
+    "reference": {
+      "checkpoint": "results/sprint8/models/reference_cnn.pt",
+      "sha256": "5479bf501513047c33fe985c487b9052f16c367a3d2f24f316f3136d0aa921d6",
+      "temperature": 0.5811861753463745,
+      "threshold": 0.26,
+      "epoch": 38,
+      "note": null,
+      "conditions": {
+        "clean": {
+          "n_clips": 1385,
+          "n_digit": 1275,
+          "n_unknown": 110,
+          "n_unknown_synthetic_noise": 50,
+          "n_unknown_real_speech": 60,
+          "digit_acc": 0.8909803921568628,
+          "digit_rejection_rate": 0.021176470588235293,
+          "digit_wrong_digit_rate": 0.08784313725490196,
+          "unknown_rejection_rate": 0.8272727272727273,
+          "unknown_rejection_rate_synthetic_noise": 1.0,
+          "unknown_rejection_rate_real_speech": 0.6833333333333333,
+          "overall_acc_11": 0.8859205776173286,
+          "balanced_acc": 0.8835795191937322,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 125,
+              "acc": 0.912
+            },
+            "1": {
+              "n": 135,
+              "acc": 0.9629629629629629
+            },
+            "2": {
+              "n": 128,
+              "acc": 0.9609375
+            },
+            "3": {
+              "n": 129,
+              "acc": 0.875968992248062
+            },
+            "4": {
+              "n": 129,
+              "acc": 0.9612403100775194
+            },
+            "5": {
+              "n": 116,
+              "acc": 0.8706896551724138
+            },
+            "6": {
+              "n": 124,
+              "acc": 0.5967741935483871
+            },
+            "7": {
+              "n": 131,
+              "acc": 0.916030534351145
+            },
+            "8": {
+              "n": 132,
+              "acc": 0.9545454545454546
+            },
+            "9": {
+              "n": 126,
+              "acc": 0.8809523809523809
+            },
+            "unknown": {
+              "n": 110,
+              "acc": 0.8272727272727273
+            }
+          },
+          "confusion_matrix": [
+            [
+              114,
+              0,
+              4,
+              0,
+              0,
+              0,
+              2,
+              1,
+              1,
+              0,
+              3
+            ],
+            [
+              0,
+              130,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              2,
+              2
+            ],
+            [
+              0,
+              0,
+              123,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              1,
+              113,
+              0,
+              1,
+              2,
+              0,
+              11,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              124,
+              2,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              3,
+              0,
+              0,
+              2,
+              101,
+              0,
+              0,
+              4,
+              2,
+              4
+            ],
+            [
+              0,
+              0,
+              0,
+              3,
+              0,
+              1,
+              74,
+              3,
+              40,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              6,
+              120,
+              1,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              3,
+              0,
+              126,
+              1,
+              0
+            ],
+            [
+              0,
+              1,
+              0,
+              0,
+              0,
+              7,
+              0,
+              0,
+              1,
+              111,
+              6
+            ],
+            [
+              6,
+              0,
+              0,
+              0,
+              11,
+              1,
+              1,
+              0,
+              0,
+              0,
+              91
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_all": {
+          "n_clips": 1385,
+          "n_digit": 1275,
+          "n_unknown": 110,
+          "n_unknown_synthetic_noise": 50,
+          "n_unknown_real_speech": 60,
+          "digit_acc": 0.5372549019607843,
+          "digit_rejection_rate": 0.19137254901960785,
+          "digit_wrong_digit_rate": 0.27137254901960783,
+          "unknown_rejection_rate": 0.7636363636363637,
+          "unknown_rejection_rate_synthetic_noise": 0.9,
+          "unknown_rejection_rate_real_speech": 0.65,
+          "overall_acc_11": 0.5552346570397112,
+          "balanced_acc": 0.5560396968881692,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 125,
+              "acc": 0.608
+            },
+            "1": {
+              "n": 135,
+              "acc": 0.7555555555555555
+            },
+            "2": {
+              "n": 128,
+              "acc": 0.484375
+            },
+            "3": {
+              "n": 129,
+              "acc": 0.5193798449612403
+            },
+            "4": {
+              "n": 129,
+              "acc": 0.5116279069767442
+            },
+            "5": {
+              "n": 116,
+              "acc": 0.5775862068965517
+            },
+            "6": {
+              "n": 124,
+              "acc": 0.2903225806451613
+            },
+            "7": {
+              "n": 131,
+              "acc": 0.5572519083969466
+            },
+            "8": {
+              "n": 132,
+              "acc": 0.6439393939393939
+            },
+            "9": {
+              "n": 126,
+              "acc": 0.40476190476190477
+            },
+            "unknown": {
+              "n": 110,
+              "acc": 0.7636363636363637
+            }
+          },
+          "confusion_matrix": [
+            [
+              76,
+              0,
+              12,
+              3,
+              5,
+              0,
+              1,
+              1,
+              0,
+              0,
+              27
+            ],
+            [
+              3,
+              102,
+              0,
+              0,
+              9,
+              5,
+              1,
+              1,
+              0,
+              1,
+              13
+            ],
+            [
+              6,
+              0,
+              62,
+              1,
+              2,
+              0,
+              0,
+              3,
+              13,
+              0,
+              41
+            ],
+            [
+              0,
+              2,
+              7,
+              67,
+              0,
+              1,
+              8,
+              3,
+              26,
+              2,
+              13
+            ],
+            [
+              6,
+              9,
+              5,
+              1,
+              66,
+              3,
+              1,
+              2,
+              2,
+              0,
+              34
+            ],
+            [
+              0,
+              9,
+              1,
+              2,
+              3,
+              67,
+              0,
+              2,
+              2,
+              6,
+              24
+            ],
+            [
+              1,
+              0,
+              6,
+              7,
+              1,
+              0,
+              36,
+              7,
+              42,
+              0,
+              24
+            ],
+            [
+              1,
+              0,
+              1,
+              2,
+              4,
+              0,
+              8,
+              73,
+              4,
+              1,
+              37
+            ],
+            [
+              0,
+              0,
+              11,
+              8,
+              2,
+              6,
+              2,
+              9,
+              85,
+              0,
+              9
+            ],
+            [
+              4,
+              9,
+              1,
+              3,
+              1,
+              25,
+              4,
+              4,
+              2,
+              51,
+              22
+            ],
+            [
+              18,
+              1,
+              1,
+              0,
+              4,
+              1,
+              0,
+              1,
+              0,
+              0,
+              84
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_good": {
+          "n_clips": 493,
+          "n_digit": 451,
+          "n_unknown": 42,
+          "n_unknown_synthetic_noise": 21,
+          "n_unknown_real_speech": 21,
+          "digit_acc": 0.5587583148558758,
+          "digit_rejection_rate": 0.15521064301552107,
+          "digit_wrong_digit_rate": 0.2860310421286031,
+          "unknown_rejection_rate": 0.6904761904761905,
+          "unknown_rejection_rate_synthetic_noise": 0.8571428571428571,
+          "unknown_rejection_rate_real_speech": 0.5238095238095238,
+          "overall_acc_11": 0.5699797160243407,
+          "balanced_acc": 0.5705958321564304,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 48,
+              "acc": 0.7083333333333334
+            },
+            "1": {
+              "n": 42,
+              "acc": 0.6666666666666666
+            },
+            "2": {
+              "n": 40,
+              "acc": 0.475
+            },
+            "3": {
+              "n": 41,
+              "acc": 0.6097560975609756
+            },
+            "4": {
+              "n": 54,
+              "acc": 0.5370370370370371
+            },
+            "5": {
+              "n": 39,
+              "acc": 0.6410256410256411
+            },
+            "6": {
+              "n": 44,
+              "acc": 0.2727272727272727
+            },
+            "7": {
+              "n": 48,
+              "acc": 0.6041666666666666
+            },
+            "8": {
+              "n": 48,
+              "acc": 0.6458333333333334
+            },
+            "9": {
+              "n": 47,
+              "acc": 0.425531914893617
+            },
+            "unknown": {
+              "n": 42,
+              "acc": 0.6904761904761905
+            }
+          },
+          "confusion_matrix": [
+            [
+              34,
+              0,
+              5,
+              2,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              28,
+              0,
+              0,
+              5,
+              4,
+              0,
+              0,
+              0,
+              1,
+              4
+            ],
+            [
+              2,
+              0,
+              19,
+              0,
+              0,
+              0,
+              0,
+              0,
+              6,
+              0,
+              13
+            ],
+            [
+              0,
+              0,
+              1,
+              25,
+              0,
+              0,
+              3,
+              1,
+              8,
+              1,
+              2
+            ],
+            [
+              2,
+              4,
+              2,
+              1,
+              29,
+              3,
+              0,
+              0,
+              0,
+              0,
+              13
+            ],
+            [
+              0,
+              2,
+              0,
+              1,
+              0,
+              25,
+              0,
+              2,
+              2,
+              4,
+              3
+            ],
+            [
+              0,
+              0,
+              1,
+              6,
+              0,
+              0,
+              12,
+              4,
+              15,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              3,
+              29,
+              2,
+              1,
+              12
+            ],
+            [
+              0,
+              0,
+              4,
+              4,
+              1,
+              1,
+              1,
+              3,
+              31,
+              0,
+              3
+            ],
+            [
+              1,
+              5,
+              1,
+              1,
+              0,
+              8,
+              0,
+              3,
+              0,
+              20,
+              8
+            ],
+            [
+              8,
+              0,
+              1,
+              0,
+              3,
+              0,
+              0,
+              1,
+              0,
+              0,
+              29
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_medium": {
+          "n_clips": 454,
+          "n_digit": 416,
+          "n_unknown": 38,
+          "n_unknown_synthetic_noise": 16,
+          "n_unknown_real_speech": 22,
+          "digit_acc": 0.5649038461538461,
+          "digit_rejection_rate": 0.17548076923076922,
+          "digit_wrong_digit_rate": 0.25961538461538464,
+          "unknown_rejection_rate": 0.7894736842105263,
+          "unknown_rejection_rate_synthetic_noise": 0.9375,
+          "unknown_rejection_rate_real_speech": 0.6818181818181818,
+          "overall_acc_11": 0.5837004405286343,
+          "balanced_acc": 0.5846779018528283,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 38,
+              "acc": 0.631578947368421
+            },
+            "1": {
+              "n": 42,
+              "acc": 0.8333333333333334
+            },
+            "2": {
+              "n": 50,
+              "acc": 0.5
+            },
+            "3": {
+              "n": 47,
+              "acc": 0.5531914893617021
+            },
+            "4": {
+              "n": 38,
+              "acc": 0.47368421052631576
+            },
+            "5": {
+              "n": 38,
+              "acc": 0.5526315789473685
+            },
+            "6": {
+              "n": 42,
+              "acc": 0.30952380952380953
+            },
+            "7": {
+              "n": 43,
+              "acc": 0.6511627906976745
+            },
+            "8": {
+              "n": 43,
+              "acc": 0.6511627906976745
+            },
+            "9": {
+              "n": 35,
+              "acc": 0.4857142857142857
+            },
+            "unknown": {
+              "n": 38,
+              "acc": 0.7894736842105263
+            }
+          },
+          "confusion_matrix": [
+            [
+              24,
+              0,
+              0,
+              0,
+              3,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11
+            ],
+            [
+              1,
+              35,
+              0,
+              0,
+              2,
+              1,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              3,
+              0,
+              25,
+              0,
+              2,
+              0,
+              0,
+              3,
+              4,
+              0,
+              13
+            ],
+            [
+              0,
+              2,
+              2,
+              26,
+              0,
+              1,
+              2,
+              2,
+              10,
+              0,
+              2
+            ],
+            [
+              2,
+              2,
+              1,
+              0,
+              18,
+              0,
+              0,
+              2,
+              1,
+              0,
+              12
+            ],
+            [
+              0,
+              5,
+              0,
+              1,
+              2,
+              21,
+              0,
+              0,
+              0,
+              1,
+              8
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              13,
+              3,
+              20,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              2,
+              28,
+              0,
+              0,
+              10
+            ],
+            [
+              0,
+              0,
+              4,
+              3,
+              0,
+              1,
+              0,
+              4,
+              28,
+              0,
+              3
+            ],
+            [
+              2,
+              2,
+              0,
+              0,
+              0,
+              7,
+              0,
+              0,
+              1,
+              17,
+              6
+            ],
+            [
+              7,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              30
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_poor": {
+          "n_clips": 438,
+          "n_digit": 408,
+          "n_unknown": 30,
+          "n_unknown_synthetic_noise": 13,
+          "n_unknown_real_speech": 17,
+          "digit_acc": 0.4852941176470588,
+          "digit_rejection_rate": 0.24754901960784315,
+          "digit_wrong_digit_rate": 0.26715686274509803,
+          "unknown_rejection_rate": 0.8333333333333334,
+          "unknown_rejection_rate_synthetic_noise": 0.9230769230769231,
+          "unknown_rejection_rate_real_speech": 0.7647058823529411,
+          "overall_acc_11": 0.5091324200913242,
+          "balanced_acc": 0.5106620623655352,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 39,
+              "acc": 0.46153846153846156
+            },
+            "1": {
+              "n": 51,
+              "acc": 0.7647058823529411
+            },
+            "2": {
+              "n": 38,
+              "acc": 0.47368421052631576
+            },
+            "3": {
+              "n": 41,
+              "acc": 0.3902439024390244
+            },
+            "4": {
+              "n": 37,
+              "acc": 0.5135135135135135
+            },
+            "5": {
+              "n": 39,
+              "acc": 0.5384615384615384
+            },
+            "6": {
+              "n": 38,
+              "acc": 0.2894736842105263
+            },
+            "7": {
+              "n": 40,
+              "acc": 0.4
+            },
+            "8": {
+              "n": 41,
+              "acc": 0.6341463414634146
+            },
+            "9": {
+              "n": 44,
+              "acc": 0.3181818181818182
+            },
+            "unknown": {
+              "n": 30,
+              "acc": 0.8333333333333334
+            }
+          },
+          "confusion_matrix": [
+            [
+              18,
+              0,
+              7,
+              1,
+              1,
+              0,
+              1,
+              1,
+              0,
+              0,
+              10
+            ],
+            [
+              2,
+              39,
+              0,
+              0,
+              2,
+              0,
+              1,
+              1,
+              0,
+              0,
+              6
+            ],
+            [
+              1,
+              0,
+              18,
+              1,
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              15
+            ],
+            [
+              0,
+              0,
+              4,
+              16,
+              0,
+              0,
+              3,
+              0,
+              8,
+              1,
+              9
+            ],
+            [
+              2,
+              3,
+              2,
+              0,
+              19,
+              0,
+              1,
+              0,
+              1,
+              0,
+              9
+            ],
+            [
+              0,
+              2,
+              1,
+              0,
+              1,
+              21,
+              0,
+              0,
+              0,
+              1,
+              13
+            ],
+            [
+              0,
+              0,
+              5,
+              1,
+              1,
+              0,
+              11,
+              0,
+              7,
+              0,
+              13
+            ],
+            [
+              1,
+              0,
+              1,
+              2,
+              0,
+              0,
+              3,
+              16,
+              2,
+              0,
+              15
+            ],
+            [
+              0,
+              0,
+              3,
+              1,
+              1,
+              4,
+              1,
+              2,
+              26,
+              0,
+              3
+            ],
+            [
+              1,
+              2,
+              0,
+              2,
+              1,
+              10,
+              4,
+              1,
+              1,
+              14,
+              8
+            ],
+            [
+              3,
+              1,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              25
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "manit_clean": {
+          "n_clips": 92,
+          "n_digit": 92,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.8695652173913043,
+          "digit_rejection_rate": 0.0,
+          "digit_wrong_digit_rate": 0.13043478260869565,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.8695652173913043,
+          "balanced_acc": 0.8777777777777779,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 6,
+              "acc": 1.0
+            },
+            "1": {
+              "n": 8,
+              "acc": 1.0
+            },
+            "2": {
+              "n": 8,
+              "acc": 1.0
+            },
+            "3": {
+              "n": 7,
+              "acc": 1.0
+            },
+            "4": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "5": {
+              "n": 9,
+              "acc": 0.7777777777777778
+            },
+            "6": {
+              "n": 10,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "8": {
+              "n": 12,
+              "acc": 1.0
+            },
+            "9": {
+              "n": 10,
+              "acc": 1.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              6,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              7,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              2,
+              7,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              3,
+              0,
+              0,
+              0,
+              0,
+              7,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "continued_clean": {
+      "checkpoint": "results/sprint8/models/continued_clean_cnn.pt",
+      "sha256": "6b69193f828be2f6d8063baa99cbecec07e55c4524898cc358249da52963ff44",
+      "temperature": 0.7711358666419983,
+      "threshold": 0.22,
+      "epoch": 6,
+      "note": null,
+      "conditions": {
+        "clean": {
+          "n_clips": 1385,
+          "n_digit": 1275,
+          "n_unknown": 110,
+          "n_unknown_synthetic_noise": 50,
+          "n_unknown_real_speech": 60,
+          "digit_acc": 0.9090196078431373,
+          "digit_rejection_rate": 0.023529411764705882,
+          "digit_wrong_digit_rate": 0.06745098039215686,
+          "unknown_rejection_rate": 0.8363636363636363,
+          "unknown_rejection_rate_synthetic_noise": 0.98,
+          "unknown_rejection_rate_real_speech": 0.7166666666666667,
+          "overall_acc_11": 0.9032490974729241,
+          "balanced_acc": 0.9013652200878355,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 125,
+              "acc": 0.936
+            },
+            "1": {
+              "n": 135,
+              "acc": 0.9703703703703703
+            },
+            "2": {
+              "n": 128,
+              "acc": 0.90625
+            },
+            "3": {
+              "n": 129,
+              "acc": 0.8682170542635659
+            },
+            "4": {
+              "n": 129,
+              "acc": 0.9612403100775194
+            },
+            "5": {
+              "n": 116,
+              "acc": 0.853448275862069
+            },
+            "6": {
+              "n": 124,
+              "acc": 0.8225806451612904
+            },
+            "7": {
+              "n": 131,
+              "acc": 0.916030534351145
+            },
+            "8": {
+              "n": 132,
+              "acc": 0.9318181818181818
+            },
+            "9": {
+              "n": 126,
+              "acc": 0.9126984126984127
+            },
+            "unknown": {
+              "n": 110,
+              "acc": 0.8363636363636363
+            }
+          },
+          "confusion_matrix": [
+            [
+              117,
+              0,
+              2,
+              0,
+              0,
+              0,
+              2,
+              1,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              131,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              2
+            ],
+            [
+              0,
+              0,
+              116,
+              0,
+              0,
+              0,
+              5,
+              0,
+              2,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              1,
+              112,
+              0,
+              1,
+              5,
+              0,
+              9,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              124,
+              1,
+              0,
+              0,
+              0,
+              0,
+              4
+            ],
+            [
+              0,
+              4,
+              0,
+              0,
+              3,
+              99,
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            [
+              0,
+              0,
+              0,
+              7,
+              0,
+              1,
+              102,
+              1,
+              10,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              6,
+              120,
+              1,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              0,
+              2,
+              5,
+              0,
+              123,
+              1,
+              0
+            ],
+            [
+              0,
+              2,
+              0,
+              0,
+              0,
+              3,
+              0,
+              0,
+              0,
+              115,
+              6
+            ],
+            [
+              5,
+              0,
+              0,
+              0,
+              10,
+              1,
+              1,
+              1,
+              0,
+              0,
+              92
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_all": {
+          "n_clips": 1385,
+          "n_digit": 1275,
+          "n_unknown": 110,
+          "n_unknown_synthetic_noise": 50,
+          "n_unknown_real_speech": 60,
+          "digit_acc": 0.5427450980392157,
+          "digit_rejection_rate": 0.2054901960784314,
+          "digit_wrong_digit_rate": 0.25176470588235295,
+          "unknown_rejection_rate": 0.7909090909090909,
+          "unknown_rejection_rate_synthetic_noise": 0.9,
+          "unknown_rejection_rate_real_speech": 0.7,
+          "overall_acc_11": 0.5624548736462094,
+          "balanced_acc": 0.5627969262859372,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 125,
+              "acc": 0.592
+            },
+            "1": {
+              "n": 135,
+              "acc": 0.8074074074074075
+            },
+            "2": {
+              "n": 128,
+              "acc": 0.4609375
+            },
+            "3": {
+              "n": 129,
+              "acc": 0.5038759689922481
+            },
+            "4": {
+              "n": 129,
+              "acc": 0.5503875968992248
+            },
+            "5": {
+              "n": 116,
+              "acc": 0.46551724137931033
+            },
+            "6": {
+              "n": 124,
+              "acc": 0.45161290322580644
+            },
+            "7": {
+              "n": 131,
+              "acc": 0.6106870229007634
+            },
+            "8": {
+              "n": 132,
+              "acc": 0.5606060606060606
+            },
+            "9": {
+              "n": 126,
+              "acc": 0.3968253968253968
+            },
+            "unknown": {
+              "n": 110,
+              "acc": 0.7909090909090909
+            }
+          },
+          "confusion_matrix": [
+            [
+              74,
+              1,
+              8,
+              1,
+              4,
+              0,
+              1,
+              2,
+              0,
+              0,
+              34
+            ],
+            [
+              2,
+              109,
+              0,
+              0,
+              7,
+              1,
+              1,
+              1,
+              0,
+              1,
+              13
+            ],
+            [
+              4,
+              0,
+              59,
+              0,
+              2,
+              0,
+              4,
+              4,
+              13,
+              0,
+              42
+            ],
+            [
+              0,
+              3,
+              6,
+              65,
+              0,
+              1,
+              18,
+              4,
+              18,
+              1,
+              13
+            ],
+            [
+              3,
+              12,
+              5,
+              1,
+              71,
+              0,
+              1,
+              2,
+              1,
+              0,
+              33
+            ],
+            [
+              0,
+              18,
+              1,
+              3,
+              4,
+              54,
+              0,
+              3,
+              2,
+              2,
+              29
+            ],
+            [
+              1,
+              0,
+              4,
+              8,
+              1,
+              0,
+              56,
+              9,
+              22,
+              0,
+              23
+            ],
+            [
+              2,
+              0,
+              0,
+              1,
+              4,
+              0,
+              8,
+              80,
+              3,
+              2,
+              31
+            ],
+            [
+              0,
+              0,
+              12,
+              9,
+              2,
+              2,
+              6,
+              12,
+              74,
+              0,
+              15
+            ],
+            [
+              3,
+              16,
+              1,
+              2,
+              0,
+              15,
+              4,
+              5,
+              1,
+              50,
+              29
+            ],
+            [
+              15,
+              1,
+              1,
+              0,
+              4,
+              1,
+              0,
+              1,
+              0,
+              0,
+              87
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_good": {
+          "n_clips": 493,
+          "n_digit": 451,
+          "n_unknown": 42,
+          "n_unknown_synthetic_noise": 21,
+          "n_unknown_real_speech": 21,
+          "digit_acc": 0.5831485587583148,
+          "digit_rejection_rate": 0.15521064301552107,
+          "digit_wrong_digit_rate": 0.2616407982261641,
+          "unknown_rejection_rate": 0.6904761904761905,
+          "unknown_rejection_rate_synthetic_noise": 0.8571428571428571,
+          "unknown_rejection_rate_real_speech": 0.5238095238095238,
+          "overall_acc_11": 0.592292089249493,
+          "balanced_acc": 0.591452903914573,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 48,
+              "acc": 0.7291666666666666
+            },
+            "1": {
+              "n": 42,
+              "acc": 0.7619047619047619
+            },
+            "2": {
+              "n": 40,
+              "acc": 0.5
+            },
+            "3": {
+              "n": 41,
+              "acc": 0.5609756097560976
+            },
+            "4": {
+              "n": 54,
+              "acc": 0.5740740740740741
+            },
+            "5": {
+              "n": 39,
+              "acc": 0.5641025641025641
+            },
+            "6": {
+              "n": 44,
+              "acc": 0.38636363636363635
+            },
+            "7": {
+              "n": 48,
+              "acc": 0.6458333333333334
+            },
+            "8": {
+              "n": 48,
+              "acc": 0.625
+            },
+            "9": {
+              "n": 47,
+              "acc": 0.46808510638297873
+            },
+            "unknown": {
+              "n": 42,
+              "acc": 0.6904761904761905
+            }
+          },
+          "confusion_matrix": [
+            [
+              35,
+              1,
+              3,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8
+            ],
+            [
+              0,
+              32,
+              0,
+              0,
+              4,
+              1,
+              0,
+              0,
+              0,
+              1,
+              4
+            ],
+            [
+              2,
+              0,
+              20,
+              0,
+              0,
+              0,
+              0,
+              1,
+              4,
+              0,
+              13
+            ],
+            [
+              0,
+              1,
+              2,
+              23,
+              0,
+              0,
+              4,
+              2,
+              7,
+              0,
+              2
+            ],
+            [
+              2,
+              4,
+              2,
+              1,
+              31,
+              0,
+              0,
+              0,
+              0,
+              0,
+              14
+            ],
+            [
+              0,
+              6,
+              0,
+              1,
+              0,
+              22,
+              0,
+              3,
+              1,
+              1,
+              5
+            ],
+            [
+              0,
+              0,
+              1,
+              6,
+              0,
+              0,
+              17,
+              6,
+              10,
+              0,
+              4
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              3,
+              31,
+              1,
+              2,
+              10
+            ],
+            [
+              0,
+              0,
+              6,
+              2,
+              1,
+              1,
+              2,
+              3,
+              30,
+              0,
+              3
+            ],
+            [
+              0,
+              8,
+              1,
+              0,
+              0,
+              5,
+              0,
+              4,
+              0,
+              22,
+              7
+            ],
+            [
+              8,
+              0,
+              1,
+              0,
+              3,
+              0,
+              0,
+              1,
+              0,
+              0,
+              29
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_medium": {
+          "n_clips": 454,
+          "n_digit": 416,
+          "n_unknown": 38,
+          "n_unknown_synthetic_noise": 16,
+          "n_unknown_real_speech": 22,
+          "digit_acc": 0.5600961538461539,
+          "digit_rejection_rate": 0.1875,
+          "digit_wrong_digit_rate": 0.25240384615384615,
+          "unknown_rejection_rate": 0.8157894736842105,
+          "unknown_rejection_rate_synthetic_noise": 0.9375,
+          "unknown_rejection_rate_real_speech": 0.7272727272727273,
+          "overall_acc_11": 0.5814977973568282,
+          "balanced_acc": 0.5812604788026023,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 38,
+              "acc": 0.5526315789473685
+            },
+            "1": {
+              "n": 42,
+              "acc": 0.8809523809523809
+            },
+            "2": {
+              "n": 50,
+              "acc": 0.42
+            },
+            "3": {
+              "n": 47,
+              "acc": 0.5531914893617021
+            },
+            "4": {
+              "n": 38,
+              "acc": 0.5
+            },
+            "5": {
+              "n": 38,
+              "acc": 0.3684210526315789
+            },
+            "6": {
+              "n": 42,
+              "acc": 0.5952380952380952
+            },
+            "7": {
+              "n": 43,
+              "acc": 0.7441860465116279
+            },
+            "8": {
+              "n": 43,
+              "acc": 0.5348837209302325
+            },
+            "9": {
+              "n": 35,
+              "acc": 0.42857142857142855
+            },
+            "unknown": {
+              "n": 38,
+              "acc": 0.8157894736842105
+            }
+          },
+          "confusion_matrix": [
+            [
+              21,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              1,
+              0,
+              0,
+              14
+            ],
+            [
+              1,
+              37,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              1,
+              0,
+              21,
+              0,
+              2,
+              0,
+              2,
+              3,
+              7,
+              0,
+              14
+            ],
+            [
+              0,
+              2,
+              1,
+              26,
+              0,
+              1,
+              5,
+              2,
+              7,
+              0,
+              3
+            ],
+            [
+              1,
+              3,
+              1,
+              0,
+              19,
+              0,
+              0,
+              2,
+              1,
+              0,
+              11
+            ],
+            [
+              0,
+              9,
+              0,
+              2,
+              2,
+              14,
+              0,
+              0,
+              1,
+              1,
+              9
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              25,
+              3,
+              7,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              2,
+              32,
+              0,
+              0,
+              6
+            ],
+            [
+              0,
+              0,
+              4,
+              4,
+              0,
+              1,
+              2,
+              6,
+              23,
+              0,
+              3
+            ],
+            [
+              2,
+              5,
+              0,
+              0,
+              0,
+              3,
+              0,
+              0,
+              1,
+              15,
+              9
+            ],
+            [
+              6,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              31
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_poor": {
+          "n_clips": 438,
+          "n_digit": 408,
+          "n_unknown": 30,
+          "n_unknown_synthetic_noise": 13,
+          "n_unknown_real_speech": 17,
+          "digit_acc": 0.4803921568627451,
+          "digit_rejection_rate": 0.27941176470588236,
+          "digit_wrong_digit_rate": 0.24019607843137256,
+          "unknown_rejection_rate": 0.9,
+          "unknown_rejection_rate_synthetic_noise": 0.9230769230769231,
+          "unknown_rejection_rate_real_speech": 0.8823529411764706,
+          "overall_acc_11": 0.5091324200913242,
+          "balanced_acc": 0.5127233681033974,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 39,
+              "acc": 0.46153846153846156
+            },
+            "1": {
+              "n": 51,
+              "acc": 0.7843137254901961
+            },
+            "2": {
+              "n": 38,
+              "acc": 0.47368421052631576
+            },
+            "3": {
+              "n": 41,
+              "acc": 0.3902439024390244
+            },
+            "4": {
+              "n": 37,
+              "acc": 0.5675675675675675
+            },
+            "5": {
+              "n": 39,
+              "acc": 0.46153846153846156
+            },
+            "6": {
+              "n": 38,
+              "acc": 0.3684210526315789
+            },
+            "7": {
+              "n": 40,
+              "acc": 0.425
+            },
+            "8": {
+              "n": 41,
+              "acc": 0.5121951219512195
+            },
+            "9": {
+              "n": 44,
+              "acc": 0.29545454545454547
+            },
+            "unknown": {
+              "n": 30,
+              "acc": 0.9
+            }
+          },
+          "confusion_matrix": [
+            [
+              18,
+              0,
+              5,
+              1,
+              1,
+              0,
+              1,
+              1,
+              0,
+              0,
+              12
+            ],
+            [
+              1,
+              40,
+              0,
+              0,
+              2,
+              0,
+              1,
+              1,
+              0,
+              0,
+              6
+            ],
+            [
+              1,
+              0,
+              18,
+              0,
+              0,
+              0,
+              2,
+              0,
+              2,
+              0,
+              15
+            ],
+            [
+              0,
+              0,
+              3,
+              16,
+              0,
+              0,
+              9,
+              0,
+              4,
+              1,
+              8
+            ],
+            [
+              0,
+              5,
+              2,
+              0,
+              21,
+              0,
+              1,
+              0,
+              0,
+              0,
+              8
+            ],
+            [
+              0,
+              3,
+              1,
+              0,
+              2,
+              18,
+              0,
+              0,
+              0,
+              0,
+              15
+            ],
+            [
+              0,
+              0,
+              3,
+              2,
+              1,
+              0,
+              14,
+              0,
+              5,
+              0,
+              13
+            ],
+            [
+              2,
+              0,
+              0,
+              1,
+              0,
+              0,
+              3,
+              17,
+              2,
+              0,
+              15
+            ],
+            [
+              0,
+              0,
+              2,
+              3,
+              1,
+              0,
+              2,
+              3,
+              21,
+              0,
+              9
+            ],
+            [
+              1,
+              3,
+              0,
+              2,
+              0,
+              7,
+              4,
+              1,
+              0,
+              13,
+              13
+            ],
+            [
+              1,
+              1,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              27
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "manit_clean": {
+          "n_clips": 92,
+          "n_digit": 92,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.8804347826086957,
+          "digit_rejection_rate": 0.0,
+          "digit_wrong_digit_rate": 0.11956521739130435,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.8804347826086957,
+          "balanced_acc": 0.8866666666666667,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 6,
+              "acc": 1.0
+            },
+            "1": {
+              "n": 8,
+              "acc": 1.0
+            },
+            "2": {
+              "n": 8,
+              "acc": 1.0
+            },
+            "3": {
+              "n": 7,
+              "acc": 1.0
+            },
+            "4": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "5": {
+              "n": 9,
+              "acc": 0.6666666666666666
+            },
+            "6": {
+              "n": 10,
+              "acc": 0.2
+            },
+            "7": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "8": {
+              "n": 12,
+              "acc": 1.0
+            },
+            "9": {
+              "n": 10,
+              "acc": 1.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              6,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              7,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              3,
+              6,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              7,
+              0,
+              0,
+              2,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "deployed": {
+      "checkpoint": "models/best_model_cnn.pt",
+      "sha256": "da27ca83ab93ff84ddd569a0c50cdb7153a5fb93a71252ae2af86efab282f1bb",
+      "temperature": 0.4980080723762512,
+      "threshold": 0.26,
+      "epoch": 36,
+      "note": "deployed checkpoint - training provenance not established as speaker-disjoint from this test set (trained on a Kaggle fold of a superset of these sources), information only",
+      "conditions": {
+        "clean": {
+          "n_clips": 1385,
+          "n_digit": 1275,
+          "n_unknown": 110,
+          "n_unknown_synthetic_noise": 50,
+          "n_unknown_real_speech": 60,
+          "digit_acc": 0.9411764705882353,
+          "digit_rejection_rate": 0.006274509803921568,
+          "digit_wrong_digit_rate": 0.05254901960784314,
+          "unknown_rejection_rate": 0.45454545454545453,
+          "unknown_rejection_rate_synthetic_noise": 0.14,
+          "unknown_rejection_rate_real_speech": 0.7166666666666667,
+          "overall_acc_11": 0.9025270758122743,
+          "balanced_acc": 0.8965533087129544,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 125,
+              "acc": 0.936
+            },
+            "1": {
+              "n": 135,
+              "acc": 0.9703703703703703
+            },
+            "2": {
+              "n": 128,
+              "acc": 0.9765625
+            },
+            "3": {
+              "n": 129,
+              "acc": 0.9069767441860465
+            },
+            "4": {
+              "n": 129,
+              "acc": 0.9457364341085271
+            },
+            "5": {
+              "n": 116,
+              "acc": 0.9482758620689655
+            },
+            "6": {
+              "n": 124,
+              "acc": 0.8870967741935484
+            },
+            "7": {
+              "n": 131,
+              "acc": 0.9923664122137404
+            },
+            "8": {
+              "n": 132,
+              "acc": 0.9393939393939394
+            },
+            "9": {
+              "n": 126,
+              "acc": 0.9047619047619048
+            },
+            "unknown": {
+              "n": 110,
+              "acc": 0.45454545454545453
+            }
+          },
+          "confusion_matrix": [
+            [
+              117,
+              0,
+              4,
+              1,
+              0,
+              0,
+              1,
+              2,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              131,
+              0,
+              0,
+              0,
+              2,
+              1,
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              125,
+              1,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              117,
+              0,
+              1,
+              5,
+              0,
+              5,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              0,
+              122,
+              1,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              110,
+              0,
+              0,
+              2,
+              1,
+              2
+            ],
+            [
+              0,
+              0,
+              1,
+              7,
+              0,
+              1,
+              110,
+              1,
+              4,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              130,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              6,
+              0,
+              124,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              9,
+              0,
+              2,
+              0,
+              114,
+              1
+            ],
+            [
+              1,
+              1,
+              1,
+              3,
+              16,
+              4,
+              23,
+              10,
+              0,
+              1,
+              50
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_all": {
+          "n_clips": 1385,
+          "n_digit": 1275,
+          "n_unknown": 110,
+          "n_unknown_synthetic_noise": 50,
+          "n_unknown_real_speech": 60,
+          "digit_acc": 0.8439215686274509,
+          "digit_rejection_rate": 0.014901960784313726,
+          "digit_wrong_digit_rate": 0.1411764705882353,
+          "unknown_rejection_rate": 0.2545454545454545,
+          "unknown_rejection_rate_synthetic_noise": 0.0,
+          "unknown_rejection_rate_real_speech": 0.4666666666666667,
+          "overall_acc_11": 0.7971119133574007,
+          "balanced_acc": 0.7908188436858559,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 125,
+              "acc": 0.864
+            },
+            "1": {
+              "n": 135,
+              "acc": 0.8296296296296296
+            },
+            "2": {
+              "n": 128,
+              "acc": 0.8671875
+            },
+            "3": {
+              "n": 129,
+              "acc": 0.751937984496124
+            },
+            "4": {
+              "n": 129,
+              "acc": 0.8837209302325582
+            },
+            "5": {
+              "n": 116,
+              "acc": 0.853448275862069
+            },
+            "6": {
+              "n": 124,
+              "acc": 0.9032258064516129
+            },
+            "7": {
+              "n": 131,
+              "acc": 0.9007633587786259
+            },
+            "8": {
+              "n": 132,
+              "acc": 0.7651515151515151
+            },
+            "9": {
+              "n": 126,
+              "acc": 0.8253968253968254
+            },
+            "unknown": {
+              "n": 110,
+              "acc": 0.2545454545454545
+            }
+          },
+          "confusion_matrix": [
+            [
+              108,
+              0,
+              6,
+              1,
+              3,
+              0,
+              2,
+              3,
+              0,
+              0,
+              2
+            ],
+            [
+              3,
+              112,
+              0,
+              0,
+              3,
+              5,
+              2,
+              3,
+              0,
+              4,
+              3
+            ],
+            [
+              1,
+              0,
+              111,
+              2,
+              4,
+              0,
+              2,
+              1,
+              3,
+              0,
+              4
+            ],
+            [
+              0,
+              0,
+              9,
+              97,
+              3,
+              3,
+              10,
+              1,
+              5,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              3,
+              1,
+              114,
+              2,
+              3,
+              2,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              1,
+              0,
+              3,
+              3,
+              99,
+              1,
+              3,
+              2,
+              2,
+              2
+            ],
+            [
+              0,
+              0,
+              3,
+              4,
+              0,
+              0,
+              112,
+              3,
+              2,
+              0,
+              0
+            ],
+            [
+              2,
+              0,
+              1,
+              1,
+              2,
+              0,
+              6,
+              118,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              9,
+              5,
+              1,
+              2,
+              10,
+              1,
+              101,
+              0,
+              2
+            ],
+            [
+              2,
+              1,
+              0,
+              3,
+              1,
+              12,
+              0,
+              2,
+              0,
+              104,
+              1
+            ],
+            [
+              16,
+              0,
+              0,
+              0,
+              19,
+              9,
+              17,
+              11,
+              8,
+              2,
+              28
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_good": {
+          "n_clips": 493,
+          "n_digit": 451,
+          "n_unknown": 42,
+          "n_unknown_synthetic_noise": 21,
+          "n_unknown_real_speech": 21,
+          "digit_acc": 0.8381374722838137,
+          "digit_rejection_rate": 0.011086474501108648,
+          "digit_wrong_digit_rate": 0.15077605321507762,
+          "unknown_rejection_rate": 0.2857142857142857,
+          "unknown_rejection_rate_synthetic_noise": 0.0,
+          "unknown_rejection_rate_real_speech": 0.5714285714285714,
+          "overall_acc_11": 0.7910750507099391,
+          "balanced_acc": 0.7862825598820078,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 48,
+              "acc": 0.875
+            },
+            "1": {
+              "n": 42,
+              "acc": 0.7380952380952381
+            },
+            "2": {
+              "n": 40,
+              "acc": 0.85
+            },
+            "3": {
+              "n": 41,
+              "acc": 0.8048780487804879
+            },
+            "4": {
+              "n": 54,
+              "acc": 0.8703703703703703
+            },
+            "5": {
+              "n": 39,
+              "acc": 0.8205128205128205
+            },
+            "6": {
+              "n": 44,
+              "acc": 0.8863636363636364
+            },
+            "7": {
+              "n": 48,
+              "acc": 0.875
+            },
+            "8": {
+              "n": 48,
+              "acc": 0.7708333333333334
+            },
+            "9": {
+              "n": 47,
+              "acc": 0.8723404255319149
+            },
+            "unknown": {
+              "n": 42,
+              "acc": 0.2857142857142857
+            }
+          },
+          "confusion_matrix": [
+            [
+              42,
+              0,
+              3,
+              0,
+              1,
+              0,
+              1,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              31,
+              0,
+              0,
+              2,
+              3,
+              1,
+              1,
+              0,
+              3,
+              1
+            ],
+            [
+              1,
+              0,
+              34,
+              0,
+              1,
+              0,
+              0,
+              0,
+              2,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              1,
+              33,
+              0,
+              1,
+              3,
+              0,
+              3,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              2,
+              0,
+              47,
+              1,
+              2,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0,
+              1,
+              0,
+              32,
+              1,
+              1,
+              2,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              2,
+              0,
+              0,
+              39,
+              1,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              4,
+              42,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              5,
+              1,
+              0,
+              0,
+              3,
+              0,
+              37,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              4,
+              0,
+              2,
+              0,
+              41,
+              0
+            ],
+            [
+              8,
+              0,
+              0,
+              0,
+              7,
+              3,
+              6,
+              4,
+              2,
+              0,
+              12
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_medium": {
+          "n_clips": 454,
+          "n_digit": 416,
+          "n_unknown": 38,
+          "n_unknown_synthetic_noise": 16,
+          "n_unknown_real_speech": 22,
+          "digit_acc": 0.8774038461538461,
+          "digit_rejection_rate": 0.019230769230769232,
+          "digit_wrong_digit_rate": 0.10336538461538461,
+          "unknown_rejection_rate": 0.2631578947368421,
+          "unknown_rejection_rate_synthetic_noise": 0.0,
+          "unknown_rejection_rate_real_speech": 0.45454545454545453,
+          "overall_acc_11": 0.8259911894273128,
+          "balanced_acc": 0.8219222970836294,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 38,
+              "acc": 0.9210526315789473
+            },
+            "1": {
+              "n": 42,
+              "acc": 0.8809523809523809
+            },
+            "2": {
+              "n": 50,
+              "acc": 0.92
+            },
+            "3": {
+              "n": 47,
+              "acc": 0.7446808510638298
+            },
+            "4": {
+              "n": 38,
+              "acc": 0.868421052631579
+            },
+            "5": {
+              "n": 38,
+              "acc": 0.8421052631578947
+            },
+            "6": {
+              "n": 42,
+              "acc": 0.9761904761904762
+            },
+            "7": {
+              "n": 43,
+              "acc": 0.9767441860465116
+            },
+            "8": {
+              "n": 43,
+              "acc": 0.7906976744186046
+            },
+            "9": {
+              "n": 35,
+              "acc": 0.8571428571428571
+            },
+            "unknown": {
+              "n": 38,
+              "acc": 0.2631578947368421
+            }
+          },
+          "confusion_matrix": [
+            [
+              35,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              2
+            ],
+            [
+              1,
+              37,
+              0,
+              0,
+              0,
+              2,
+              0,
+              2,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              46,
+              0,
+              2,
+              0,
+              1,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              3,
+              35,
+              0,
+              2,
+              4,
+              1,
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              33,
+              0,
+              1,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              2,
+              32,
+              0,
+              0,
+              0,
+              1,
+              2
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              41,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              42,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              2,
+              0,
+              1,
+              4,
+              1,
+              34,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              1,
+              2,
+              0,
+              0,
+              0,
+              30,
+              1
+            ],
+            [
+              4,
+              0,
+              0,
+              0,
+              7,
+              5,
+              3,
+              4,
+              5,
+              0,
+              10
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_poor": {
+          "n_clips": 438,
+          "n_digit": 408,
+          "n_unknown": 30,
+          "n_unknown_synthetic_noise": 13,
+          "n_unknown_real_speech": 17,
+          "digit_acc": 0.8161764705882353,
+          "digit_rejection_rate": 0.014705882352941176,
+          "digit_wrong_digit_rate": 0.16911764705882354,
+          "unknown_rejection_rate": 0.2,
+          "unknown_rejection_rate_synthetic_noise": 0.0,
+          "unknown_rejection_rate_real_speech": 0.35294117647058826,
+          "overall_acc_11": 0.773972602739726,
+          "balanced_acc": 0.7609900760319849,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 39,
+              "acc": 0.7948717948717948
+            },
+            "1": {
+              "n": 51,
+              "acc": 0.8627450980392157
+            },
+            "2": {
+              "n": 38,
+              "acc": 0.8157894736842105
+            },
+            "3": {
+              "n": 41,
+              "acc": 0.7073170731707317
+            },
+            "4": {
+              "n": 37,
+              "acc": 0.918918918918919
+            },
+            "5": {
+              "n": 39,
+              "acc": 0.8974358974358975
+            },
+            "6": {
+              "n": 38,
+              "acc": 0.8421052631578947
+            },
+            "7": {
+              "n": 40,
+              "acc": 0.85
+            },
+            "8": {
+              "n": 41,
+              "acc": 0.7317073170731707
+            },
+            "9": {
+              "n": 44,
+              "acc": 0.75
+            },
+            "unknown": {
+              "n": 30,
+              "acc": 0.2
+            }
+          },
+          "confusion_matrix": [
+            [
+              31,
+              0,
+              3,
+              1,
+              2,
+              0,
+              1,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              44,
+              0,
+              0,
+              1,
+              0,
+              1,
+              0,
+              0,
+              1,
+              2
+            ],
+            [
+              0,
+              0,
+              31,
+              2,
+              1,
+              0,
+              1,
+              1,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              5,
+              29,
+              3,
+              0,
+              3,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              0,
+              34,
+              1,
+              0,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              1,
+              35,
+              0,
+              2,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              2,
+              2,
+              0,
+              0,
+              32,
+              1,
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              0,
+              1,
+              1,
+              0,
+              0,
+              2,
+              34,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              3,
+              2,
+              1,
+              1,
+              3,
+              0,
+              30,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              0,
+              3,
+              0,
+              6,
+              0,
+              0,
+              0,
+              33,
+              0
+            ],
+            [
+              4,
+              0,
+              0,
+              0,
+              5,
+              1,
+              8,
+              3,
+              1,
+              2,
+              6
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "manit_clean": {
+          "n_clips": 92,
+          "n_digit": 92,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.9021739130434783,
+          "digit_rejection_rate": 0.0,
+          "digit_wrong_digit_rate": 0.09782608695652174,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.9021739130434783,
+          "balanced_acc": 0.9088888888888889,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 6,
+              "acc": 1.0
+            },
+            "1": {
+              "n": 8,
+              "acc": 1.0
+            },
+            "2": {
+              "n": 8,
+              "acc": 1.0
+            },
+            "3": {
+              "n": 7,
+              "acc": 1.0
+            },
+            "4": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "5": {
+              "n": 9,
+              "acc": 0.8888888888888888
+            },
+            "6": {
+              "n": 10,
+              "acc": 0.2
+            },
+            "7": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "8": {
+              "n": 12,
+              "acc": 1.0
+            },
+            "9": {
+              "n": 10,
+              "acc": 1.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              6,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              7,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              6,
+              0,
+              0,
+              2,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "finetuned_v2": {
+      "checkpoint": "results/sprint8/models/finetuned_v2_cnn.pt",
+      "sha256": "9d8a11081dcfc9e6d97d9afc84717f405623fd602117248390687e28458d1598",
+      "temperature": 0.5721844434738159,
+      "threshold": 0.26,
+      "epoch": 30,
+      "note": null,
+      "conditions": {
+        "clean": {
+          "n_clips": 1385,
+          "n_digit": 1275,
+          "n_unknown": 110,
+          "n_unknown_synthetic_noise": 50,
+          "n_unknown_real_speech": 60,
+          "digit_acc": 0.9152941176470588,
+          "digit_rejection_rate": 0.013333333333333334,
+          "digit_wrong_digit_rate": 0.07137254901960784,
+          "unknown_rejection_rate": 0.8181818181818182,
+          "unknown_rejection_rate_synthetic_noise": 0.98,
+          "unknown_rejection_rate_real_speech": 0.6833333333333333,
+          "overall_acc_11": 0.9075812274368231,
+          "balanced_acc": 0.9043413045975573,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 125,
+              "acc": 0.928
+            },
+            "1": {
+              "n": 135,
+              "acc": 0.9851851851851852
+            },
+            "2": {
+              "n": 128,
+              "acc": 0.9765625
+            },
+            "3": {
+              "n": 129,
+              "acc": 0.937984496124031
+            },
+            "4": {
+              "n": 129,
+              "acc": 0.9534883720930233
+            },
+            "5": {
+              "n": 116,
+              "acc": 0.8103448275862069
+            },
+            "6": {
+              "n": 124,
+              "acc": 0.6935483870967742
+            },
+            "7": {
+              "n": 131,
+              "acc": 0.9923664122137404
+            },
+            "8": {
+              "n": 132,
+              "acc": 0.9393939393939394
+            },
+            "9": {
+              "n": 126,
+              "acc": 0.9126984126984127
+            },
+            "unknown": {
+              "n": 110,
+              "acc": 0.8181818181818182
+            }
+          },
+          "confusion_matrix": [
+            [
+              116,
+              0,
+              4,
+              1,
+              0,
+              0,
+              2,
+              0,
+              1,
+              0,
+              1
+            ],
+            [
+              0,
+              133,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              125,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              0,
+              2,
+              121,
+              0,
+              0,
+              0,
+              0,
+              4,
+              0,
+              2
+            ],
+            [
+              0,
+              1,
+              1,
+              1,
+              123,
+              1,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              10,
+              0,
+              1,
+              3,
+              94,
+              0,
+              1,
+              2,
+              1,
+              4
+            ],
+            [
+              0,
+              0,
+              2,
+              9,
+              0,
+              1,
+              86,
+              5,
+              20,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              130,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              4,
+              1,
+              124,
+              1,
+              0
+            ],
+            [
+              0,
+              3,
+              0,
+              1,
+              0,
+              2,
+              0,
+              0,
+              1,
+              115,
+              4
+            ],
+            [
+              5,
+              1,
+              0,
+              0,
+              10,
+              2,
+              0,
+              2,
+              0,
+              0,
+              90
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_all": {
+          "n_clips": 1385,
+          "n_digit": 1275,
+          "n_unknown": 110,
+          "n_unknown_synthetic_noise": 50,
+          "n_unknown_real_speech": 60,
+          "digit_acc": 0.8054901960784314,
+          "digit_rejection_rate": 0.04156862745098039,
+          "digit_wrong_digit_rate": 0.15294117647058825,
+          "unknown_rejection_rate": 0.7818181818181819,
+          "unknown_rejection_rate_synthetic_noise": 1.0,
+          "unknown_rejection_rate_real_speech": 0.6,
+          "overall_acc_11": 0.8036101083032491,
+          "balanced_acc": 0.8025449703869524,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 125,
+              "acc": 0.856
+            },
+            "1": {
+              "n": 135,
+              "acc": 0.8814814814814815
+            },
+            "2": {
+              "n": 128,
+              "acc": 0.890625
+            },
+            "3": {
+              "n": 129,
+              "acc": 0.7441860465116279
+            },
+            "4": {
+              "n": 129,
+              "acc": 0.813953488372093
+            },
+            "5": {
+              "n": 116,
+              "acc": 0.7931034482758621
+            },
+            "6": {
+              "n": 124,
+              "acc": 0.7338709677419355
+            },
+            "7": {
+              "n": 131,
+              "acc": 0.8549618320610687
+            },
+            "8": {
+              "n": 132,
+              "acc": 0.7954545454545454
+            },
+            "9": {
+              "n": 126,
+              "acc": 0.6825396825396826
+            },
+            "unknown": {
+              "n": 110,
+              "acc": 0.7818181818181819
+            }
+          },
+          "confusion_matrix": [
+            [
+              107,
+              0,
+              6,
+              2,
+              1,
+              0,
+              0,
+              1,
+              0,
+              0,
+              8
+            ],
+            [
+              1,
+              119,
+              0,
+              0,
+              1,
+              1,
+              0,
+              1,
+              0,
+              3,
+              9
+            ],
+            [
+              0,
+              0,
+              114,
+              1,
+              2,
+              0,
+              2,
+              1,
+              3,
+              0,
+              5
+            ],
+            [
+              1,
+              1,
+              8,
+              96,
+              0,
+              1,
+              5,
+              1,
+              14,
+              0,
+              2
+            ],
+            [
+              2,
+              7,
+              5,
+              2,
+              105,
+              1,
+              1,
+              2,
+              0,
+              0,
+              4
+            ],
+            [
+              0,
+              10,
+              0,
+              1,
+              3,
+              92,
+              2,
+              1,
+              3,
+              1,
+              3
+            ],
+            [
+              0,
+              0,
+              3,
+              8,
+              0,
+              0,
+              91,
+              2,
+              17,
+              0,
+              3
+            ],
+            [
+              2,
+              0,
+              1,
+              1,
+              1,
+              0,
+              6,
+              112,
+              0,
+              1,
+              7
+            ],
+            [
+              0,
+              0,
+              9,
+              5,
+              1,
+              1,
+              5,
+              1,
+              105,
+              0,
+              5
+            ],
+            [
+              4,
+              11,
+              0,
+              3,
+              2,
+              12,
+              0,
+              1,
+              0,
+              86,
+              7
+            ],
+            [
+              7,
+              0,
+              4,
+              0,
+              8,
+              1,
+              1,
+              2,
+              0,
+              1,
+              86
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_good": {
+          "n_clips": 493,
+          "n_digit": 451,
+          "n_unknown": 42,
+          "n_unknown_synthetic_noise": 21,
+          "n_unknown_real_speech": 21,
+          "digit_acc": 0.8070953436807096,
+          "digit_rejection_rate": 0.04434589800443459,
+          "digit_wrong_digit_rate": 0.14855875831485588,
+          "unknown_rejection_rate": 0.8095238095238095,
+          "unknown_rejection_rate_synthetic_noise": 1.0,
+          "unknown_rejection_rate_real_speech": 0.6190476190476191,
+          "overall_acc_11": 0.8073022312373225,
+          "balanced_acc": 0.8077499625631439,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 48,
+              "acc": 0.8541666666666666
+            },
+            "1": {
+              "n": 42,
+              "acc": 0.8333333333333334
+            },
+            "2": {
+              "n": 40,
+              "acc": 0.9
+            },
+            "3": {
+              "n": 41,
+              "acc": 0.8048780487804879
+            },
+            "4": {
+              "n": 54,
+              "acc": 0.8703703703703703
+            },
+            "5": {
+              "n": 39,
+              "acc": 0.8205128205128205
+            },
+            "6": {
+              "n": 44,
+              "acc": 0.75
+            },
+            "7": {
+              "n": 48,
+              "acc": 0.8125
+            },
+            "8": {
+              "n": 48,
+              "acc": 0.7916666666666666
+            },
+            "9": {
+              "n": 47,
+              "acc": 0.6382978723404256
+            },
+            "unknown": {
+              "n": 42,
+              "acc": 0.8095238095238095
+            }
+          },
+          "confusion_matrix": [
+            [
+              41,
+              0,
+              3,
+              1,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              35,
+              0,
+              0,
+              0,
+              1,
+              0,
+              1,
+              0,
+              2,
+              3
+            ],
+            [
+              0,
+              0,
+              36,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              1,
+              33,
+              0,
+              0,
+              1,
+              0,
+              6,
+              0,
+              0
+            ],
+            [
+              1,
+              2,
+              2,
+              0,
+              47,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              2,
+              0,
+              1,
+              1,
+              32,
+              0,
+              0,
+              2,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              4,
+              0,
+              0,
+              33,
+              0,
+              6,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4,
+              39,
+              0,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              5,
+              0,
+              0,
+              0,
+              2,
+              1,
+              38,
+              0,
+              2
+            ],
+            [
+              1,
+              6,
+              0,
+              0,
+              0,
+              6,
+              0,
+              0,
+              0,
+              30,
+              4
+            ],
+            [
+              2,
+              0,
+              2,
+              0,
+              2,
+              0,
+              1,
+              1,
+              0,
+              0,
+              34
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_medium": {
+          "n_clips": 454,
+          "n_digit": 416,
+          "n_unknown": 38,
+          "n_unknown_synthetic_noise": 16,
+          "n_unknown_real_speech": 22,
+          "digit_acc": 0.84375,
+          "digit_rejection_rate": 0.02403846153846154,
+          "digit_wrong_digit_rate": 0.13221153846153846,
+          "unknown_rejection_rate": 0.7368421052631579,
+          "unknown_rejection_rate_synthetic_noise": 1.0,
+          "unknown_rejection_rate_real_speech": 0.5454545454545454,
+          "overall_acc_11": 0.8348017621145375,
+          "balanced_acc": 0.8336583891468133,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 38,
+              "acc": 0.9473684210526315
+            },
+            "1": {
+              "n": 42,
+              "acc": 0.9285714285714286
+            },
+            "2": {
+              "n": 50,
+              "acc": 0.9
+            },
+            "3": {
+              "n": 47,
+              "acc": 0.723404255319149
+            },
+            "4": {
+              "n": 38,
+              "acc": 0.7631578947368421
+            },
+            "5": {
+              "n": 38,
+              "acc": 0.8421052631578947
+            },
+            "6": {
+              "n": 42,
+              "acc": 0.7380952380952381
+            },
+            "7": {
+              "n": 43,
+              "acc": 0.9534883720930233
+            },
+            "8": {
+              "n": 43,
+              "acc": 0.8372093023255814
+            },
+            "9": {
+              "n": 35,
+              "acc": 0.8
+            },
+            "unknown": {
+              "n": 38,
+              "acc": 0.7368421052631579
+            }
+          },
+          "confusion_matrix": [
+            [
+              36,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              1,
+              39,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              45,
+              0,
+              2,
+              0,
+              1,
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              3,
+              34,
+              0,
+              1,
+              3,
+              1,
+              5,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              2,
+              2,
+              29,
+              1,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              3,
+              0,
+              0,
+              1,
+              32,
+              0,
+              0,
+              1,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              1,
+              0,
+              0,
+              31,
+              0,
+              9,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              41,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              2,
+              0,
+              0,
+              3,
+              0,
+              36,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              0,
+              0,
+              1,
+              3,
+              0,
+              0,
+              0,
+              28,
+              1
+            ],
+            [
+              4,
+              0,
+              0,
+              0,
+              4,
+              1,
+              0,
+              1,
+              0,
+              0,
+              28
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "sim_poor": {
+          "n_clips": 438,
+          "n_digit": 408,
+          "n_unknown": 30,
+          "n_unknown_synthetic_noise": 13,
+          "n_unknown_real_speech": 17,
+          "digit_acc": 0.7647058823529411,
+          "digit_rejection_rate": 0.056372549019607844,
+          "digit_wrong_digit_rate": 0.17892156862745098,
+          "unknown_rejection_rate": 0.8,
+          "unknown_rejection_rate_synthetic_noise": 1.0,
+          "unknown_rejection_rate_real_speech": 0.6470588235294118,
+          "overall_acc_11": 0.7671232876712328,
+          "balanced_acc": 0.7665492591882521,
+          "n_classes_present": 11,
+          "per_class_acc": {
+            "0": {
+              "n": 39,
+              "acc": 0.7692307692307693
+            },
+            "1": {
+              "n": 51,
+              "acc": 0.8823529411764706
+            },
+            "2": {
+              "n": 38,
+              "acc": 0.868421052631579
+            },
+            "3": {
+              "n": 41,
+              "acc": 0.7073170731707317
+            },
+            "4": {
+              "n": 37,
+              "acc": 0.7837837837837838
+            },
+            "5": {
+              "n": 39,
+              "acc": 0.717948717948718
+            },
+            "6": {
+              "n": 38,
+              "acc": 0.7105263157894737
+            },
+            "7": {
+              "n": 40,
+              "acc": 0.8
+            },
+            "8": {
+              "n": 41,
+              "acc": 0.7560975609756098
+            },
+            "9": {
+              "n": 44,
+              "acc": 0.6363636363636364
+            },
+            "unknown": {
+              "n": 30,
+              "acc": 0.8
+            }
+          },
+          "confusion_matrix": [
+            [
+              30,
+              0,
+              3,
+              1,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              4
+            ],
+            [
+              0,
+              45,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              5
+            ],
+            [
+              0,
+              0,
+              33,
+              1,
+              0,
+              0,
+              1,
+              1,
+              0,
+              0,
+              2
+            ],
+            [
+              1,
+              1,
+              4,
+              29,
+              0,
+              0,
+              1,
+              0,
+              3,
+              0,
+              2
+            ],
+            [
+              1,
+              4,
+              1,
+              0,
+              29,
+              0,
+              1,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              5,
+              0,
+              0,
+              1,
+              28,
+              2,
+              1,
+              0,
+              1,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              3,
+              0,
+              0,
+              27,
+              2,
+              2,
+              0,
+              3
+            ],
+            [
+              2,
+              0,
+              1,
+              1,
+              0,
+              0,
+              2,
+              32,
+              0,
+              1,
+              1
+            ],
+            [
+              0,
+              0,
+              3,
+              3,
+              1,
+              1,
+              0,
+              0,
+              31,
+              0,
+              2
+            ],
+            [
+              2,
+              4,
+              0,
+              3,
+              1,
+              3,
+              0,
+              1,
+              0,
+              28,
+              2
+            ],
+            [
+              1,
+              0,
+              2,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              1,
+              24
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        },
+        "manit_clean": {
+          "n_clips": 92,
+          "n_digit": 92,
+          "n_unknown": 0,
+          "n_unknown_synthetic_noise": 0,
+          "n_unknown_real_speech": 0,
+          "digit_acc": 0.8586956521739131,
+          "digit_rejection_rate": 0.0,
+          "digit_wrong_digit_rate": 0.14130434782608695,
+          "unknown_rejection_rate": null,
+          "unknown_rejection_rate_synthetic_noise": null,
+          "unknown_rejection_rate_real_speech": null,
+          "overall_acc_11": 0.8586956521739131,
+          "balanced_acc": 0.8666666666666666,
+          "n_classes_present": 10,
+          "per_class_acc": {
+            "0": {
+              "n": 6,
+              "acc": 1.0
+            },
+            "1": {
+              "n": 8,
+              "acc": 1.0
+            },
+            "2": {
+              "n": 8,
+              "acc": 1.0
+            },
+            "3": {
+              "n": 7,
+              "acc": 1.0
+            },
+            "4": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "5": {
+              "n": 9,
+              "acc": 0.6666666666666666
+            },
+            "6": {
+              "n": 10,
+              "acc": 0.0
+            },
+            "7": {
+              "n": 11,
+              "acc": 1.0
+            },
+            "8": {
+              "n": 12,
+              "acc": 1.0
+            },
+            "9": {
+              "n": 10,
+              "acc": 1.0
+            },
+            "unknown": {
+              "n": 0,
+              "acc": null
+            }
+          },
+          "confusion_matrix": [
+            [
+              6,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              8,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              7,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              3,
+              6,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              9,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "unknown"
+          ]
+        }
+      }
+    }
+  },
+  "acceptance_finetuned_model": "finetuned_v2",
+  "acceptance": {
+    "criteria": [
+      {
+        "id": "AC1",
+        "statement": "fine-tuned test sim_all digit_acc >= reference test sim_all digit_acc + 0.05",
+        "rationale": "the fine-tune must buy a clear gain on simulated laser audio (Exp 6 saw +12 pts)"
+      },
+      {
+        "id": "AC2",
+        "statement": "fine-tuned test clean digit_acc >= reference test clean digit_acc - 0.03",
+        "rationale": "clean-audio accuracy may not be sacrificed by more than 3 points"
+      },
+      {
+        "id": "AC3",
+        "statement": "fine-tuned test sim_all balanced_acc >= reference test sim_all balanced_acc",
+        "rationale": "unknown rejection on sim must not collapse while digits improve"
+      },
+      {
+        "id": "AC4",
+        "statement": "both models: test clean digit_rejection_rate <= 0.05",
+        "rationale": "the tuned threshold must not reject real digits"
+      }
+    ],
+    "results": [
+      {
+        "id": "AC1",
+        "pass": true,
+        "values": {
+          "reference_sim_all_digit_acc": 0.5372549019607843,
+          "finetuned_sim_all_digit_acc": 0.8054901960784314,
+          "delta": 0.2682352941176471
+        }
+      },
+      {
+        "id": "AC2",
+        "pass": true,
+        "values": {
+          "reference_clean_digit_acc": 0.8909803921568628,
+          "finetuned_clean_digit_acc": 0.9152941176470588,
+          "delta": 0.02431372549019606
+        }
+      },
+      {
+        "id": "AC3",
+        "pass": true,
+        "values": {
+          "reference_sim_all_balanced_acc": 0.5560396968881692,
+          "finetuned_sim_all_balanced_acc": 0.8025449703869524
+        }
+      },
+      {
+        "id": "AC4",
+        "pass": true,
+        "values": {
+          "reference_clean_digit_rejection": 0.021176470588235293,
+          "finetuned_clean_digit_rejection": 0.013333333333333334
+        }
+      }
+    ],
+    "all_pass": true
+  },
+  "wall_seconds": 77.01076245307922,
+  "wall_seconds_preload": 63.147162675857544,
+  "environment": {
+    "python": "3.13.16",
+    "torch": "2.15.0+cu132",
+    "platform": "Linux-6.18.44-fc-v310-x86_64-with-glibc2.39",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "cpu_count": 2,
+    "torch_threads": 2,
+    "device": "cpu",
+    "sample_rate": 8000,
+    "output_dir_env": "/home/claude/lmml/results/sprint8/train"
+  }
+}

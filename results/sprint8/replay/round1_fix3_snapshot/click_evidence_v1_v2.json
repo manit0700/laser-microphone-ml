@@ -1,0 +1,113 @@
+{
+ "machine": "cloud dev container, 2 vCPU, CPU-only PyTorch 2.15.0",
+ "model": "models/best_model_cnn.pt",
+ "n_per_set": 600,
+ "sets": {
+  "v1": {
+   "manifest": "results/sprint8/data/manifest.csv",
+   "fixed_code": {
+    "events_per_clip": {
+     "0": 7,
+     "1": 512,
+     "2+": 81
+    },
+    "multi_with_head_click": 9,
+    "by_condition": {
+     "sim_medium": {
+      "0": 3,
+      "1": 190,
+      "2+": 22
+     },
+     "sim_poor": {
+      "0": 2,
+      "1": 154,
+      "2+": 42
+     },
+     "sim_good": {
+      "0": 2,
+      "1": 168,
+      "2+": 17
+     }
+    }
+   },
+   "prefix_code_emulated": {
+    "events_per_clip": {
+     "0": 22,
+     "1": 576,
+     "2+": 2
+    },
+    "multi_with_head_click": 2,
+    "by_condition": {
+     "sim_medium": {
+      "0": 7,
+      "1": 207,
+      "2+": 1
+     },
+     "sim_poor": {
+      "0": 7,
+      "1": 190,
+      "2+": 1
+     },
+     "sim_good": {
+      "0": 8,
+      "1": 179,
+      "2+": 0
+     }
+    }
+   }
+  },
+  "v2": {
+   "manifest": "results/sprint8/data/manifest_v2.csv",
+   "fixed_code": {
+    "events_per_clip": {
+     "0": 0,
+     "1": 541,
+     "2+": 59
+    },
+    "multi_with_head_click": 0,
+    "by_condition": {
+     "sim_medium": {
+      "0": 0,
+      "1": 206,
+      "2+": 9
+     },
+     "sim_poor": {
+      "0": 0,
+      "1": 159,
+      "2+": 39
+     },
+     "sim_good": {
+      "0": 0,
+      "1": 176,
+      "2+": 11
+     }
+    }
+   },
+   "prefix_code_emulated": {
+    "events_per_clip": {
+     "0": 3,
+     "1": 594,
+     "2+": 3
+    },
+    "multi_with_head_click": 2,
+    "by_condition": {
+     "sim_medium": {
+      "0": 2,
+      "1": 212,
+      "2+": 1
+     },
+     "sim_poor": {
+      "0": 0,
+      "1": 196,
+      "2+": 2
+     },
+     "sim_good": {
+      "0": 1,
+      "1": 186,
+      "2+": 0
+     }
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,206 @@
+{
+  "frozen_at_utc": "2026-11-08T17:39:03+00:00",
+  "rule": "Test split is read once, after this file is written. No setting below may change afterwards.",
+  "manifest": "results/sprint8/train/scratch/fake_manifest.csv",
+  "manifest_sha256": "f7d11e6a585f639270be1e6218f0f4d6835c52451e272d2526e0e624d5192676",
+  "test_split": "test",
+  "val_split": "val",
+  "decision_rule": "probs = softmax(logits / T); pred = argmax; if max(probs) < threshold -> 'unknown' (calibration.apply_threshold)",
+  "labels": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "unknown"
+  ],
+  "unknown_index": 10,
+  "audio_paths": {
+    "clean": "preprocess_file (dataset.py path, no band-pass, no enhance)",
+    "sim": "load_audio -> Butterworth-4 band-pass [200.0, 3800.0] Hz (sosfiltfilt) -> enhance_waveform -> preprocess_waveform (dashboard laser channel)"
+  },
+  "conditions": {
+    "clean": "kind == clean",
+    "sim_good": "condition == sim_good (snr >= 20 dB)",
+    "sim_medium": "condition == sim_medium (10 <= snr < 20 dB)",
+    "sim_poor": "condition == sim_poor (snr < 10 dB)",
+    "sim_all": "kind == sim",
+    "manit_clean": "kind == clean and speaker == manit"
+  },
+  "metrics": [
+    "n_digit",
+    "n_unknown (synthetic noise / real non-digit speech)",
+    "digit_acc",
+    "digit_rejection_rate",
+    "unknown_rejection_rate",
+    "overall_acc_11",
+    "balanced_acc (mean recall over classes present)",
+    "per_class_acc",
+    "confusion_matrix 11x11 (0-9, unknown)"
+  ],
+  "models": {
+    "reference": {
+      "checkpoint": "results/sprint8/train/scratch/models/reference_cnn.pt",
+      "sha256": "5d581ee19466a2c88e667ebb3e98090d8c9af13f20ab78fc16171c9fcd5e675c",
+      "temperature": 1.0,
+      "threshold": 0.58,
+      "epoch": 3,
+      "calibrated_on": "val clean"
+    },
+    "finetuned": {
+      "checkpoint": "results/sprint8/train/scratch/models/finetuned_cnn.pt",
+      "sha256": "180259b89da13468ef6e271617bc32840846bacee19c86e7d290312cf38fa647",
+      "temperature": 1.0,
+      "threshold": 0.58,
+      "epoch": 3,
+      "calibrated_on": "val clean + val sim"
+    },
+    "deployed": {
+      "checkpoint": "models/best_model_cnn.pt",
+      "sha256": "da27ca83ab93ff84ddd569a0c50cdb7153a5fb93a71252ae2af86efab282f1bb",
+      "temperature": 0.4980080723762512,
+      "threshold": 0.26,
+      "epoch": 36,
+      "calibrated_on": "its own Kaggle validation fold (stored in checkpoint, not re-fitted)",
+      "note": "deployed checkpoint - training provenance not established as speaker-disjoint from this test set (trained on a Kaggle fold of a superset of these sources), information only",
+      "read_only": true
+    },
+    "control": {
+      "checkpoint": "results/sprint8/train/scratch/models/control.pt",
+      "sha256": "de2bb04870fa9b0f7374d57d1990d7a44fa22a876f7dd4729715998cd033438b",
+      "temperature": 0.5067571997642517,
+      "threshold": 0.2,
+      "epoch": 2,
+      "calibrated_on": "val clean + val sim"
+    }
+  },
+  "seeds": {
+    "seed": 42,
+    "note": "evaluation is deterministic; seed only fixes torch/numpy/random state"
+  },
+  "feature": "mel (40 log-mel bands, standardised), 8 kHz, 1.0 s clips",
+  "batch_size_eval": 64,
+  "torch_threads": 2,
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "statement": "fine-tuned test sim_all digit_acc >= reference test sim_all digit_acc + 0.05",
+      "rationale": "the fine-tune must buy a clear gain on simulated laser audio (Exp 6 saw +12 pts)"
+    },
+    {
+      "id": "AC2",
+      "statement": "fine-tuned test clean digit_acc >= reference test clean digit_acc - 0.03",
+      "rationale": "clean-audio accuracy may not be sacrificed by more than 3 points"
+    },
+    {
+      "id": "AC3",
+      "statement": "fine-tuned test sim_all balanced_acc >= reference test sim_all balanced_acc",
+      "rationale": "unknown rejection on sim must not collapse while digits improve"
+    },
+    {
+      "id": "AC4",
+      "statement": "both models: test clean digit_rejection_rate <= 0.05",
+      "rationale": "the tuned threshold must not reject real digits"
+    }
+  ],
+  "val_preview_for_criteria": {
+    "reference_val_clean_digit_acc": 0.0,
+    "reference_val_sim_digit_acc": 0.0,
+    "finetuned_val_clean_digit_acc": 0.0,
+    "finetuned_val_sim_digit_acc": 0.0
+  },
+  "additions": [
+    {
+      "frozen_at_utc": "2026-11-08T18:21:37+00:00",
+      "models": {
+        "control": {
+          "checkpoint": "results/sprint8/train/scratch/models/control.pt",
+          "sha256": "de2bb04870fa9b0f7374d57d1990d7a44fa22a876f7dd4729715998cd033438b",
+          "temperature": 0.5067571997642517,
+          "threshold": 0.2,
+          "epoch": 2,
+          "calibrated_on": "val clean + val sim"
+        }
+      },
+      "note": "added after the first test run; settings fixed on validation before these models' test scores were seen",
+      "criteria": "scored under the same conditions and metrics; original models' test rows are not recomputed"
+    }
+  ],
+  "rounds": {
+    "v2": {
+      "frozen_at_utc": "2026-11-08T18:31:10+00:00",
+      "manifest": "results/sprint8/train/scratch/fake_manifest.csv",
+      "manifest_sha256": "f7d11e6a585f639270be1e6218f0f4d6835c52451e272d2526e0e624d5192676",
+      "test_split": "test",
+      "models": {
+        "reference": {
+          "checkpoint": "results/sprint8/train/scratch/models/reference_cnn.pt",
+          "sha256": "5d581ee19466a2c88e667ebb3e98090d8c9af13f20ab78fc16171c9fcd5e675c",
+          "temperature": 1.0,
+          "threshold": 0.58,
+          "epoch": 3,
+          "calibrated_on": "val clean",
+          "settings_from": "round 1 freeze (not re-fitted)"
+        },
+        "deployed": {
+          "checkpoint": "models/best_model_cnn.pt",
+          "sha256": "da27ca83ab93ff84ddd569a0c50cdb7153a5fb93a71252ae2af86efab282f1bb",
+          "temperature": 0.4980080723762512,
+          "threshold": 0.26,
+          "epoch": 36,
+          "calibrated_on": "its own Kaggle validation fold (stored in checkpoint, not re-fitted)",
+          "note": "deployed checkpoint - training provenance not established as speaker-disjoint from this test set (trained on a Kaggle fold of a superset of these sources), information only",
+          "read_only": true,
+          "settings_from": "round 1 freeze (not re-fitted)"
+        },
+        "control": {
+          "checkpoint": "results/sprint8/train/scratch/models/control.pt",
+          "sha256": "de2bb04870fa9b0f7374d57d1990d7a44fa22a876f7dd4729715998cd033438b",
+          "temperature": 0.5067571997642517,
+          "threshold": 0.2,
+          "epoch": 2,
+          "calibrated_on": "val clean + val sim",
+          "settings_from": "round 1 freeze (not re-fitted)"
+        },
+        "ft2": {
+          "checkpoint": "results/sprint8/train/scratch/models/finetuned_cnn.pt",
+          "sha256": "3863569b9d1409e40fa6730fae8b25aa926365b00879b2e2821dc1b82bac0833",
+          "temperature": 1.0,
+          "threshold": 0.58,
+          "epoch": 3,
+          "calibrated_on": "val clean + val sim"
+        }
+      },
+      "note": "scratch round test",
+      "outputs": "calibration_val_v2.json, test_metrics_v2.json/.md, plots_v2/",
+      "acceptance_criteria": [
+        {
+          "id": "AC1",
+          "statement": "fine-tuned test sim_all digit_acc >= reference test sim_all digit_acc + 0.05",
+          "rationale": "the fine-tune must buy a clear gain on simulated laser audio (Exp 6 saw +12 pts)"
+        },
+        {
+          "id": "AC2",
+          "statement": "fine-tuned test clean digit_acc >= reference test clean digit_acc - 0.03",
+          "rationale": "clean-audio accuracy may not be sacrificed by more than 3 points"
+        },
+        {
+          "id": "AC3",
+          "statement": "fine-tuned test sim_all balanced_acc >= reference test sim_all balanced_acc",
+          "rationale": "unknown rejection on sim must not collapse while digits improve"
+        },
+        {
+          "id": "AC4",
+          "statement": "both models: test clean digit_rejection_rate <= 0.05",
+          "rationale": "the tuned threshold must not reject real digits"
+        }
+      ],
+      "criteria_note": "same metrics/conditions/decision rule as round 1; AC1-AC4 evaluated with the round's fine-tuned model vs reference"
+    }
+  }
+}

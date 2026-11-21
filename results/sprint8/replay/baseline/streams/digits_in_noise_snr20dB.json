@@ -1,0 +1,43 @@
+{
+ "name": "digits_in_noise_snr20dB",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.1959,
+   "label": "6",
+   "source": "data/raw/6_yweweler_46.wav",
+   "speaker": "yweweler"
+  },
+  {
+   "t_start": 1.9959,
+   "t_end": 2.4959,
+   "label": "1",
+   "source": "data/raw/1_sc171edea9_303.wav",
+   "speaker": "171edea9"
+  },
+  {
+   "t_start": 3.2959,
+   "t_end": 3.7759,
+   "label": "8",
+   "source": "data/raw/8_sc0137b3f4_14.wav",
+   "speaker": "0137b3f4"
+  },
+  {
+   "t_start": 4.5759,
+   "t_end": 5.4118,
+   "label": "3",
+   "source": "data/raw/3_sc1816b768_290.wav",
+   "speaker": "1816b768"
+  }
+ ],
+ "duration_s": 6.912,
+ "params": {
+  "gap_s": 0.8,
+  "speech_rms": 0.05,
+  "noise_kind": "real_noise_clip",
+  "noise_rms": 0.005,
+  "snr_db": 20.0
+ },
+ "note": "",
+ "expect_merge": false
+}

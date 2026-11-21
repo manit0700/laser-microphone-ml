@@ -1,0 +1,26 @@
+{
+ "error": {
+  "n": 45,
+  "sample_rate": {
+   "16000": 27,
+   "8000": 18
+  },
+  "duration_1s_count": 24,
+  "median_bursts": 2.0,
+  "bursts_ge2_count": 30,
+  "median_onset_ms": 119.1875,
+  "onset_gt_400ms_count": 5
+ },
+ "control_correct": {
+  "n": 12,
+  "sample_rate": {
+   "8000": 6,
+   "16000": 6
+  },
+  "duration_1s_count": 6,
+  "median_bursts": 2.0,
+  "bursts_ge2_count": 9,
+  "median_onset_ms": 85.625,
+  "onset_gt_400ms_count": 1
+ }
+}

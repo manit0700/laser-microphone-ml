@@ -110,6 +110,16 @@ if [ -n "$KAGGLE_MODE" ]; then
   fi
 fi
 
+# Optional: KAGGLE_MOD_DATASET=<user>/google-commands-0-9-mod bash scripts/kaggle_push_kernel.sh
+#   also trains on the modified Speech Commands digits (google_commands_0_9_mod): attaches that
+#   dataset and sets USE_MOD = True. scripts/kaggle_train_with_mod.sh uploads it and does all this.
+if [ -n "$KAGGLE_MOD_DATASET" ]; then
+  sed "s/USE_MOD = False/USE_MOD = True /" "$STAGE/kaggle_train.ipynb" > "$STAGE/kt.tmp" \
+    && mv "$STAGE/kt.tmp" "$STAGE/kaggle_train.ipynb"
+  grep -q "USE_MOD = True" "$STAGE/kaggle_train.ipynb" || { echo "ERROR: could not set USE_MOD"; exit 1; }
+  SOURCES="$SOURCES, \"$KAGGLE_MOD_DATASET\""
+fi
+
 # Kernel metadata Kaggle requires. We attach the code dataset and request GPU +
 # Internet so the notebook runs end-to-end unattended.
 cat > "$STAGE/kernel-metadata.json" <<JSON

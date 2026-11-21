@@ -1,0 +1,26 @@
+Base: /home/claude/lmml/results/sprint8/models/reference_cnn.pt (epoch 38, val acc 0.8416, sha256 5479bf501513...)
+CONTROL RUN: sim clips removed from training; clean replay sample kept identical.
+train: 0 sim {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0, 'unknown': 0}
+       + 6391 clean replay (ratio 1.0) {'0': 557, '1': 546, '2': 554, '3': 554, '4': 563, '5': 561, '6': 552, '7': 552, '8': 548, '9': 547, 'unknown': 857}
+val  : 1433 sim + 1433 clean; speakers shared train/val: 0
+Laser path on sim clips: True (band-pass (200.0, 3800.0) order 4 + enhance); clean clips: plain path
+Preloading waveforms ...
+    [train] preloaded 2000/6391 clips (18s)
+    [train] preloaded 4000/6391 clips (37s)
+    [train] preloaded 6000/6391 clips (58s)
+  preload done in 155s
+BEFORE fine-tune (reference): val sim loss 1.7039 acc 0.4962 | val clean loss 0.9696 acc 0.8416 | clean floor 0.8116
+Epoch  1/15 | train loss 1.0561 acc 0.812 | val loss 1.3381 acc 0.664 | sim acc 0.472 | clean acc 0.856 | 11s  <- best
+Epoch  2/15 | train loss 1.0514 acc 0.815 | val loss 1.3354 acc 0.668 | sim acc 0.477 | clean acc 0.860 | 11s  <- best
+Epoch  3/15 | train loss 1.0465 acc 0.819 | val loss 1.3198 acc 0.673 | sim acc 0.493 | clean acc 0.853 | 11s  <- best
+Epoch  4/15 | train loss 1.0465 acc 0.818 | val loss 1.3103 acc 0.679 | sim acc 0.499 | clean acc 0.860 | 10s  <- best
+Epoch  5/15 | train loss 1.0375 acc 0.823 | val loss 1.3315 acc 0.669 | sim acc 0.483 | clean acc 0.854 | 9s  (no improvement 1/4)
+Epoch  6/15 | train loss 1.0334 acc 0.827 | val loss 1.3048 acc 0.677 | sim acc 0.488 | clean acc 0.865 | 9s  <- best
+Epoch  7/15 | train loss 1.0252 acc 0.829 | val loss 1.3093 acc 0.677 | sim acc 0.489 | clean acc 0.865 | 9s  (no improvement 1/4)
+Epoch  8/15 | train loss 1.0334 acc 0.823 | val loss 1.3092 acc 0.677 | sim acc 0.500 | clean acc 0.855 | 9s  (no improvement 2/4)
+Epoch  9/15 | train loss 1.0338 acc 0.824 | val loss 1.3159 acc 0.680 | sim acc 0.495 | clean acc 0.865 | 9s  (no improvement 3/4)
+Epoch 10/15 | train loss 1.0232 acc 0.830 | val loss 1.3176 acc 0.677 | sim acc 0.491 | clean acc 0.864 | 10s  (no improvement 4/4)
+Early stopping at epoch 10 (best combined val loss 1.3048 at epoch 6).
+
+Selected epoch 6: val sim acc 0.4962 -> 0.4878, val clean acc 0.8416 -> 0.8653
+Saved -> results/sprint8/models/continued_clean_cnn.pt  (sha256 2f4160ec9745...)  total 324s

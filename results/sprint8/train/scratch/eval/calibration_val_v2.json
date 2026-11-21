@@ -1,0 +1,87 @@
+{
+  "val_split": "val",
+  "n_val_clean": 157,
+  "n_val_sim": 97,
+  "manifest": "results/sprint8/train/scratch/fake_manifest.csv",
+  "manifest_sha256": "f7d11e6a585f639270be1e6218f0f4d6835c52451e272d2526e0e624d5192676",
+  "threshold_grid": "0.20..0.95 step 0.01; middle of the thresholds within 0.002 of the best balanced accuracy",
+  "temperature_fit": "LBFGS on NLL of validation logits (calibration.fit_temperature); kept only if ECE does not get worse",
+  "models": {
+    "ft2": {
+      "checkpoint": "results/sprint8/train/scratch/models/finetuned_cnn.pt",
+      "checkpoint_sha256_before": "180259b89da13468ef6e271617bc32840846bacee19c86e7d290312cf38fa647",
+      "epoch": 3,
+      "fit_set": "val clean + val sim",
+      "n_fit": 254,
+      "temperature_fitted": 0.4795745313167572,
+      "temperature": 1.0,
+      "ece_before": 0.08614877611398697,
+      "ece_after": 0.08614877611398697,
+      "threshold": 0.58,
+      "val_metrics_at_threshold": {
+        "threshold": 0.58,
+        "balanced_acc": 0.09090909090909091,
+        "overall_acc": 0.29133859276771545,
+        "digit_acc": 0.0,
+        "digit_rejected": 1.0,
+        "unknown_rejection": 1.0
+      },
+      "val_metrics_at_0.60": {
+        "balanced_acc": 0.09090909090909091,
+        "overall_acc": 0.29133859276771545,
+        "digit_acc": 0.0,
+        "digit_rejected": 1.0,
+        "unknown_rejection": 1.0
+      },
+      "val_metrics_argmax_only": {
+        "balanced_acc": 0.11775451627644626,
+        "overall_acc": 0.27559053897857666,
+        "digit_acc": 0.03333333507180214,
+        "digit_rejected": 0.9277777671813965,
+        "unknown_rejection": 0.8648648858070374
+      },
+      "val_clean": {
+        "n": 157,
+        "ece_before": 0.047160156071186066,
+        "ece_after": 0.047160156071186066,
+        "at_chosen_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.23566879332065582,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        },
+        "threshold_this_subset_alone_would_pick": 0.58,
+        "at_own_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.23566879332065582,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        }
+      },
+      "val_sim": {
+        "n": 97,
+        "ece_before": 0.14925405383110046,
+        "ece_after": 0.14925405383110046,
+        "at_chosen_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.3814432919025421,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        },
+        "threshold_this_subset_alone_would_pick": 0.58,
+        "at_own_threshold": {
+          "balanced_acc": 0.09090909090909091,
+          "overall_acc": 0.3814432919025421,
+          "digit_acc": 0.0,
+          "digit_rejected": 1.0,
+          "unknown_rejection": 1.0
+        }
+      },
+      "checkpoint_sha256": "3863569b9d1409e40fa6730fae8b25aa926365b00879b2e2821dc1b82bac0833"
+    }
+  },
+  "wall_seconds": 10.15535569190979
+}

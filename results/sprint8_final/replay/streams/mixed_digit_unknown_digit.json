@@ -1,0 +1,36 @@
+{
+ "name": "mixed_digit_unknown_digit",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.97,
+   "label": "0",
+   "source": "data/raw/0_sc113b3fbc_237.wav",
+   "speaker": "113b3fbc"
+  },
+  {
+   "t_start": 2.77,
+   "t_end": 3.33,
+   "label": "unknown",
+   "source": "data/raw/unknown/stop_0132a06d_9.wav",
+   "speaker": "0132a06d"
+  },
+  {
+   "t_start": 4.13,
+   "t_end": 4.5891,
+   "label": "9",
+   "source": "data/raw/9_george_29.wav",
+   "speaker": "george"
+  }
+ ],
+ "duration_s": 6.089,
+ "params": {
+  "gap_s": 0.8,
+  "speech_rms": 0.05,
+  "noise_kind": "none",
+  "noise_rms": 0.0,
+  "snr_db": null
+ },
+ "note": "",
+ "expect_merge": false
+}

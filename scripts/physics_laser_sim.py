@@ -128,9 +128,22 @@ def interference(n: int, hum: float, flicker: float, rng, fs: int = FS) -> np.nd
 
 
 def electronics(v: np.ndarray, hp_hz: float, lp_hz: float, fs: int = FS) -> np.ndarray:
+    """AC coupling (1st-order high-pass) then amplifier bandwidth (2nd-order low-pass).
+
+    The filters start in STEADY STATE for the signal's initial value (sosfilt_zi),
+    the way a receiver that has been powered on for a while sits at its operating
+    point. Before Sprint 8 they started from zero state, so the ~0.5 DC level of the
+    photodiode intensity hit the high-pass as a step at t=0 and produced a
+    full-scale click in the first ~20 ms of every clip; adc() then normalised the
+    clip to that click instead of the speech (speech ended up at 0.005-0.1 of full
+    scale). Found by the Sprint 8 replay harness; see docs/EXPERIMENTS.md, Exp 7.
+    """
+    from scipy.signal import sosfilt_zi
     sos_hp = butter(1, hp_hz / (fs / 2), btype="highpass", output="sos")
     sos_lp = butter(2, min(lp_hz, fs / 2 * 0.95) / (fs / 2), btype="lowpass", output="sos")
-    return sosfilt(sos_lp, sosfilt(sos_hp, v))
+    v_hp, _ = sosfilt(sos_hp, v, zi=sosfilt_zi(sos_hp) * v[0])
+    v_lp, _ = sosfilt(sos_lp, v_hp, zi=sosfilt_zi(sos_lp) * v_hp[0])
+    return v_lp
 
 
 def adc(v: np.ndarray, headroom: float) -> np.ndarray:

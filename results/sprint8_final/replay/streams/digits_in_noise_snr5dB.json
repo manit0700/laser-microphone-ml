@@ -1,0 +1,43 @@
+{
+ "name": "digits_in_noise_snr5dB",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.3504,
+   "label": "6",
+   "source": "data/raw/6_george_33.wav",
+   "speaker": "george"
+  },
+  {
+   "t_start": 2.1504,
+   "t_end": 2.4904,
+   "label": "1",
+   "source": "data/raw/1_sc06f6c194_84.wav",
+   "speaker": "06f6c194"
+  },
+  {
+   "t_start": 3.2904,
+   "t_end": 3.8704,
+   "label": "8",
+   "source": "data/raw/8_sc1496195a_267.wav",
+   "speaker": "1496195a"
+  },
+  {
+   "t_start": 4.6704,
+   "t_end": 5.5104,
+   "label": "3",
+   "source": "data/raw/3_sc113b3fbc_203.wav",
+   "speaker": "113b3fbc"
+  }
+ ],
+ "duration_s": 7.01,
+ "params": {
+  "gap_s": 0.8,
+  "speech_rms": 0.05,
+  "noise_kind": "real_noise_clip",
+  "noise_rms": 0.028117066259517456,
+  "snr_db": 5.0
+ },
+ "note": "",
+ "expect_merge": false
+}

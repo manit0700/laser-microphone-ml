@@ -32,6 +32,8 @@ Speaker ids come from the filenames already used in this project:
     9_michael_std_0.wav         team recording (DAQ)       -> michael
     7_laserplay_laser_12.wav    replay_record_laser.py     -> derived (train only)
     7_physlaser_5.wav           physics_laser_sim.py       -> derived (train only)
+    7_sc1b4c9b89_mod2.wav       add_modified_commands.py   -> 1b4c9b89 (same speaker as
+                                the original clip, so both land in the same split)
 """
 
 from __future__ import annotations
@@ -45,6 +47,7 @@ from pathlib import Path
 DERIVED_SPEAKERS = ("laserplay", "physlaser", "lasersynth")
 _DUP_RE = re.compile(r"_dup\d+$")
 _SC_RE = re.compile(r"^sc([0-9a-f]{8})$")
+_MOD_RE = re.compile(r"^mod\d+$")
 
 
 def speaker_of(path: Path) -> str:
@@ -59,6 +62,38 @@ def speaker_of(path: Path) -> str:
         return "am" + spk
     m = _SC_RE.match(spk)
     return m.group(1) if m else spk
+
+
+def is_modified(path) -> bool:
+    """True for a modified Speech Commands clip (<digit>_sc<speaker>_mod<k>.wav)."""
+    parts = Path(path).stem.split("_")
+    return len(parts) >= 3 and bool(_SC_RE.match(parts[1])) and bool(_MOD_RE.match(parts[-1]))
+
+
+def per_source_scores(paths, preds, true, n_digits: int = 10) -> dict:
+    """Test accuracy for original vs modified clips, scored separately.
+
+    Returns {} unless the test split holds both kinds. 'digit_accuracy' counts only
+    clips whose true label is a digit, so the two rows are comparable (the
+    'unknown' clips are all originals).
+    """
+    paths, preds, true = list(paths), list(preds), list(true)
+    if not (len(paths) == len(preds) == len(true)):
+        return {}
+    mod = [is_modified(p) for p in paths]
+    if all(mod) or not any(mod):
+        return {}
+    out = {}
+    for name, want in (("original", False), ("modified", True)):
+        rows = [(p, t) for p, t, m in zip(preds, true, mod) if m == want]
+        digits = [(p, t) for p, t in rows if t < n_digits]
+        out[name] = {
+            "num_samples": len(rows),
+            "accuracy": sum(p == t for p, t in rows) / len(rows),
+            "num_digit_samples": len(digits),
+            "digit_accuracy": (sum(p == t for p, t in digits) / len(digits)) if digits else float("nan"),
+        }
+    return out
 
 
 def _file_hash(path: Path) -> str:

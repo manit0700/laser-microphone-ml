@@ -54,6 +54,37 @@ from utils import format_prediction
 # Each entry: {"model": nn.Module, "labels": [...], "feature": "mfcc"|"mel"}.
 _cache: dict = {}
 
+# Optional explicit checkpoint files, keyed by model type ("cnn", "lstm", ...).
+# Lets an experiment (e.g. Sprint 8's results/sprint8/models/finetuned_cnn.pt) or
+# the dashboard run a checkpoint that is NOT under models/ without copying it
+# there. Set programmatically with set_checkpoint_path(), or from the
+# environment with LMML_CKPT_<TYPE>=path (e.g. LMML_CKPT_CNN=...). When neither
+# is given, config.model_checkpoint() is used exactly as before.
+_checkpoint_overrides: dict = {}
+
+
+def set_checkpoint_path(model_type: str, path) -> None:
+    """Point `model_type` at an explicit checkpoint file (None = back to default).
+
+    Drops that type's cached model so the next _load() reads the new file.
+    """
+    if path is None:
+        _checkpoint_overrides.pop(model_type, None)
+    else:
+        _checkpoint_overrides[model_type] = Path(path)
+    _cache.pop(model_type, None)
+
+
+def checkpoint_path(model_type: str = MODEL_TYPE) -> Path:
+    """Checkpoint file for `model_type`: explicit override > LMML_CKPT_<TYPE> > config."""
+    if model_type in _checkpoint_overrides:
+        return Path(_checkpoint_overrides[model_type])
+    import os
+    env = os.environ.get(f"LMML_CKPT_{model_type.upper()}")
+    if env:
+        return Path(env)
+    return Path(model_checkpoint(model_type))
+
 
 def _load(model_type: str = MODEL_TYPE) -> dict:
     """Load a trained model (once) and reuse it.
@@ -62,7 +93,7 @@ def _load(model_type: str = MODEL_TYPE) -> dict:
     network (LSTM or CNN) and extracts the matching feature.
     """
     if model_type not in _cache:
-        ckpt_path = model_checkpoint(model_type)
+        ckpt_path = checkpoint_path(model_type)
         if not Path(ckpt_path).exists():
             raise FileNotFoundError(
                 f"No trained model at {ckpt_path}. Run `python src/train.py "

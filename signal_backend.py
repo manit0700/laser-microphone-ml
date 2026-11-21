@@ -756,12 +756,28 @@ class _LiveClassifier:
     def __init__(self, model: str = "ensemble", threshold: float | None = None,
                  silence_rms: float = DAQ_SILENCE_RMS, enhance: bool | None = None,
                  autosave: bool = True, source_label: str = "live",
-                 bandpass: tuple | None = None, word_mode: bool = False):
+                 bandpass: tuple | None = None, word_mode: bool = False,
+                 on_decision=None, clock=None):
         # Default is the DAQ threshold, not the mic one: this class exists so a
         # caller with its own hardware audio stream (PCM1808) gets real
         # predictions, and that hardware's noise floor is much higher than a
         # laptop mic's. Pass silence_rms explicitly to override.
         self.model = model
+        # Decision instrumentation (Sprint 8 replay harness). `on_decision(info)`
+        # is called every time this classifier makes a NEW decision: in word mode
+        # once per finished word (digit or Unknown); in sliding mode whenever the
+        # committed result changes. Two identical consecutive words return the
+        # same (label, confidence) tuple from predict(), so a caller that wants to
+        # count words must use this, not compare tuples. Counters are cumulative
+        # for the life of the object (reset() does not clear them).
+        self.on_decision = on_decision
+        self.n_decisions = 0      # new decisions (events) made so far
+        self.n_inferences = 0     # model forward passes so far
+        self.last_decision = None # info dict of the most recent decision
+        # Clock used by the sliding-window throttle (PREDICT_EVERY_SEC). Defaults to
+        # time.monotonic(); a replay/test can pass a clock that follows the audio.
+        import time as _time
+        self._clock = clock if clock is not None else _time.monotonic
         self.threshold = threshold
         self.silence_rms = silence_rms
         self.enhance = ENABLE_ENHANCE if enhance is None else enhance
@@ -785,6 +801,8 @@ class _LiveClassifier:
         self._last_active = 0.0
         self._t0 = None
         self._n_pushed = 0
+        self._n_gated = 0          # stream index of the next frame the gate will inspect
+        self._hold_until_quiet = False  # after a WORD_MAX_SEC cut-off: no new word until a quiet frame
 
         self.rate = SAMPLE_RATE
         self._buf = np.zeros(0, dtype=np.float32)
@@ -838,12 +856,19 @@ class _LiveClassifier:
         self._streak_label = None
         self._streak_count = 0
         self._in_word = False
+        self._hold_until_quiet = False
         self._n_pushed = 0
+        self._n_gated = 0
 
     # --- end-of-word mode -------------------------------------------------
-    WORD_FRAME_SEC = 0.15     # loudness is measured on the last 0.15 s
+    WORD_FRAME_SEC = 0.15     # loudness is measured on 0.15 s frames ...
+    WORD_HOP_SEC = 0.05       # ... every 0.05 s of NEW audio (see _gate_frames)
+    WORD_EDGE_SEC = 0.03      # last 30 ms are a filter edge: gated on the next call
     WORD_END_QUIET_SEC = 0.25 # this long below the gate = the word is over
-    WORD_MIN_SEC = 0.12       # shorter bursts are clicks/taps, ignored
+    WORD_MIN_SEC = 0.05       # less than this above the gate (20 ms frames) = click/tap, ignored.
+                              # Sprint 8 replay: digits measure >= 0.08 s (val split, n=500),
+                              # 5-20 ms clicks 0.02-0.04 s. (Was 0.12 s against a 0.15 s frame
+                              # length, which could never trigger.)
     WORD_MAX_SEC = 1.1        # classify anyway if "speech" lasts this long
     WORD_PAD_SEC = 0.25       # context kept before/after the word
 
@@ -851,35 +876,139 @@ class _LiveClassifier:
         """Seconds of audio pushed so far (clock follows the audio, not the GUI)."""
         return self._n_pushed / float(self.rate)
 
+    def _emit_decision(self, result: dict, kind: str, **extra) -> None:
+        """Record one new decision and notify the optional callback (never raises)."""
+        self.n_decisions += 1
+        info = {
+            "kind": kind,                       # "word" (end-of-word) or "commit" (sliding)
+            "label": result["prediction"],
+            "confidence": float(result["confidence"]),
+            "status": result["status"],
+            "committed": self._committed,
+            "stream_time": self._stream_time(),
+            "n": self.n_decisions,
+        }
+        info.update(extra)
+        self.last_decision = info
+        if self.on_decision is not None:
+            try:
+                self.on_decision(info)
+            except Exception:  # noqa: BLE001 - a listener must never break the UI
+                pass
+
+    def _gate_frames(self):
+        """Run the silence gate over EVERY new frame since the previous call.
+
+        The dashboard pushes 256 ms of audio per tick (12288 frames at 48 kHz),
+        but the gate used to look only at the last 0.15 s of the buffer, so the
+        first ~0.1 s of every chunk was never inspected: a short digit ("six",
+        0.2 s) landing there was missed outright (Sprint 8 replay: 15/96 short
+        words lost at 256 ms pushes, 0/96 at 50 ms). Now the frames are stepped
+        WORD_HOP_SEC apart over all audio that has not been gated yet, whatever
+        the push size, and the word start/end times come from the frames, not
+        from the GUI tick. Returns the end time (s) of the last gated frame, or
+        None when there was nothing new to gate.
+        """
+        rate = self.rate
+        frame = int(self.WORD_FRAME_SEC * rate)
+        hop = int(self.WORD_HOP_SEC * rate)
+        edge = int(self.WORD_EDGE_SEC * rate)
+        buf_start = self._n_pushed - self._buf.size       # stream index of _buf[0]
+        if self._n_gated < buf_start:                     # (re)start or buffer wrapped
+            self._n_gated = buf_start
+        last_end = self._n_pushed - edge
+        if self._n_gated + frame > last_end:
+            return None                                    # nothing new to gate yet
+        # Filter once, with >= 0.3 s of context before the first new frame so the
+        # zero-phase filter's start transient never lands in a gated frame.
+        ctx_start = max(buf_start, min(self._n_gated - int(0.3 * rate),
+                                       self._n_pushed - int(0.6 * rate)))
+        ctx = self._buf[ctx_start - buf_start:]
+        if ctx.size < int(0.4 * rate):
+            return None                                    # stream just started
+        f = self._filter(ctx)
+        t_last = None
+        while self._n_gated + frame <= last_end:
+            i = self._n_gated - ctx_start
+            seg = f[i:i + frame]
+            level = float(np.sqrt(np.mean(seg ** 2))) if seg.size else 0.0
+            t_end = (self._n_gated + frame) / float(rate)
+            if level >= self.silence_rms:
+                if not self._in_word and not self._hold_until_quiet:
+                    self._in_word = True
+                    self._word_start = t_end - self.WORD_FRAME_SEC
+                if self._in_word:
+                    self._last_active = t_end
+            else:
+                self._hold_until_quiet = False
+            t_last = t_end
+            self._n_gated += hop
+        return t_last
+
+    def _active_seconds(self, x: np.ndarray, frame_sec: float = 0.02) -> float:
+        """Seconds of `x` (already band-passed) whose 20 ms frames are above the gate."""
+        n = int(frame_sec * self.rate)
+        if n <= 0 or x.size < n:
+            return 0.0
+        k = x.size // n
+        rms = np.sqrt((x[: k * n].reshape(k, n) ** 2).mean(axis=1))
+        return float((rms >= self.silence_rms).sum()) * frame_sec
+
+    def _word_window(self, now: float) -> np.ndarray:
+        """The raw samples handed to the model for the word that just ended.
+
+        Anchored to the WORD, not to the GUI tick: WORD_PAD_SEC before the word
+        start up to WORD_PAD_SEC after its last active frame (at least 1.0 s,
+        at most BUFFER_SECONDS). The window used to run up to `now`, so it
+        carried 0.25-0.5 s of trailing silence that depended on the push size
+        and on when the 0.25 s end-of-word timer happened to expire; the
+        >1 s window was then re-cut by preprocess.center_on_peak and the result
+        varied from tick to tick. On 200 validation-split clips (Sprint 8
+        replay, deployed CNN) this change took replay accuracy from 0.895/0.900
+        (256/50 ms pushes) to 0.930/0.930 and agreement with the direct file
+        prediction from 0.875/0.900 to 0.935/0.935.
+        """
+        rate = self.rate
+        end_t = min(now, self._last_active + self.WORD_PAD_SEC)
+        span = min(max(end_t - (self._word_start - self.WORD_PAD_SEC), 1.0), BUFFER_SECONDS)
+        end = self._buf.size - int(round((now - end_t) * rate))
+        start = max(0, end - int(span * rate))
+        return self._buf[start:end]
+
     def _predict_word(self):
         rate = self.rate
         now = self._stream_time()
-        ctx = self._buf[-int(0.6 * rate):]
-        if ctx.size < int(0.4 * rate):
+        t_gate = self._gate_frames()
+        if t_gate is None or not self._in_word:
             return self._committed
-        f = self._filter(ctx)
-        # loudness of the most recent frame, skipping the last 30 ms (filter edge)
-        seg = f[-int((self.WORD_FRAME_SEC + 0.03) * rate): -int(0.03 * rate)]
-        level = float(np.sqrt(np.mean(seg ** 2))) if seg.size else 0.0
-        active = level >= self.silence_rms
-        if active:
-            if not self._in_word:
-                self._in_word = True
-                self._word_start = now - self.WORD_FRAME_SEC
-            self._last_active = now
-        if not self._in_word:
-            return self._committed
-        quiet_for = now - self._last_active
+        quiet_for = t_gate - self._last_active
         length = self._last_active - self._word_start
         if quiet_for < self.WORD_END_QUIET_SEC and length < self.WORD_MAX_SEC:
             return self._committed                      # word still going
         self._in_word = False
-        if length < self.WORD_MIN_SEC:
-            return self._committed                      # a click, not a word
-        span = min(now - self._word_start + self.WORD_PAD_SEC, BUFFER_SECONDS)
-        raw = self._buf[-int(max(span, 1.0) * rate):]
+        if quiet_for < self.WORD_END_QUIET_SEC:
+            # Cut off by WORD_MAX_SEC while the signal is still active: classify
+            # what we have, but do NOT start another "word" from the remainder of
+            # the same activity. Continuous noise above the gate used to yield a
+            # decision every 1.1 s (4-5 false activations per 5 s in the Sprint 8
+            # noise-only replays) and a 1.3 s noisy clip got a second decision
+            # for its tail; now one decision per burst of activity, re-armed by
+            # the first quiet frame.
+            self._hold_until_quiet = True
+        raw = self._word_window(now)
         try:
-            waveform = load_waveform_from_array(self._filter(raw), rate)
+            filtered = self._filter(raw)
+            # How long the signal was really above the gate, at 20 ms resolution
+            # on the band-passed word window. The gate frames are 0.15 s long, so
+            # a single click/tap (or the start-up transient at the head of a
+            # simulated clip) used to measure `length` = 0.15 s and the
+            # WORD_MIN_SEC (0.12 s) test could never reject it -- the model then
+            # answered a digit with ~0.8 confidence (Sprint 8 replay: 202/600
+            # simulated test clips got a second, bogus event from their first 20 ms).
+            active_sec = self._active_seconds(filtered)
+            if active_sec < self.WORD_MIN_SEC:
+                return self._committed                  # a click, not a word
+            waveform = load_waveform_from_array(filtered, rate)
             if self.enhance:
                 waveform = enhance_waveform(waveform)
             if self.model == "ensemble":
@@ -890,6 +1019,7 @@ class _LiveClassifier:
         except Exception as e:  # noqa: BLE001
             print(f"[dashboard] prediction error ({self.source_label}): {type(e).__name__}: {e}")
             return self._committed
+        self.n_inferences += 1
         if result["status"] == "recognized" and result["confidence"] >= STABLE_CONF:
             self._committed = (result["prediction"], result["confidence"] * 100.0)
             if self.autosave:
@@ -900,6 +1030,9 @@ class _LiveClassifier:
                     pass
         else:
             self._committed = ("Unknown", result["confidence"] * 100.0)
+        self._emit_decision(result, "word", word_start=self._word_start,
+                            word_end=self._last_active, active_sec=active_sec,
+                            span_sec=raw.size / float(rate))
         return self._committed
 
     def predict(self):
@@ -909,8 +1042,7 @@ class _LiveClassifier:
         if self.word_mode:
             return self._predict_word()
 
-        import time
-        now = time.monotonic()
+        now = self._clock()
         if now - self._last_predict_t < PREDICT_EVERY_SEC:
             return self._committed
         self._last_predict_t = now
@@ -939,6 +1071,7 @@ class _LiveClassifier:
             print(f"[dashboard] prediction error ({self.source_label}): "
                   f"{type(e).__name__}: {e}")
             return self._committed
+        self.n_inferences += 1
 
         label = result["prediction"]
         confident = result["status"] == "recognized" and result["confidence"] >= STABLE_CONF
@@ -960,6 +1093,8 @@ class _LiveClassifier:
                                        source=self.source_label)
                     except Exception:  # noqa: BLE001
                         pass
+                self._emit_decision(result, "commit", window_rms=rms)
         elif self._committed is None:
             self._committed = ("Unknown", result["confidence"] * 100.0)
+            self._emit_decision(result, "commit", window_rms=rms)
         return self._committed

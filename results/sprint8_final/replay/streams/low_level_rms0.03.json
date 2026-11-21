@@ -1,0 +1,37 @@
+{
+ "name": "low_level_rms0.03",
+ "events": [
+  {
+   "t_start": 1.0,
+   "t_end": 1.5426,
+   "label": "4",
+   "source": "data/raw/4_george_9.wav",
+   "speaker": "george"
+  },
+  {
+   "t_start": 2.3426,
+   "t_end": 3.3426,
+   "label": "7",
+   "source": "data/raw/7_sc1b18600d_375.wav",
+   "speaker": "1b18600d"
+  },
+  {
+   "t_start": 4.1426,
+   "t_end": 4.5926,
+   "label": "2",
+   "source": "data/raw/2_sc0f7266cf_211.wav",
+   "speaker": "0f7266cf"
+  }
+ ],
+ "duration_s": 6.093,
+ "params": {
+  "gap_s": 0.8,
+  "speech_rms": 0.03,
+  "noise_kind": "none",
+  "noise_rms": 0.0,
+  "snr_db": null,
+  "level_override": 0.03
+ },
+ "note": "word RMS vs silence gate",
+ "expect_merge": false
+}

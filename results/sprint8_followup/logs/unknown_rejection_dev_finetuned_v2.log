@@ -1,0 +1,6 @@
+validation composition {'digit_clips': 2540, 'unknown_real_speech': 226, 'unknown_synthetic_noise': 100}
+frozen baseline (maxprob 0.26): {'tau': 0.26, 'digit_rejected': 0.04212598502635956, 'real_speech_unknown_rejected': 0.73893803358078, 'synthetic_noise_rejected': 0.9800000190734863, 'cross_check_frozen_decide_digit_rejected': 0.04212598502635956}
+maxprob selected: {'tau': 0.27, 'digit_rejected': 0.04251968488097191, 'real_speech_unknown_rejected': 0.7433628439903259, 'synthetic_noise_rejected': 0.9800000190734863}
+margin selected: {'tau': 0.0, 'digit_rejected': 0.03937007859349251, 'real_speech_unknown_rejected': 0.73893803358078, 'synthetic_noise_rejected': 0.9800000190734863}
+entropy selected: {'tau': 0.8, 'digit_rejected': 0.04330708831548691, 'real_speech_unknown_rejected': 0.747787594795227, 'synthetic_noise_rejected': 0.9800000190734863}
+wrote /home/claude/lmml/results/sprint8_followup/unknown/unknown_rejection_dev_finetuned_v2.json

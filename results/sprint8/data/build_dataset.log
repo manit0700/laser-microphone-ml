@@ -1,0 +1,32 @@
+[1] 9682 original wav files under data/raw
+    sha256 of all files in 0.3s
+    kept 9209 unique recordings, dropped 473 (460 _dupN, 13 byte-identical)
+    noise families: {'brown': 58, 'white': 59, 'hum_click': 68, 'bandlimited': 65}
+[2] split: fsdd train=['nicolas', 'jackson', 'lucas', 'theo'] val=george test=yweweler; team->test; SC pool 5787 clips / 362 speakers: test 743, val 883 (targets 740/832)
+    train: 6391 clips  fsdd=2000, noise=174, sc_unknown=627, silence=56, speech_commands=3534
+    val: 1433 clips  fsdd=500, noise=38, sc_unknown=113, silence=12, speech_commands=770
+    test: 1385 clips  fsdd=500, noise=38, sc_unknown=60, silence=12, speech_commands=683, team=92
+[3] sim plan: train digits 5534 x1 + 609 second variants, train unknown 857 x1 -> 7000 train sims; val/test x1
+    9818 sim jobs -> data/sprint8_sim
+    500/9818  3s elapsed, eta 64s
+    1000/9818  7s elapsed, eta 60s
+    1500/9818  11s elapsed, eta 59s
+    2000/9818  14s elapsed, eta 53s
+    2500/9818  17s elapsed, eta 50s
+    3000/9818  20s elapsed, eta 46s
+    3500/9818  24s elapsed, eta 43s
+    4000/9818  27s elapsed, eta 40s
+    4500/9818  31s elapsed, eta 36s
+    5000/9818  34s elapsed, eta 33s
+    5500/9818  37s elapsed, eta 29s
+    6000/9818  41s elapsed, eta 26s
+    6500/9818  44s elapsed, eta 23s
+    7000/9818  47s elapsed, eta 19s
+    7500/9818  51s elapsed, eta 16s
+    8000/9818  54s elapsed, eta 12s
+    8500/9818  58s elapsed, eta 9s
+    9000/9818  61s elapsed, eta 6s
+    9500/9818  65s elapsed, eta 2s
+    9818/9818  68s elapsed, eta 0s
+[4] manifest -> results/sprint8/data/manifest.csv (19027 rows)
+    summary  -> results/sprint8/data/manifest_summary.md

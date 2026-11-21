@@ -1,0 +1,204 @@
+{
+  "protocol": "validation only; 2-fold speaker-group cross-fit; T by NLL on log grid; threshold = frozen value; ECE = 15 equal-width bins, top-label",
+  "fold_rule": "sha256(speaker) mod 2",
+  "models": {
+    "reference": {
+      "P_clean": {
+        "holdout_fold_0": {
+          "T_fit_on_other_fold": 0.5495408773422241,
+          "n_heldout": 427,
+          "nll_T_fit": 0.596339762210846,
+          "brier_T_fit": 0.28339123725891113,
+          "ece15_T_fit": 0.054861042811496084,
+          "nll_uncalibrated_T1": 0.6658331155776978,
+          "ece15_uncalibrated_T1": 0.13034925956709187,
+          "digit_acc_at_frozen_thr": 0.7891737818717957,
+          "digit_rejected_at_frozen_thr": 0.08547008782625198,
+          "unknown_rejection_at_frozen_thr": 0.8815789222717285
+        },
+        "holdout_fold_1": {
+          "T_fit_on_other_fold": 0.6456542015075684,
+          "n_heldout": 1006,
+          "nll_T_fit": 0.42334410548210144,
+          "brier_T_fit": 0.20426394045352936,
+          "ece15_T_fit": 0.038545489203979245,
+          "nll_uncalibrated_T1": 0.5362736582756042,
+          "ece15_uncalibrated_T1": 0.1595472709849428,
+          "digit_acc_at_frozen_thr": 0.871599555015564,
+          "digit_rejected_at_frozen_thr": 0.018498368561267853,
+          "unknown_rejection_at_frozen_thr": 0.6896551847457886
+        },
+        "out_of_fold_pooled": {
+          "nll": 0.4748927056789398,
+          "brier": 0.22784198820590973,
+          "ece15": 0.022814157347421794,
+          "n": 1433
+        }
+      },
+      "P_mix": {
+        "holdout_fold_0": {
+          "T_fit_on_other_fold": 0.7244359850883484,
+          "n_heldout": 854,
+          "nll_T_fit": 1.1259742975234985,
+          "brier_T_fit": 0.499595046043396,
+          "ece15_T_fit": 0.07687213520622639,
+          "nll_uncalibrated_T1": 1.1078346967697144,
+          "ece15_uncalibrated_T1": 0.041634243477078274,
+          "digit_acc_at_frozen_thr": 0.5826210975646973,
+          "digit_rejected_at_frozen_thr": 0.23361822962760925,
+          "unknown_rejection_at_frozen_thr": 0.8618420958518982
+        },
+        "holdout_fold_1": {
+          "T_fit_on_other_fold": 0.8912509083747864,
+          "n_heldout": 2012,
+          "nll_T_fit": 0.8607208728790283,
+          "brier_T_fit": 0.3921334445476532,
+          "ece15_T_fit": 0.07121366884030345,
+          "nll_uncalibrated_T1": 0.8878114223480225,
+          "ece15_uncalibrated_T1": 0.11013697802616504,
+          "digit_acc_at_frozen_thr": 0.7149075269699097,
+          "digit_rejected_at_frozen_thr": 0.10010881721973419,
+          "unknown_rejection_at_frozen_thr": 0.7356321811676025
+        },
+        "out_of_fold_pooled": {
+          "nll": 0.9397602081298828,
+          "brier": 0.4241544306278229,
+          "ece15": 0.03077154257230727,
+          "n": 2866
+        }
+      }
+    },
+    "continued_clean": {
+      "P_clean": {
+        "holdout_fold_0": {
+          "T_fit_on_other_fold": 0.4677351415157318,
+          "n_heldout": 427,
+          "nll_T_fit": 0.6037927865982056,
+          "brier_T_fit": 0.27678337693214417,
+          "ece15_T_fit": 0.06785504395056459,
+          "nll_uncalibrated_T1": 0.6523179411888123,
+          "ece15_uncalibrated_T1": 0.13961597680095608,
+          "digit_acc_at_frozen_thr": 0.7891737818717957,
+          "digit_rejected_at_frozen_thr": 0.09401709586381912,
+          "unknown_rejection_at_frozen_thr": 0.9473684430122375
+        },
+        "holdout_fold_1": {
+          "T_fit_on_other_fold": 0.6309573650360107,
+          "n_heldout": 1006,
+          "nll_T_fit": 0.36825838685035706,
+          "brier_T_fit": 0.17036598920822144,
+          "ece15_T_fit": 0.068370974056021,
+          "nll_uncalibrated_T1": 0.5092549920082092,
+          "ece15_uncalibrated_T1": 0.19431968239958533,
+          "digit_acc_at_frozen_thr": 0.899891197681427,
+          "digit_rejected_at_frozen_thr": 0.028291622176766396,
+          "unknown_rejection_at_frozen_thr": 0.7356321811676025
+        },
+        "out_of_fold_pooled": {
+          "nll": 0.43844205141067505,
+          "brier": 0.20207585394382477,
+          "ece15": 0.03528930916756064,
+          "n": 1433
+        }
+      },
+      "P_mix": {
+        "holdout_fold_0": {
+          "T_fit_on_other_fold": 0.6606934666633606,
+          "n_heldout": 854,
+          "nll_T_fit": 1.1101285219192505,
+          "brier_T_fit": 0.5023099780082703,
+          "ece15_T_fit": 0.09879687104861112,
+          "nll_uncalibrated_T1": 1.086719274520874,
+          "ece15_uncalibrated_T1": 0.04938835103748086,
+          "digit_acc_at_frozen_thr": 0.5698005557060242,
+          "digit_rejected_at_frozen_thr": 0.23076923191547394,
+          "unknown_rejection_at_frozen_thr": 0.9013158082962036
+        },
+        "holdout_fold_1": {
+          "T_fit_on_other_fold": 0.8511380553245544,
+          "n_heldout": 2012,
+          "nll_T_fit": 0.8098442554473877,
+          "brier_T_fit": 0.3645625710487366,
+          "ece15_T_fit": 0.09594482813129532,
+          "nll_uncalibrated_T1": 0.856238603591919,
+          "ece15_uncalibrated_T1": 0.15080789178861395,
+          "digit_acc_at_frozen_thr": 0.7502720355987549,
+          "digit_rejected_at_frozen_thr": 0.10174102336168289,
+          "unknown_rejection_at_frozen_thr": 0.7816091775894165
+        },
+        "out_of_fold_pooled": {
+          "nll": 0.8993217945098877,
+          "brier": 0.40560805797576904,
+          "ece15": 0.04001215489837367,
+          "n": 2866
+        }
+      }
+    },
+    "finetuned_v2": {
+      "P_clean": {
+        "holdout_fold_0": {
+          "T_fit_on_other_fold": 0.4897788166999817,
+          "n_heldout": 427,
+          "nll_T_fit": 0.5060803890228271,
+          "brier_T_fit": 0.22321824729442596,
+          "ece15_T_fit": 0.03859208174876631,
+          "nll_uncalibrated_T1": 0.591547966003418,
+          "ece15_uncalibrated_T1": 0.16220833321888767,
+          "digit_acc_at_frozen_thr": 0.8490028381347656,
+          "digit_rejected_at_frozen_thr": 0.04843304678797722,
+          "unknown_rejection_at_frozen_thr": 0.8947368264198303
+        },
+        "holdout_fold_1": {
+          "T_fit_on_other_fold": 0.6025595664978027,
+          "n_heldout": 1006,
+          "nll_T_fit": 0.33126455545425415,
+          "brier_T_fit": 0.1467224508523941,
+          "ece15_T_fit": 0.05171387785921742,
+          "nll_uncalibrated_T1": 0.47483184933662415,
+          "ece15_uncalibrated_T1": 0.1913704706208207,
+          "digit_acc_at_frozen_thr": 0.9173014163970947,
+          "digit_rejected_at_frozen_thr": 0.0217627864331007,
+          "unknown_rejection_at_frozen_thr": 0.7931034564971924
+        },
+        "out_of_fold_pooled": {
+          "nll": 0.3833554983139038,
+          "brier": 0.16951638460159302,
+          "ece15": 0.03158327485630611,
+          "n": 1433
+        }
+      },
+      "P_mix": {
+        "holdout_fold_0": {
+          "T_fit_on_other_fold": 0.5495408773422241,
+          "n_heldout": 854,
+          "nll_T_fit": 0.553500235080719,
+          "brier_T_fit": 0.25352075695991516,
+          "ece15_T_fit": 0.038890876297690474,
+          "nll_uncalibrated_T1": 0.6349632143974304,
+          "ece15_uncalibrated_T1": 0.1440835995797251,
+          "digit_acc_at_frozen_thr": 0.8219373226165771,
+          "digit_rejected_at_frozen_thr": 0.06980057060718536,
+          "unknown_rejection_at_frozen_thr": 0.8486841917037964
+        },
+        "holdout_fold_1": {
+          "T_fit_on_other_fold": 0.6165950298309326,
+          "n_heldout": 2012,
+          "nll_T_fit": 0.49462488293647766,
+          "brier_T_fit": 0.21464815735816956,
+          "ece15_T_fit": 0.049546909478411394,
+          "nll_uncalibrated_T1": 0.6180732250213623,
+          "ece15_uncalibrated_T1": 0.19120290031611853,
+          "digit_acc_at_frozen_thr": 0.8688791990280151,
+          "digit_rejected_at_frozen_thr": 0.03210010752081871,
+          "unknown_rejection_at_frozen_thr": 0.7816091775894165
+        },
+        "out_of_fold_pooled": {
+          "nll": 0.5121683478355408,
+          "brier": 0.22623126208782196,
+          "ece15": 0.03151270430440979,
+          "n": 2866
+        }
+      }
+    }
+  }
+}

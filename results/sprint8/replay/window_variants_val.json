@@ -1,0 +1,30 @@
+{
+ "A_end_now_256": {
+  "acc": 0.895,
+  "agree_direct": 0.875,
+  "unknown": 5,
+  "no_event": 2,
+  "span_mean": 1.10806492003367
+ },
+ "A_end_now_50": {
+  "acc": 0.9,
+  "agree_direct": 0.9,
+  "unknown": 7,
+  "no_event": 2,
+  "span_mean": 1.0328237584175084
+ },
+ "B_anchored_256": {
+  "acc": 0.93,
+  "agree_direct": 0.935,
+  "unknown": 3,
+  "no_event": 2,
+  "span_mean": 1.014079650673401
+ },
+ "B_anchored_50": {
+  "acc": 0.93,
+  "agree_direct": 0.935,
+  "unknown": 4,
+  "no_event": 2,
+  "span_mean": 1.0148977272727273
+ }
+}
